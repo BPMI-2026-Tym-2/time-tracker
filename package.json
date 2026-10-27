@@ -1,0 +1,40 @@
+{
+  "name": "time-tracker-workspace",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "npm run db:up && concurrently --kill-others --names backend,frontend \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "dev:backend": "npm run dev --workspace backend",
+    "db:up": "docker compose up -d --wait mongodb",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f mongodb",
+    "generate": "npm run prisma:generate --workspace backend",
+    "build:shared": "npm run build --workspace shared",
+    "build": "npm run generate && npm run build:shared && npm run build --workspace backend && npm run build --workspace frontend",
+    "compose:build": "docker compose --profile production build",
+    "compose:up": "docker compose --profile production up -d",
+    "compose:down": "docker compose --profile production down",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "postinstall": "npm run generate && npm run build:shared"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "eslint-config-prettier": "^10",
+    "globals": "^16",
+    "concurrently": "^9",
+    "next": "16.4.3",
+    "prettier": "^3",
+    "typescript": "^5",
+    "typescript-eslint": "^8"
+  }
+}

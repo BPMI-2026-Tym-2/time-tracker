@@ -1,0 +1,56 @@
+services:
+  mongodb:
+    image: mongo:8
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: ['CMD-SHELL', 'mongosh --quiet --eval "db.adminCommand({ ping: 1 }).ok"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    profiles: ['production']
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      PORT: 3001
+      DATABASE_URL: mongodb://mongodb:27017/time_tracker
+      CORS_ORIGIN: http://localhost:3000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - '3001:3001'
+    networks:
+      - app-network
+
+  frontend:
+    profiles: ['production']
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+    environment:
+      BACKEND_INTERNAL_URL: http://backend:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    ports:
+      - '3000:3000'
+    networks:
+      - app-network
+
+volumes:
+  mongodb-data:
+
+networks:
+  app-network:
+    driver: bridge
