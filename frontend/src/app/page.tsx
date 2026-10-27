@@ -1,5 +1,7 @@
-import { TEST_MESSAGE } from '@time-tracker/shared';
-
 export default function Home() {
-  return <p>{TEST_MESSAGE}</p>;
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+      <h1 className="text-3xl font-bold">Welcome to the Time Tracker</h1>
+    </main>
+  );
 }
