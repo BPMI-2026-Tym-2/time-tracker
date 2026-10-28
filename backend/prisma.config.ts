@@ -10,6 +10,8 @@ export default defineConfig({
   },
   engine: 'classic',
   datasource: {
-    url: process.env.DATABASE_URL ?? 'mongodb://127.0.0.1:27017/time_tracker',
+    url:
+      process.env.DATABASE_URL ??
+      'mongodb://127.0.0.1:27017/time_tracker?replicaSet=rs0&directConnection=true',
   },
 });

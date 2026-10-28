@@ -34,3 +34,13 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Start MongoDB replica set
+        run: npm run db:up
+
+      - name: Check Prisma transactions and shared schema
+        run: npm run test:db
+
+      - name: Stop MongoDB
+        if: always()
+        run: npm run db:down

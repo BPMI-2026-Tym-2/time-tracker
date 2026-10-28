@@ -1,21 +1,25 @@
 {
   "name": "time-tracker-workspace",
   "private": true,
+  "engines": {
+    "node": "22.x",
+    "npm": ">=10"
+  },
   "workspaces": [
     "frontend",
     "backend",
     "shared"
   ],
   "scripts": {
-    "dev": "npm run db:up && concurrently --kill-others --names backend,frontend \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "npm run db:up && npm run generate && concurrently --kill-others --names shared,backend,frontend \"npm run dev --workspace shared\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev --workspace frontend",
     "dev:backend": "npm run dev --workspace backend",
     "db:up": "docker compose up -d --wait mongodb",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f mongodb",
-    "generate": "npm run prisma:generate --workspace backend",
+    "generate": "npm run prisma:generate --workspace backend && npm run build:shared",
     "build:shared": "npm run build --workspace shared",
-    "build": "npm run generate && npm run build:shared && npm run build --workspace backend && npm run build --workspace frontend",
+    "build": "npm run generate && npm run build --workspace backend && npm run build --workspace frontend",
     "compose:build": "docker compose --profile production build",
     "compose:up": "docker compose --profile production up -d",
     "compose:down": "docker compose --profile production down",
@@ -25,7 +29,7 @@
     "typecheck": "npm run generate && npm run typecheck --workspaces --if-present",
     "verify": "npm run lint && npm run format:check && npm run typecheck && npm run build",
     "prepare": "husky",
-    "postinstall": "npm run generate && npm run build:shared"
+    "postinstall": "npm run generate"
   },
   "devDependencies": {
     "@eslint/js": "^9",

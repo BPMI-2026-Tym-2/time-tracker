@@ -1,6 +1,8 @@
 FROM node:22-slim AS build
 
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/*
 
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
@@ -13,7 +15,6 @@ RUN npm ci --ignore-scripts
 
 COPY . .
 RUN npm run generate
-RUN npm run build:shared
 RUN npm run build --workspace frontend
 
 FROM node:22-slim

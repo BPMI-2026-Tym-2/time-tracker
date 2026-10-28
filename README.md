@@ -22,6 +22,7 @@ balíček. MongoDB běží lokálně v Dockeru a backend k ní přistupuje přes
 | Zod            | Validace dat a sdílené typy                 |
 | ESLint         | Statická kontrola JavaScriptu a TypeScriptu |
 | Prettier       | Formátování zdrojových souborů              |
+| Husky          | Lokální kontroly při commitu a pushi        |
 
 ## Struktura projektu
 
@@ -46,7 +47,7 @@ balíček. MongoDB běží lokálně v Dockeru a backend k ní přistupuje přes
 
 Pro lokální vývoj je potřeba:
 
-- Node.js a npm
+- Node.js 22 a npm 10 nebo novější (`nvm use`, pokud používáte nvm)
 - Docker s Docker Compose
 
 Závislosti nainstalujte z rootu repozitáře:
@@ -58,22 +59,83 @@ npm install
 Backend používá proměnné prostředí definované v
 [`backend/.env.example`](./backend/.env.example). Frontend používá
 [`frontend/.env.example`](./frontend/.env.example). Pro lokální vývoj
-zkopírujte tyto soubory do `.env.local`:
+zkopírujte backendový soubor do `.env` a frontendový do `.env.local`.
+Backend a Prisma používají `dotenv`, který standardně načítá `.env`:
 
 ```sh
-cp backend/.env.example backend/.env.local
+cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 ```
 
+Závislosti nainstalujte z rootu repozitáře:
+
+```sh
+npm ci
+```
+
+Instalace vygeneruje Prisma client a sdílená schémata, přeloží `shared`
+a aktivuje Husky hooky. Tyto příkazy spouštějte z kořene repozitáře.
+
 MongoDB spuštěná přes repozitářový Compose soubor je dostupná na
-`mongodb://localhost:27017`.
+`mongodb://127.0.0.1:27017/time_tracker?replicaSet=rs0&directConnection=true`.
+Compose při prvním spuštění inicializuje jednouzlový replica set `rs0` a čeká,
+až je uzel připravený přijímat zápisy. Replica set je nutný pro Prisma transakce.
+`directConnection=true` umožní připojení z hostu i z kontejneru bez překladu
+interního hostname `mongodb`. Tento stack je určený pro lokální vývoj a ověření
+kontejnerů; databáze nemá zapnutou autentizaci.
 
 ## Spuštění aplikace
 
-### Celá aplikace
+### Frontendový tým
 
-Nejjednodušší způsob spustí MongoDB v Dockeru a frontend i backend v
-development režimu:
+Po společné instalaci z rootu spusťte pouze frontend:
+
+```sh
+npm run dev:frontend
+```
+
+UI běží na [http://localhost:3000](http://localhost:3000) a změny načítá Next.js
+automaticky. Pro práci na samotném UI není potřeba spouštět Docker ani backend.
+Pro funkce používající skutečné API musí běžet backend a jeho databáze.
+`NEXT_PUBLIC_API_URL` ve `frontend/.env.local` musí odpovídat adrese tohoto
+backendu. Pokud endpoint ještě není hotový, může FE tým pracovat s dočasnými
+testovacími daty podle domluveného API kontraktu; automatické mockování API
+zatím v repozitáři není připravené.
+
+### Backendový tým
+
+Z rootu spusťte databázi, obnovte generované soubory a spusťte backend:
+
+```sh
+npm run db:up
+npm run generate
+npm run dev:backend
+```
+
+Backend běží na [http://localhost:3001](http://localhost:3001) a změny restartují
+server přes `tsx watch`. Frontend není potřeba spouštět; endpointy lze ověřovat
+HTTP klientem a testy. Na samotném `/` je zatím očekávaná odpověď `404`, protože
+aplikační endpointy ještě nejsou implementované.
+
+Databázový základ ověříte přes `npm run test:db`. Pokud testujete volání z jiného
+frontendu než `http://localhost:3000`, upravte `CORS_ORIGIN` v `backend/.env`.
+
+### Změny sdíleného balíčku
+
+Při samostatném vývoji obou týmů po změně sdíleného kódu spusťte
+`npm run build:shared`, nebo v dalším terminálu zapněte průběžný překlad:
+
+```sh
+npm run dev --workspace shared
+```
+
+Po změně Prisma schématu spusťte `npm run generate`. Stejný příkaz použijte
+po přepnutí větve nebo stažení změn, které upravují datový model.
+
+### Společné integrační ověření
+
+Pro práci na propojení FE a BE spusťte MongoDB v Dockeru a obě aplikace lokálně
+jedním příkazem:
 
 ```sh
 npm run dev
@@ -87,6 +149,11 @@ Po spuštění budou služby dostupné na:
 Frontend tedy otevřete v prohlížeči na portu `3000`; backend poskytuje API na
 portu `3001`.
 Tento režim spouští frontend a backend lokálně na hostu a MongoDB v Dockeru.
+Současně sleduje a kompiluje změny sdíleného balíčku `shared`.
+Při startu také obnoví Prisma client a sdílená schémata podle aktuální větve.
+Změny frontendu se projeví přes Next.js, změny backendu restartují server přes
+`tsx watch`. Ukončení pomocí `Ctrl+C` zastaví vývojové procesy, MongoDB zůstane
+běžet. Pokud ji už nepotřebujete, spusťte `npm run db:down`.
 
 ### Samostatné spuštění databáze
 
@@ -98,23 +165,6 @@ npm run db:down
 
 Data MongoDB jsou uložená v Docker volume `mongodb-data`, takže se při běžném
 `db:down` nesmažou.
-
-### Samostatné spuštění frontendu a backendu
-
-Databázi nejdříve spusťte pomocí `npm run db:up`. Poté lze jednotlivé části
-spustit samostatně:
-
-```sh
-npm run dev:frontend
-npm run dev:backend
-```
-
-Alternativně lze použít workspace příkazy přímo:
-
-```sh
-npm run dev --workspace frontend
-npm run dev --workspace backend
-```
 
 ### Build a produkční režim
 
@@ -133,17 +183,25 @@ příkazem:
 npm run compose:down
 ```
 
-Build jednotlivých workspace balíčků:
+Build celého projektu včetně generování sdílených souborů:
 
 ```sh
+npm run build
+```
+
+Pokud potřebujete přeložit jen jednu aplikaci, nejdříve obnovte sdílené soubory:
+
+```sh
+npm run generate
 npm run build --workspace frontend
 npm run build --workspace backend
 ```
 
-Produkční servery se spouštějí po úspěšném buildu:
+Produkční frontend spouštějte přes Docker Compose výše, který připraví
+standalone server včetně statických souborů. Samotný backend lze po buildu
+spustit lokálně:
 
 ```sh
-npm run start --workspace frontend
 npm run start --workspace backend
 ```
 
@@ -168,9 +226,24 @@ npm run format:check
 npm run typecheck
 ```
 
-Po čisté instalaci `npm install` se automaticky spustí `postinstall`, který
+Po čisté instalaci `npm ci` se automaticky spustí `postinstall`, který
 vygeneruje Prisma/Zod soubory do `shared/generated` a připraví shared balíček.
 Při Docker buildu se generování spouští také v Dockerfile.
+
+Po změně Prisma schématu spusťte `npm run generate`. Příkaz zároveň přeloží
+sdílený balíček, ze kterého frontend a backend importují typy a schémata.
+
+Připravenost databáze a kompatibilitu Prisma/Zod ověříte:
+
+```sh
+npm run db:up
+npm run test:db
+```
+
+Kontrola vytvoří, načte a smaže dočasný úkol v jedné transakci. Stejná kontrola
+běží v CI. Standardně používá lokální Compose databázi; jinou testovací databázi
+lze zadat přes `TEST_DATABASE_URL`. `npm run verify` spustí lint, formátování,
+typecheck a build bez požadavku na běžící databázi.
 
 ## Vývojový workflow
 
@@ -189,18 +262,83 @@ Při Docker buildu se generování spouští také v Dockerfile.
    git checkout -b feature/kratky-popis
    ```
 
-3. Nainstalujte závislosti a spusťte aplikaci podle části
-   [Spuštění aplikace](#spuštění-aplikace).
-4. Průběžně implementujte změnu a ověřujte ji lokálně.
-5. Před vytvořením pull requestu spusťte všechny kontroly:
+3. Při prvním spuštění připravte env soubory a spusťte `npm ci` podle části
+   [Požadavky](#požadavky). `npm ci` zopakujte po změně `package-lock.json`;
+   nemusíte jej spouštět při každém startu vývoje.
+4. Podle svého týmu spusťte [frontend](#frontendový-tým) nebo
+   [backend](#backendový-tým). Pro integrační ověření použijte `npm run dev`.
+   U úkolu zasahujícího FE i BE si nejdříve domluvte API kontrakt podle části
+   [Spolupráce FE a BE](#spolupráce-fe-a-be).
+5. Před commitem opravte formátování a připravte související soubory:
 
    ```sh
-   npm run lint
-   npm run format:check
-   npm run typecheck
+   npm run format
+   git add <soubory-zmeny>
+   git commit -m "feat: add task creation form"
    ```
 
-   Pokud projekt obsahuje testy, spusťte také příslušný testovací příkaz.
+   Pre-commit hook automaticky ověří lint a formátování. Pokud kontrola selže,
+   opravte chyby, znovu přidejte opravené soubory do stage a commit zopakujte.
+
+6. U změn Prisma/sdílených schémat nebo práce s databází spusťte také
+   `npm run test:db` s běžící lokální databází. Přidejte a spusťte funkční testy
+   odpovídající implementované změně.
+7. Pushněte větev a otevřete pull request do `dev`:
+
+   ```sh
+   git push -u origin feature/kratky-popis
+   ```
+
+   Pre-push hook automaticky spustí `npm run verify`: lint, formátování,
+   typecheck a produkční build obou aplikací. Kontrolu lze stejným příkazem
+   spustit i ručně. Počítejte s tím, že push čeká na dokončení buildu.
+
+### Spolupráce FE a BE
+
+Týmy mohou implementovat své části v samostatných feature větvích a pull
+requestech do `dev`. Před rozdělením navazující práce si domluvte metodu a URL
+endpointu, vstupní data, tvar odpovědi, chybové stavy a formát dat přenášených
+přes JSON. Databázový model sám o sobě není API kontrakt.
+
+Společné typy a validační schémata pro API udržujte v `shared` a změny kontraktu
+koordinujte mezi oběma týmy. Pokud FE práce závisí na konkrétním backendovém PR,
+uveďte tuto závislost v popisu PR a před dokončením funkce ověřte obě části
+společně proti skutečnému API. Tato koordinace nemění pravidla review níže.
+
+### Kde provádět změny
+
+- **Frontend:** stránky a UI patří do `frontend/src`. Adresa API pro prohlížeč
+  je připravená v `frontend/.env.local` jako `NEXT_PUBLIC_API_URL`; její použití
+  při volání endpointů je součástí implementace frontendu.
+- **Backend:** endpointy a aplikační logika patří do `backend/src`.
+- **Sdílený kód:** ručně psané typy a validační schémata patří do `shared`.
+  Obě aplikace je importují z `@time-tracker/shared`.
+- **Datový model:** upravujte `backend/prisma/schema.prisma` a potom spusťte
+  `npm run generate`. Soubory v `shared/generated`, `shared/dist` a Prisma
+  client neupravujte ručně ani necommitujte.
+
+Pokud změna datového modelu vyžaduje promítnutí schématu nebo indexů do lokální
+MongoDB, s běžící databází spusťte:
+
+```sh
+npm exec --workspace backend -- prisma db push --skip-generate
+npm run generate
+```
+
+MongoDB nepoužívá Prisma Migrate. Změny již uložených dat je potřeba řešit
+samostatně podle konkrétní změny modelu.
+
+### Husky a CI
+
+Hooky se instalují automaticky přes `npm ci` a kontrolují celý pracovní strom,
+nejen soubory ve stage. Neprovádějí automatické opravy ani staging souborů.
+Lokální commit i push proto může zablokovat i nedokončená změna v jiné části
+repozitáře.
+
+CI zopakuje lint, formátování, typecheck a build a navíc spustí MongoDB
+a databázový integrační test. Ten není součástí pre-push hooku, takže samotný
+push nepotřebuje běžící Docker daemon. Build frontendu ale může potřebovat
+přístup k síti kvůli načtení Google Fonts.
 
 ### Pull request a review
 
@@ -235,7 +373,7 @@ Při Docker buildu se generování spouští také v Dockerfile.
 
 - Commit message pište v imperativu a udržujte ji stručnou. Jeden commit by měl
   ideálně popisovat jednu logickou změnu.
-- Před otevřením pull requestu ověřte lint, formátování, typecheck a testy.
+- Před otevřením pull requestu musí projít `npm run verify` a relevantní testy.
 - Pull request musí mít popis, Sprintman backlog odkaz a informace o ověření.
 - Změny mergeujte do `dev` až po požadovaných schváleních.
 
@@ -278,7 +416,7 @@ Zkontrolujte, že běží MongoDB a že `backend/.env` obsahuje správnou hodnot
 `DATABASE_URL`, například:
 
 ```dotenv
-DATABASE_URL="mongodb://localhost:27017/time-tracker"
+DATABASE_URL="mongodb://127.0.0.1:27017/time_tracker?replicaSet=rs0&directConnection=true"
 ```
 
 Po změně environment proměnných backend restartujte.
@@ -305,7 +443,7 @@ npm run dev --workspace frontend -- -p 3002
 Z rootu přeinstalujte závislosti:
 
 ```sh
-npm install
+npm ci
 ```
 
 Pokud problém přetrvává, ověřte verzi Node.js a npm a zkontrolujte, že příkaz
@@ -317,5 +455,13 @@ Po změně Prisma schématu znovu vygenerujte Prisma client a sdílená validač
 schémata:
 
 ```sh
-npm run prisma:generate --workspace backend
+npm run generate
 ```
+
+### Audit závislostí Prisma
+
+`npm audit` aktuálně hlásí zranitelnost `deepmerge-ts` přes vývojovou závislost
+Prisma CLI. Automaticky navrhovaný major upgrade nelze bez ověření použít:
+projekt používá Prisma 6.19 kvůli podpoře MongoDB. Aktualizaci Prisma CLI,
+`@prisma/client` a Nix enginů provádějte společně a ověřte pomocí `npm run test:db`.
+Viz [podpora MongoDB v Prisma](https://www.prisma.io/docs/orm/overview/databases/mongodb).
