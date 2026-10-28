@@ -15,7 +15,7 @@ RUN npm ci --ignore-scripts
 
 COPY . .
 RUN npm run generate
-RUN npm run build --workspace frontend
+RUN mkdir -p frontend/public && npm run build --workspace frontend
 
 FROM node:22-slim
 
