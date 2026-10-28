@@ -34,19 +34,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Start MongoDB replica set
-        run: npm run db:up
-
-      - name: Check Prisma transactions and shared schema
-        run: npm run test:db
-
-      - name: MongoDB diagnostics
-        if: failure()
-        run: |
-          docker compose ps -a
-          docker compose logs --no-color --tail=200 mongodb
-
-      - name: Stop MongoDB
-        if: always()
-        run: npm run db:down

@@ -310,6 +310,9 @@ společně proti skutečnému API. Tato koordinace nemění pravidla review ní�
 - **Frontend:** stránky a UI patří do `frontend/src`. Adresa API pro prohlížeč
   je připravená v `frontend/.env.local` jako `NEXT_PUBLIC_API_URL`; její použití
   při volání endpointů je součástí implementace frontendu.
+- **shad/cn komponenty:** Projekt používá shad/cn. Komponenty shad/cn jsou ve
+  složce `frontend/src/components/ui` a neupravují se. Vlastní komponenty,
+  které je využívají, vytvářejte ve složce `frontend/src/components/features` nebo `frontend/src/components/layout`.
 - **Backend:** endpointy a aplikační logika patří do `backend/src`.
 - **Sdílený kód:** ručně psané typy a validační schémata patří do `shared`.
   Obě aplikace je importují z `@time-tracker/shared`.
