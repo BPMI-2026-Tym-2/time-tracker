@@ -12,3 +12,4 @@
 // export type TaskSchemaDTO = z.infer<typeof TaskSchema>;
 
 export * from './generated/index.js';
+export * from './user.js';

@@ -8,6 +8,6 @@
     "outDir": "dist",
     "declaration": true
   },
-  "include": ["index.ts", "generated/**/*.ts"],
+  "include": ["index.ts", "user.ts", "generated/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
