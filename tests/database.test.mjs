@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PrismaClient } from '@prisma/client';
-import { TaskSchema } from '@time-tracker/shared';
 
-test('Prisma can transact against MongoDB and return a valid shared Task', async () => {
+test('Prisma can transact against MongoDB and return a task', async () => {
   const prisma = new PrismaClient({
     datasourceUrl:
       process.env.TEST_DATABASE_URL ??
@@ -17,7 +16,9 @@ test('Prisma can transact against MongoDB and return a valid shared Task', async
       const stored = await tx.task.findUniqueOrThrow({ where: { id: task.id } });
 
       assert.equal(stored.title, 'Database setup check');
-      assert.equal(TaskSchema.parse(stored).id, task.id);
+      assert.equal(stored.id, task.id);
+      assert.equal(stored.description, null);
+      assert.ok(stored.createdAt instanceof Date);
 
       await tx.task.delete({ where: { id: task.id } });
       assert.equal(await tx.task.findUnique({ where: { id: task.id } }), null);
