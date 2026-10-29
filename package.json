@@ -17,6 +17,7 @@
     "db:up": "docker compose up -d --wait mongodb",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f mongodb",
+    "test": "node --test tests/auth.test.mjs",
     "test:db": "node --test tests/database.test.mjs",
     "generate": "npm run prisma:generate --workspace backend && npm run build:shared",
     "build:shared": "npm run build --workspace shared",

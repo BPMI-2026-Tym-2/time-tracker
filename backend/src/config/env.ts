@@ -13,4 +13,6 @@ function readPort(value: string | undefined): number {
 export const env = {
   port: readPort(process.env.PORT),
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+  betterAuthSecret: process.env.BETTER_AUTH_SECRET ?? 'time-tracker-better-auth-secret-key-32chars',
+  betterAuthUrl: process.env.BETTER_AUTH_URL,
 } as const;

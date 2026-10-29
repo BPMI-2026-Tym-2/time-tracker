@@ -31,6 +31,12 @@ Aktuálně jsou implementované:
 Požadavek se validuje přes schema ze shared balíčku, service zavolá
 repository, mapper připraví API response a response se ověří response schema.
 
+## Auth a user moduly
+
+- `backend/src/modules/auth` konfiguruje Better Auth a připojuje ho na router `/auth`.
+- `backend/src/modules/users` řeší načítání uživatelských profilů (`GET /users/me`, `GET /users/:id`).
+- Chráněné routy používají middleware `requireAuth`.
+
 ## Sdílená backendová infrastruktura
 
 `backend/src/shared` obsahuje obecné backendové části, například:
