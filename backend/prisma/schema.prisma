@@ -26,20 +26,51 @@ model Task {
 // (v Better Auth configu je potřeba `user.fields.image = "profileImageUrl"`).
 // ID (UUID) generuje Better Auth (`advanced.database.generateId: "uuid"`), proto nemají @default.
 // Heslo je uložené zahashované v Account.password, nikdy ne na User.
+// Aplikační pole `role` ("user" | "superAdmin") musí být v Better Auth configu jako additionalField s `input: false`.
 
 model User {
-  id              String    @id @map("_id")
+  id              String        @id @map("_id")
   name            String
   surname         String
-  email           String    @unique
-  emailVerified   Boolean   @default(false)
+  email           String        @unique
+  emailVerified   Boolean       @default(false)
   profileImageUrl String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  role            String        @default("user")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   sessions        Session[]
   accounts        Account[]
+  memberships     GroupMember[]
 
   @@map("user")
+}
+
+model Group {
+  id        String        @id @default(uuid()) @map("_id")
+  name      String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  members   GroupMember[]
+
+  @@map("group")
+}
+
+// Členství uživatele ve skupině. `role`: "member" | "owner" (zakladatel skupiny).
+// `joinedAt` určuje výchozí pořadí v seznamu členů.
+// Při smazání skupiny nebo uživatele se členství smažou automaticky (onDelete: Cascade).
+// Smazání zakladatele (owner) má smazat celou skupinu – to musí řešit kód, který maže uživatele.
+model GroupMember {
+  id       String   @id @default(uuid()) @map("_id")
+  groupId  String
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@map("group_member")
 }
 
 model Session {
