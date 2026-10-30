@@ -27,6 +27,17 @@ npm run test:db
 Test vytvoří task v transakci, načte ho, ověří jeho hodnoty a následně ho
 smaže. Jinou databázi lze zadat přes `TEST_DATABASE_URL`.
 
+## Test seznamu členů skupiny
+
+Test služby pro seznam členů skupiny (scénář Tereza/Adam/Klára) také vyžaduje
+běžící MongoDB replica set se synchronizovaným schématem. Databáze se bere
+z `DATABASE_URL` (jinak z `backend/.env`); testovací data po sobě smaže.
+
+```sh
+npm run db:up
+npm run test:groups
+```
+
 ## Kam přidávat testy
 
 - databázové testy patří do `tests/`,
