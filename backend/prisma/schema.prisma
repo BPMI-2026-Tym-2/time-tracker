@@ -22,22 +22,20 @@ model Task {
 
 // Modely User, Session, Account a Verification vyžaduje Better Auth (Prisma adapter, provider mongodb).
 // Tvar odpovídá výstupu `npx auth generate` – názvy polí neměnit, jinak s nimi Better Auth nebude pracovat.
-// Výjimka: Better Auth pole `image` je přejmenované na `profileImageUrl`
-// (v Better Auth configu je potřeba `user.fields.image = "profileImageUrl"`).
 // ID (UUID) generuje Better Auth (`advanced.database.generateId: "uuid"`), proto nemají @default.
 // Heslo je uložené zahashované v Account.password, nikdy ne na User.
 
 model User {
-  id              String    @id @map("_id")
-  name            String
-  surname         String
-  email           String    @unique
-  emailVerified   Boolean   @default(false)
-  profileImageUrl String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  sessions        Session[]
-  accounts        Account[]
+  id            String    @id @map("_id")
+  name          String
+  surname       String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
 
   @@map("user")
 }
