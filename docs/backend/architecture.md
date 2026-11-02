@@ -39,3 +39,16 @@ repository, mapper připraví API response a response se ověří response schem
 - async handler pro Express,
 - CORS middleware,
 - response helpery.
+
+## Environment konfigurace
+
+Povinné environment proměnné se načítají pomocí helperu `requiredEnv` z
+`backend/src/config/env.ts`. Helper odstraní okolní mezery a při chybějící nebo
+prázdné hodnotě vyhodí explicitní chybu.
+
+Při přidávání konfigurace, která bez environment proměnné nemůže bezpečně
+fungovat, se má použít `requiredEnv` místo přímého čtení `process.env`.
+
+Volitelné proměnné s definovanou výchozí hodnotou, například `PORT` nebo
+`CORS_ORIGIN`, zůstávají zpracované v konfiguraci vlastním validačním helperem
+nebo fallbackem.
