@@ -6,10 +6,10 @@ import { taskRouter } from './modules/tasks/task.routes.js';
 import { userRouter } from './modules/users/user.routes.js';
 
 const app = express();
-app.use(express.json());
 app.use(corsMiddleware);
-
 app.use('/auth', authRouter);
+app.use(express.json());
+
 app.use('/tasks', taskRouter);
 app.use('/users', userRouter);
 app.use(errorHandler);
