@@ -87,15 +87,13 @@ export function LoginForm({
                   value={password}
                   onChange={onPasswordChange}
                 />
-                <Button
+                <button
                   type="button"
-                  className="absolute top-1/2 right-0 -translate-y-1/2"
-                  variant="ghost"
-                  size="sm"
+                  className="absolute top-1/2 right-0 w-fit -translate-y-1/2 px-3"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <LucideEye /> : <LucideEyeOff />}
-                </Button>
+                  {showPassword ? <LucideEye size="16" /> : <LucideEyeOff size="16" />}
+                </button>
               </span>
             </Field>
           </FieldGroup>
@@ -127,8 +125,12 @@ export function LoginForm({
       </form>
 
       <div className="text-muted-foreground flex justify-between text-sm">
-        <Link href="/forgot-password">Zapomněli jste heslo?</Link>
-        <Link href="/register">Registrovat se</Link>
+        <Link href="/forgot-password" className="hover:underline">
+          Zapomněli jste heslo?
+        </Link>
+        <Link href="/register" className="hover:underline">
+          Registrovat se
+        </Link>
       </div>
     </div>
   );

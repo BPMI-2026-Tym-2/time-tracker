@@ -35,35 +35,37 @@ export function RegisterForm({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <>
-      <h1>Registrace</h1>
+    <div className="flex w-xs flex-col gap-y-6 sm:w-md">
+      <h1 className="text-center text-2xl font-bold">Registrace</h1>
 
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} noValidate>
         <FieldSet>
           <FieldGroup>
-            <Field>
+            <Field className="gap-1">
               <FieldLabel htmlFor="name">Jméno</FieldLabel>
               <Input
                 id="name"
                 name="name"
                 autoComplete="given-name"
                 required
+                placeholder="Jan"
                 value={name}
                 onChange={onNameChange}
               />
             </Field>
-            <Field>
+            <Field className="gap-1">
               <FieldLabel htmlFor="surname">Příjmení</FieldLabel>
               <Input
                 id="surname"
                 name="surname"
                 autoComplete="family-name"
                 required
+                placeholder="Novák"
                 value={surname}
                 onChange={onSurnameChange}
               />
             </Field>
-            <Field>
+            <Field className="gap-1">
               <FieldLabel htmlFor="email">E-mail</FieldLabel>
               <Input
                 id="email"
@@ -71,11 +73,12 @@ export function RegisterForm({
                 type="email"
                 autoComplete="email"
                 required
+                placeholder="jan.novak@seznam.cz"
                 value={email}
                 onChange={onEmailChange}
               />
             </Field>
-            <Field>
+            <Field className="gap-1">
               <FieldLabel htmlFor="password">Heslo</FieldLabel>
               <span className="relative">
                 <Input
@@ -88,28 +91,35 @@ export function RegisterForm({
                   value={password}
                   onChange={onPasswordChange}
                 />
-                <Button
+                <button
                   type="button"
-                  className="absolute top-1/2 right-0 -translate-y-1/2"
-                  variant="ghost"
-                  size="sm"
+                  className="absolute top-1/2 right-0 w-fit -translate-y-1/2 px-3"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <LucideEye /> : <LucideEyeOff />}
-                </Button>
+                  {showPassword ? <LucideEye size="16" /> : <LucideEyeOff size="16" />}
+                </button>
               </span>
             </Field>
           </FieldGroup>
 
           {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
 
-          <Button type="submit" disabled={isPending}>
+          <Button
+            type="submit"
+            disabled={isPending}
+            size="sm"
+            className="bg-primary text-background"
+          >
             {isPending ? <LoaderCircle /> : 'Registrovat'}
           </Button>
         </FieldSet>
       </form>
 
-      <Link href="/login">Zpět na přihlášení</Link>
-    </>
+      <div className="text-muted-foreground flex justify-center text-sm">
+        <Link href="/login" className="hover:underline">
+          Zpět na přihlášení
+        </Link>
+      </div>
+    </div>
   );
 }
