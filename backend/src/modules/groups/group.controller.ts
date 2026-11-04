@@ -1,21 +1,28 @@
 import type { Request, Response } from 'express';
-import {
-  listGroupMembersParamsSchema,
-  listGroupMembersQuerySchema,
-  listGroupMembersResponseSchema,
-} from '@time-tracker/shared';
 import { AppError } from '../../shared/errors/app-error.js';
 import { sendData } from '../../shared/http/response.js';
-import { groupService } from './group.service.js';
+import groupService from './group.service.js';
+import { group } from '@time-tracker/shared';
 
-export async function listGroupMembersController(request: Request, response: Response) {
+export type GroupController = {
+  listMembers: (request: Request, response: Response) => Promise<void>;
+};
+
+async function listMembers(request: Request, response: Response) {
   if (!request.user) {
     throw new AppError('Not authenticated', 401);
   }
 
-  const { groupId } = listGroupMembersParamsSchema.parse(request.params);
-  const query = listGroupMembersQuerySchema.parse(request.query);
-  const result = await groupService.listGroupMembers(request.user, groupId, query);
+  const { groupId } = group.listMembersParams.parse(request.params);
+  const query = group.listMembersQuery.parse(request.query);
+  const result = await groupService.listMembers(request.user, groupId, query);
 
-  return sendData(response, listGroupMembersResponseSchema.parse(result));
+  sendData(response, group.listMembersResponse.parse(result));
 }
+
+const groupController: GroupController = {
+  listMembers,
+  // dalsi metody kontroleru
+};
+
+export default groupController;

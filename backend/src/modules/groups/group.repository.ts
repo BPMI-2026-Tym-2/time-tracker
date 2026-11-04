@@ -22,7 +22,6 @@ const groupMemberSelect = {
 
 export type GroupRecord = Prisma.GroupGetPayload<{ select: typeof groupSelect }>;
 export type GroupMemberRecord = Prisma.GroupMemberGetPayload<{ select: typeof groupMemberSelect }>;
-
 export type GroupMemberFilter = {
   search?: string;
   // hledat i podle e-mailu (jen pokud volající e-maily vidí).
@@ -30,24 +29,21 @@ export type GroupMemberFilter = {
   role?: GroupRole;
 };
 
-export function findGroupById(id: string): Promise<GroupRecord | null> {
+function findById(id: string): Promise<GroupRecord | null> {
   return prisma.group.findUnique({
     where: { id },
     select: groupSelect,
   });
 }
 
-export function findGroupMembership(
-  groupId: string,
-  userId: string,
-): Promise<{ role: string } | null> {
+function findMembership(groupId: string, userId: string): Promise<{ role: string } | null> {
   return prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId, userId } },
     select: { role: true },
   });
 }
 
-export async function findGroupMembers(
+async function findMembers(
   groupId: string,
   filter: GroupMemberFilter,
   pagination: { skip: number; take: number },
@@ -78,3 +74,11 @@ export async function findGroupMembers(
 
   return { items, total };
 }
+
+const groupRepository = {
+  findById,
+  findMembership,
+  findMembers,
+};
+
+export default groupRepository;
