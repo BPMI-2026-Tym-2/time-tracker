@@ -1,16 +1,40 @@
 import type { Request, Response } from 'express';
-import { createGroupRequestSchema, groupResponseSchema } from '@time-tracker/shared';
 import { sendData } from '../../shared/http/response.js';
-import { createGroupService } from './group.service.js';
-import { toGroupResponse } from './group.mapper.js';
+import { AppError } from '../../shared/errors/app-error.js';
+import groupService from './group.service.js';
+import { groupSchema } from '@time-tracker/shared';
 
-export async function createGroupController(request: Request, response: Response) {
-  // 1. Zod validace těla požadavku
-  const input = createGroupRequestSchema.parse(request.body);
+export type GroupController = {
+  listMembers: (request: Request, response: Response) => Promise<void>;
+  createGroup: (request: Request, response: Response) => Promise<void>;
+};
 
-  // 2. Volání service
-  const group = await createGroupService(input);
+async function listMembers(request: Request, response: Response) {
+  if (!request.user) {
+    throw new AppError('Not authenticated', 401);
+  }
 
-  // 3. Mapování a validace výstupu
-  return sendData(response, groupResponseSchema.parse(toGroupResponse(group)), 201);
+  const { groupId } = groupSchema.listMembersParams.parse(request.params);
+  const query = groupSchema.listMembersQuery.parse(request.query);
+  const result = await groupService.listMembers(request.user, groupId, query);
+
+  sendData(response, groupSchema.listMembersResponse.parse(result));
 }
+
+async function createGroup(request: Request, response: Response) {
+  if (!request.user) {
+    throw new AppError('Not authenticated', 401);
+  }
+
+  const input = groupSchema.createGroupRequest.parse(request.body);
+  const group = await groupService.createGroup(input);
+
+  sendData(response, groupSchema.createGroupResponse.parse(group), 201);
+}
+
+const groupController: GroupController = {
+  listMembers,
+  createGroup,
+};
+
+export default groupController;

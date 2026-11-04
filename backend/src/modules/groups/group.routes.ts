@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/http/async-handler.js';
-import { createGroupController } from './group.controller.js';
+import groupController from './group.controller.js';
 
 const groupRouter = Router();
 
-groupRouter.post('/', asyncHandler(createGroupController));
+groupRouter.post('/', asyncHandler(groupController.createGroup));
+groupRouter.get('/:groupId/members', asyncHandler(groupController.listMembers));
 
-export { groupRouter };
+export default groupRouter;
