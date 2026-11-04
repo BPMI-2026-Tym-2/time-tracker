@@ -36,7 +36,7 @@ const listMembersResponse = z.object({
   }),
 });
 
-export const group = {
+export const groupSchema = {
   role,
   listMembersParams,
   listMembersQuery,
