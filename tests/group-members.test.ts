@@ -4,7 +4,7 @@ import { after, before, describe, test } from 'node:test';
 import { listGroupMembersQuerySchema } from '@time-tracker/shared';
 import { prisma } from '../backend/src/db/prisma.js';
 import { AppError } from '../backend/src/shared/errors/app-error.js';
-import { listGroupMembersService } from '../backend/src/modules/groups/group.service.js';
+import { groupService } from '../backend/src/modules/groups/group.service.js';
 
 // Vyžaduje běžící MongoDB replica set (npm run db:up). Databáze se bere z DATABASE_URL
 // (výchozí z backend/.env).
@@ -27,7 +27,7 @@ const turistikaId = randomUUID();
 
 const defaults = listGroupMembersQuerySchema.parse({});
 const list = (requester: { id: string; role: string }, query = {}, groupId = turistikaId) =>
-  listGroupMembersService(requester, groupId, { ...defaults, ...query });
+  groupService.listGroupMembers(requester, groupId, { ...defaults, ...query });
 
 async function rejectsWith(promise: Promise<unknown>, statusCode: number, message: string) {
   await assert.rejects(promise, (error) => {

@@ -35,7 +35,7 @@ z `DATABASE_URL` (jinak z `backend/.env`); testovací data po sobě smaže.
 
 ```sh
 npm run db:up
-npm run test:groups
+node --import tsx --test tests/group-members.test.ts
 ```
 
 ## Kam přidávat testy

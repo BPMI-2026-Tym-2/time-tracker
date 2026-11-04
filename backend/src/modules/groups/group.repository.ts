@@ -1,4 +1,5 @@
 import type { Prisma } from '@prisma/client';
+import type { GroupRole } from '@time-tracker/shared';
 import { prisma } from '../../db/prisma.js';
 
 const groupSelect = {
@@ -24,9 +25,9 @@ export type GroupMemberRecord = Prisma.GroupMemberGetPayload<{ select: typeof gr
 
 export type GroupMemberFilter = {
   search?: string;
-  // Hledat i podle e-mailu (jen pokud volající e-maily vidí).
+  // hledat i podle e-mailu (jen pokud volající e-maily vidí).
   searchEmail: boolean;
-  role?: string;
+  role?: GroupRole;
 };
 
 export function findGroupById(id: string): Promise<GroupRecord | null> {
@@ -46,7 +47,7 @@ export function findGroupMembership(
   });
 }
 
-export async function listGroupMembers(
+export async function findGroupMembers(
   groupId: string,
   filter: GroupMemberFilter,
   pagination: { skip: number; take: number },

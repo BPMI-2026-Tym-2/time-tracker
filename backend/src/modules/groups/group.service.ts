@@ -1,12 +1,20 @@
 import type { ListGroupMembersQuery, ListGroupMembersResponse } from '@time-tracker/shared';
+import type { RequestingUser } from '../../shared/auth/types.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { toGroupMemberResponse } from './group.mapper.js';
-import { findGroupById, findGroupMembership, listGroupMembers } from './group.repository.js';
-import type { RequestingUser } from './group.types.js';
+import { findGroupById, findGroupMembers, findGroupMembership } from './group.repository.js';
+
+export type GroupService = {
+  listGroupMembers: (
+    requestingUser: RequestingUser,
+    groupId: string,
+    query: ListGroupMembersQuery,
+  ) => Promise<ListGroupMembersResponse>;
+};
 
 // Seznam členů skupiny smí vidět člen, zakladatel skupiny a super admin.
-// E-mail vidí (a hledat podle něj smí) jen zakladatel skupiny a super admin.
-export async function listGroupMembersService(
+// E-mail vidí (a hledat podle nej smi) jen zakladatel skupiny a super admin.
+async function listGroupMembers(
   requestingUser: RequestingUser,
   groupId: string,
   query: ListGroupMembersQuery,
@@ -25,7 +33,7 @@ export async function listGroupMembersService(
   }
 
   const canSeeEmail = isSuperAdmin || membership?.role === 'owner';
-  const { items, total } = await listGroupMembers(
+  const { items, total } = await findGroupMembers(
     groupId,
     { search: query.search, searchEmail: canSeeEmail, role: query.role },
     { skip: (query.page - 1) * query.pageSize, take: query.pageSize },
@@ -37,3 +45,7 @@ export async function listGroupMembersService(
     pageInfo: { page: query.page, pageSize: query.pageSize, total },
   };
 }
+
+export const groupService: GroupService = {
+  listGroupMembers,
+};
