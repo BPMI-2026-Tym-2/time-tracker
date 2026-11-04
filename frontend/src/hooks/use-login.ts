@@ -28,10 +28,16 @@ export function useLogin() {
         throw new Error(result.error.message ?? 'Přihlášení se nepodařilo.');
       }
 
+      const session = await authClient.getSession();
+
+      if (session.error || !session.data) {
+        throw new Error('Přihlášení proběhlo, ale session se nepodařilo načíst.');
+      }
+
       return result.data;
     },
     onSuccess: () => {
-      router.replace('/');
+      router.push('/');
     },
   });
 

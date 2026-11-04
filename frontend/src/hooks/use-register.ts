@@ -22,10 +22,16 @@ export function useRegister() {
         throw new Error(result.error.message ?? 'Registrace se nepodařila.');
       }
 
+      const session = await authClient.getSession();
+
+      if (session.error || !session.data) {
+        throw new Error('Registrace proběhla, ale session se nepodařilo načíst.');
+      }
+
       return result.data;
     },
     onSuccess: () => {
-      router.replace('/');
+      router.push('/');
     },
   });
 
