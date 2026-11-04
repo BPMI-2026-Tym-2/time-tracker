@@ -1,6 +1,6 @@
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, LucideEye, LucideEyeOff } from 'lucide-react';
 import Link from 'next/link';
-import type { ChangeEvent, SyntheticEvent } from 'react';
+import { useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,8 @@ export function RegisterForm({
   onPasswordChange,
   onSubmit,
 }: RegisterFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <>
       <h1>Registrace</h1>
@@ -75,15 +77,27 @@ export function RegisterForm({
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Heslo</FieldLabel>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={onPasswordChange}
-              />
+              <span className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={onPasswordChange}
+                />
+                <Button
+                  type="button"
+                  className="absolute top-1/2 right-0 -translate-y-1/2"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <LucideEye /> : <LucideEyeOff />}
+                </Button>
+              </span>
             </Field>
           </FieldGroup>
 
