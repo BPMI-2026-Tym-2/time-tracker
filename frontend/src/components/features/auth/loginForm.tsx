@@ -80,7 +80,7 @@ export function LoginForm({
                 <Input
                   id="password"
                   name="password"
-                  type={showPassword ? 'password' : 'text'}
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
                   placeholder="••••••••"
