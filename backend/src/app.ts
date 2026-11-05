@@ -10,6 +10,28 @@ const app = express();
 app.use(express.json());
 app.use(corsMiddleware);
 
+// Auth middleware pro lokální vývoj
+app.use((req, _res, next) => {
+  const isAnonymous = req.headers['x-anonymous'] === 'true' || req.headers['x-user-id'] === 'none';
+
+  if (isAnonymous) {
+    next();
+    return;
+  }
+
+  const headerUserId = req.headers['x-user-id'];
+  const headerUserRole = req.headers['x-user-role'];
+
+  const id =
+    typeof headerUserId === 'string' && headerUserId.trim() !== '' ? headerUserId : 'dev-user-id';
+
+  const role =
+    typeof headerUserRole === 'string' && headerUserRole.trim() !== '' ? headerUserRole : 'owner';
+
+  req.user = { id, role };
+  next();
+});
+
 app.use('/auth', authRouter);
 app.use('/groups', groupRouter);
 app.use('/tasks', taskRouter);

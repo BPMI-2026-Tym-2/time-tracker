@@ -44,11 +44,16 @@ model User {
 }
 
 model Group {
-  id        String        @id @default(uuid()) @map("_id")
-  name      String
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  members   GroupMember[]
+  id          String        @id @default(uuid()) @map("_id")
+  name        String
+  description String?
+  category    String?       @default("Vývoj")
+  color       String?       @default("blue")
+  logo        String?       @default("rocket")
+  visibility  String?       @default("private")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  members     GroupMember[]
 
   @@map("group")
 }
