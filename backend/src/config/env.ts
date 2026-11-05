@@ -1,5 +1,15 @@
 import 'dotenv/config';
 
+export function requiredEnv(name: string): string {
+  const value = process.env[name]?.trim();
+
+  if (!value) {
+    throw new Error(`${name} environment variable is required`);
+  }
+
+  return value;
+}
+
 function readPort(value: string | undefined): number {
   const port = Number(value ?? 3001);
 
