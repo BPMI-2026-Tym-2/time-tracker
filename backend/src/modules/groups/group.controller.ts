@@ -6,6 +6,8 @@ import { groupSchema } from '@time-tracker/shared';
 
 export type GroupController = {
   listMembers: (request: Request, response: Response) => Promise<void>;
+  getSettings: (request: Request, response: Response) => Promise<void>;
+  updateSettings: (request: Request, response: Response) => Promise<void>;
 };
 
 async function listMembers(request: Request, response: Response) {
@@ -20,9 +22,33 @@ async function listMembers(request: Request, response: Response) {
   sendData(response, groupSchema.listMembersResponse.parse(result));
 }
 
+async function getSettings(request: Request, response: Response) {
+  if (!request.user) {
+    throw new AppError('Not authenticated', 401);
+  }
+
+  const { groupId } = groupSchema.getSettingsParams.parse(request.params);
+  const result = await groupService.getSettings(request.user, groupId);
+
+  sendData(response, groupSchema.groupSettingsResponse.parse(result));
+}
+
+async function updateSettings(request: Request, response: Response) {
+  if (!request.user) {
+    throw new AppError('Not authenticated', 401);
+  }
+
+  const { groupId } = groupSchema.getSettingsParams.parse(request.params);
+  const body = groupSchema.updateSettingsBody.parse(request.body);
+  const result = await groupService.updateSettings(request.user, groupId, body);
+
+  sendData(response, groupSchema.groupSettingsResponse.parse(result));
+}
+
 const groupController: GroupController = {
   listMembers,
-  // dalsi metody kontroleru
+  getSettings,
+  updateSettings,
 };
 
 export default groupController;

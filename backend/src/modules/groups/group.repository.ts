@@ -20,7 +20,42 @@ const groupMemberSelect = {
   },
 } satisfies Prisma.GroupMemberSelect;
 
+const groupSettingsSelect = {
+  id: true,
+  name: true,
+  description: true,
+  category: true,
+  color: true,
+  logo: true,
+  visibility: true,
+  createdAt: true,
+  updatedAt: true,
+  members: {
+    where: {
+      role: 'owner',
+    },
+    take: 1,
+    select: {
+      role: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          surname: true,
+          email: true,
+        },
+      },
+    },
+  },
+  _count: {
+    select: {
+      members: true,
+    },
+  },
+} satisfies Prisma.GroupSelect;
+
 export type GroupRecord = Prisma.GroupGetPayload<{ select: typeof groupSelect }>;
+export type GroupSettingsRecord = Prisma.GroupGetPayload<{ select: typeof groupSettingsSelect }>;
 export type GroupMemberRecord = Prisma.GroupMemberGetPayload<{ select: typeof groupMemberSelect }>;
 export type GroupMemberFilter = {
   search?: string;
@@ -33,6 +68,13 @@ function findById(id: string): Promise<GroupRecord | null> {
   return prisma.group.findUnique({
     where: { id },
     select: groupSelect,
+  });
+}
+
+function findSettingsById(id: string): Promise<GroupSettingsRecord | null> {
+  return prisma.group.findUnique({
+    where: { id },
+    select: groupSettingsSelect,
   });
 }
 
@@ -75,8 +117,21 @@ async function findMembers(
   return { items, total };
 }
 
+function updateSettingsById(
+  id: string,
+  data: Prisma.GroupUpdateInput,
+): Promise<GroupSettingsRecord | null> {
+  return prisma.group.update({
+    where: { id },
+    data,
+    select: groupSettingsSelect,
+  });
+}
+
 const groupRepository = {
   findById,
+  findSettingsById,
+  updateSettingsById,
   findMembership,
   findMembers,
 };

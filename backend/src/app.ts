@@ -1,4 +1,7 @@
 import express from 'express';
+import { fromNodeHeaders } from 'better-auth/node';
+import { auth } from './modules/auth/auth.config.js';
+import { prisma } from './db/prisma.js';
 import { errorHandler } from './shared/errors/error-handler.js';
 import { corsMiddleware } from './shared/http/cors.js';
 import { authRouter } from './modules/auth/auth.routes.js';
@@ -10,6 +13,34 @@ const app = express();
 app.use(corsMiddleware);
 app.use('/auth', authRouter);
 app.use(express.json());
+
+// Autentizační session middleware: ověří Better Auth session a serverově určí roli uživatele
+app.use(async (req, _res, next) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    if (session?.user) {
+      let role = (session.user as { role?: string }).role;
+      if (!role) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { role: true },
+        });
+        role = dbUser?.role ?? 'user';
+      }
+
+      req.user = {
+        id: session.user.id,
+        role: role || 'user',
+      };
+    }
+  } catch {
+    // Při chybě zůstává req.user nedefinovaný
+  }
+  next();
+});
 
 app.use('/groups', groupRouter);
 app.use('/tasks', taskRouter);
