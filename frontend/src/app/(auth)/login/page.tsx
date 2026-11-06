@@ -1,49 +1,40 @@
 'use client';
 
 import { useEffect, useState, type ChangeEvent, type SyntheticEvent } from 'react';
-import { LoginForm } from '@/components/features/auth/loginForm';
+import { LoginForm } from '@/components/features/auth/login-form';
 import { useLogin } from '@/hooks/use-login';
 import { authClient } from '@/lib/auth-client';
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { loginSchema } from '@time-tracker/shared';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [validationError, setValidationError] = useState('');
-  const { login, loginPending, googlePending, loginWithGoogle, isPending, error, getErrorMessage } =
+  const { login, loginPending, googlePending, loginWithGoogle, isPending, error, resetLoginError } =
     useLogin();
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!email) {
-      setValidationError('Zadejte e-mail.');
+    const result = loginSchema.safeParse({
+      email,
+      password,
+    });
+
+    if (!result.success) {
       return;
     }
 
-    if (!emailPattern.test(email)) {
-      setValidationError('Zadejte platnou e-mailovou adresu.');
-      return;
-    }
-
-    if (!password) {
-      setValidationError('Zadejte heslo.');
-      return;
-    }
-
-    setValidationError('');
     login({ email, password });
   }
 
   function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
     setEmail(event.target.value);
-    setValidationError('');
+    resetLoginError();
   }
 
   function handlePasswordChange(event: ChangeEvent<HTMLInputElement>) {
     setPassword(event.target.value);
-    setValidationError('');
+    resetLoginError();
   }
 
   useEffect(() => {
@@ -61,7 +52,7 @@ export default function LoginPage() {
       isPending={isPending}
       loginPending={loginPending}
       googlePending={googlePending}
-      errorMessage={validationError || (error ? getErrorMessage(error) : undefined)}
+      errorMessage={error instanceof Error ? error.message : undefined}
       onEmailChange={handleEmailChange}
       onPasswordChange={handlePasswordChange}
       onSubmit={handleSubmit}
