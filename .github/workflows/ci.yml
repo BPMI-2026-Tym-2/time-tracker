@@ -45,8 +45,14 @@ jobs:
 
       - name: Start MongoDB
         run: |
+          sudo systemctl stop mongodb 2>/dev/null || true
+          sudo systemctl stop mongod 2>/dev/null || true
           echo "127.0.0.1 mongodb" | sudo tee -a /etc/hosts
-          npm run db:up
+          docker compose up -d mongodb || true
+          sleep 3
+          docker compose logs mongodb
+          docker compose ps
+          docker compose up -d --wait mongodb
 
       - name: Run tests
         run: npm test
