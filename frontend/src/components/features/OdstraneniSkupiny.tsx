@@ -1,118 +1,110 @@
-"use client";
-import { useRef } from "react";
-import { Trash } from "lucide-react";
-import { toast } from "@/components/ui/toast";
-
+'use client';
+import { useRef } from 'react';
+import { Trash } from 'lucide-react';
+import { toast } from '@/components/ui/toast';
 
 type OdstraneniSkupinyProps = {
-    groupId: string;
-    groupName: string;
-    isOwner: boolean;
-    onDeleted?: () => void;  //callback zavolaný po úspěšném odstraněním, třeba k přesměrování
+  groupId: string;
+  groupName: string;
+  isOwner: boolean;
+  onDeleted?: () => void; //callback zavolaný po úspěšném odstraněním, třeba k přesměrování
 };
 
+export default function OdstraneniSkupiny({ groupName, isOwner }: OdstraneniSkupinyProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
-export default function OdstraneniSkupiny({ groupName, isOwner, }: OdstraneniSkupinyProps) {
+  function openDialog() {
+    dialogRef.current?.showModal();
+  }
+  function closeDialog() {
+    dialogRef.current?.close();
+  }
 
-    const dialogRef = useRef<HTMLDialogElement>(null);
+  async function handleDelete() {
+    const simulateSuccess = false; //prozatimní simulace odpovědi backendu, později smazat
 
+    try {
+      if (!simulateSuccess) {
+        throw new Error('Simulated deletion failure');
+      }
 
-    function openDialog() {
-        dialogRef.current?.showModal();
+      closeDialog();
+
+      toast.add({
+        type: 'success',
+        title: 'Skupina byla úspěšně odstraněna.',
+      });
+    } catch {
+      closeDialog();
+
+      toast.add({
+        type: 'error',
+        title: 'Odstranění skupiny se nezdařilo.',
+        description: 'Zkuste to prosím znovu.',
+      });
     }
-    function closeDialog() {
-        dialogRef.current?.close();
-    }
+  }
 
-    async function handleDelete() {
+  if (!isOwner) {
+    //pokud uživatel není vlastník skupiny, nezobrazovat komponentu
+    return null;
+  }
 
-        const simulateSuccess = false; //prozatimní simulace odpovědi backendu, později smazat
+  return (
+    <>
+      {/* Delete tlačítko */}
+      <button
+        type="button"
+        className="inline-flex items-center gap-2 rounded-xl border border-red-600 bg-red-200 px-3 py-2 font-bold text-red-600"
+        onClick={openDialog}
+      >
+        <Trash size={20} />
+        Odstranit skupinu
+      </button>
 
-        try {
-            if (!simulateSuccess) {
-                throw new Error("Simulated deletion failure");
-            }
+      {/* potvrzovací dialog okno */}
+      <dialog
+        ref={dialogRef}
+        className="m-auto w-[90%] max-w-sm rounded-xl bg-white p-4 text-gray-900 shadow-xl backdrop:bg-black/60"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
+            <Trash size={24} color="#dc2626" />
+          </div>
 
-            closeDialog();
+          <h2 className="text-lg font-bold">Odstranit skupinu?</h2>
 
-            toast.add({
-                type: "success",
-                title: "Skupina byla úspěšně odstraněna.",
-            });
+          <button
+            type="button"
+            onClick={closeDialog}
+            className="ml-auto text-2xl font-bold text-gray-700"
+          >
+            ×
+          </button>
+        </div>
 
-        } catch {
-            closeDialog();
+        <p className="my-4 text-sm">
+          Opravdu chcete odstranit skupinu &quot;{groupName}&quot;? Tuto akci nelze vrátit zpět.
+        </p>
 
-            toast.add({
-                type: "error",
-                title: "Odstranění skupiny se nezdařilo.",
-                description: "Zkuste to prosím znovu.",
-            });
-        }
-    }
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={closeDialog}
+            className="rounded-xl border border-gray-400 bg-gray-200 px-4 py-2 font-bold"
+          >
+            Zrušit
+          </button>
 
-    if (!isOwner) { //pokud uživatel není vlastník skupiny, nezobrazovat komponentu
-        return null;
-    }
-
-
-    return (
-        <>
-            {/* Delete tlačítko */}
-            <button
-                type="button"
-                className=" bg-red-200 px-3 py-2 text-red-600 rounded-xl border border-red-600 font-bold inline-flex items-center gap-2"
-                onClick={openDialog}
-            >
-                <Trash size={20} />
-                Odstranit skupinu
-            </button>
-
-            {/* potvrzovací dialog okno */}
-            <dialog
-                ref={dialogRef}
-                className="m-auto w-[90%] max-w-sm rounded-xl bg-white p-4 text-gray-900 shadow-xl backdrop:bg-black/60">
-
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
-                        <Trash size={24} color="#dc2626" />
-                    </div>
-
-                    <h2 className="text-lg font-bold">
-                        Odstranit skupinu?
-                    </h2>
-
-                    <button
-                        type="button"
-                        onClick={closeDialog}
-                        className="ml-auto font-bold text-2xl text-gray-700"
-                    >
-                        ×
-                    </button>
-                </div>
-
-                <p className="my-4 text-sm">
-                    Opravdu chcete odstranit skupinu &quot;{groupName}&quot;? Tuto akci nelze vrátit zpět.
-                </p>
-
-                <div className="flex justify-end gap-2">
-                    <button
-                        type="button"
-                        onClick={closeDialog}
-                        className="rounded-xl border border-gray-400 px-4 py-2 bg-gray-200 font-bold"
-                    >
-                        Zrušit
-                    </button>
-
-                    <button
-                        type="button"
-                        className="rounded-xl bg-red-600 px-4 py-2 text-white font-bold"
-                        onClick={handleDelete}
-                    >
-                        Odstranit
-                    </button>
-                </div>
-            </dialog>
-        </>
-    );
+          <button
+            type="button"
+            className="rounded-xl bg-red-600 px-4 py-2 font-bold text-white"
+            onClick={handleDelete}
+          >
+            Odstranit
+          </button>
+        </div>
+      </dialog>
+    </>
+  );
 }
