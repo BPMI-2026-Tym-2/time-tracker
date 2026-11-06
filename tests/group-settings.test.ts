@@ -8,35 +8,90 @@ import { app } from '../backend/src/app.js';
 import { prisma } from '../backend/src/db/prisma.js';
 
 const runId = randomUUID().slice(0, 8);
-const testUser = (name: string, surname: string, role = 'user') => ({
-  id: randomUUID(),
-  name,
-  surname,
-  email: `${name.toLowerCase()}.${runId}@unicorn.cz`,
-  emailVerified: true,
-  role,
-});
 
-const tereza = testUser('Tereza', 'Nováková');
-const adam = testUser('Adam', 'Dvořák');
-const outsider = testUser('Petr', 'Černý');
-const superAdmin = testUser('Super', 'Admin', 'superAdmin');
-const users = [tereza, adam, outsider, superAdmin];
+const terezaData = {
+  name: 'Tereza',
+  surname: 'Nováková',
+  email: `tereza.${runId}@unicorn.cz`,
+  password: 'Password123!',
+};
+
+const adamData = {
+  name: 'Adam',
+  surname: 'Dvořák',
+  email: `adam.${runId}@unicorn.cz`,
+  password: 'Password123!',
+};
+
+const outsiderData = {
+  name: 'Petr',
+  surname: 'Černý',
+  email: `petr.${runId}@unicorn.cz`,
+  password: 'Password123!',
+};
+
+const superAdminData = {
+  name: 'Super',
+  surname: 'Admin',
+  email: `admin.${runId}@unicorn.cz`,
+  password: 'Password123!',
+};
 
 const groupId = randomUUID();
 const ownerlessGroupId = randomUUID();
 
-// Session tokeny pro jednotlivé uživatele
-const tokens = {
-  tereza: randomUUID(),
-  adam: randomUUID(),
-  outsider: randomUUID(),
-  superAdmin: randomUUID(),
-};
-
 let server: Server;
 let baseUrl: string;
+
+let terezaCookie: string;
+let adamCookie: string;
+let outsiderCookie: string;
+let superAdminCookie: string;
+
+let terezaId: string;
+let adamId: string;
+let outsiderId: string;
+let superAdminId: string;
+
 let isDbAvailable = false;
+let setupError: Error | null = null;
+
+async function signUpAndGetCookie(user: {
+  name: string;
+  surname: string;
+  email: string;
+  password: string;
+}) {
+  const trustedOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
+  const res = await fetch(`${baseUrl}/auth/sign-up/email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: trustedOrigin,
+    },
+    body: JSON.stringify(user),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Failed to sign up ${user.email} (HTTP ${res.status}): ${errorText}`);
+  }
+
+  const setCookies = res.headers.getSetCookie?.() ?? [res.headers.get('set-cookie') ?? ''];
+  const sessionTokenCookie = setCookies
+    .map((c) => c.split(';')[0].trim())
+    .find((c) => c.startsWith('better-auth.session_token='));
+
+  if (!sessionTokenCookie) {
+    throw new Error(`No signed better-auth.session_token cookie returned for ${user.email}`);
+  }
+
+  const dbUser = await prisma.user.findUniqueOrThrow({
+    where: { email: user.email },
+  });
+
+  return { id: dbUser.id, cookie: sessionTokenCookie };
+}
 
 describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
   before(async () => {
@@ -49,31 +104,33 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
       });
     });
 
-    // Kontrola a inicializace databáze pro testy
     try {
       await prisma.$connect();
 
-      for (const u of users) {
-        await prisma.user.create({ data: u });
-      }
+      // Vytvoření uživatelů a získání podepsaných cookies přímo přes Better Auth
+      const terezaRes = await signUpAndGetCookie(terezaData);
+      terezaId = terezaRes.id;
+      terezaCookie = terezaRes.cookie;
 
-      // Vytvoření platných Better Auth sessions v databázi
-      const sessionEntries = [
-        { id: randomUUID(), userId: tereza.id, token: tokens.tereza },
-        { id: randomUUID(), userId: adam.id, token: tokens.adam },
-        { id: randomUUID(), userId: outsider.id, token: tokens.outsider },
-        { id: randomUUID(), userId: superAdmin.id, token: tokens.superAdmin },
-      ];
+      const adamRes = await signUpAndGetCookie(adamData);
+      adamId = adamRes.id;
+      adamCookie = adamRes.cookie;
 
-      for (const s of sessionEntries) {
-        await prisma.session.create({
-          data: {
-            ...s,
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-          },
-        });
-      }
+      const outsiderRes = await signUpAndGetCookie(outsiderData);
+      outsiderId = outsiderRes.id;
+      outsiderCookie = outsiderRes.cookie;
 
+      const adminRes = await signUpAndGetCookie(superAdminData);
+      superAdminId = adminRes.id;
+      superAdminCookie = adminRes.cookie;
+
+      // Aktualizace role superAdmin v databázi pro administrátora
+      await prisma.user.update({
+        where: { id: superAdminId },
+        data: { role: 'superAdmin' },
+      });
+
+      // Vytvoření testovací skupiny
       await prisma.group.create({
         data: {
           id: groupId,
@@ -86,7 +143,7 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
         },
       });
 
-      // Skupina bez vlastníka (testování explicitního owner: null)
+      // Vytvoření skupiny bez vlastníka
       await prisma.group.create({
         data: {
           id: ownerlessGroupId,
@@ -94,15 +151,21 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
         },
       });
 
+      // Přiřazení členství ve skupině
       await prisma.groupMember.create({
-        data: { groupId, userId: tereza.id, role: 'owner', joinedAt: new Date(2026, 9, 1) },
+        data: { groupId, userId: terezaId, role: 'owner', joinedAt: new Date(2026, 9, 1) },
       });
       await prisma.groupMember.create({
-        data: { groupId, userId: adam.id, role: 'member', joinedAt: new Date(2026, 9, 2) },
+        data: { groupId, userId: adamId, role: 'member', joinedAt: new Date(2026, 9, 2) },
       });
 
       isDbAvailable = true;
-    } catch {
+    } catch (err) {
+      setupError = err as Error;
+      if (process.env.CI) {
+        // V CI prostředí musí selhání fixture setupu shodit celý test run
+        throw new Error(`CI fixture setup failed: ${setupError.message}`);
+      }
       isDbAvailable = false;
     }
   });
@@ -118,8 +181,10 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
           where: { groupId: { in: [groupId, ownerlessGroupId] } },
         });
         await prisma.group.deleteMany({ where: { id: { in: [groupId, ownerlessGroupId] } } });
-        await prisma.session.deleteMany({ where: { token: { in: Object.values(tokens) } } });
-        await prisma.user.deleteMany({ where: { id: { in: users.map((u) => u.id) } } });
+        const userIds = [terezaId, adamId, outsiderId, superAdminId].filter(Boolean);
+        await prisma.session.deleteMany({ where: { userId: { in: userIds } } });
+        await prisma.account.deleteMany({ where: { userId: { in: userIds } } });
+        await prisma.user.deleteMany({ where: { id: { in: userIds } } });
         await prisma.$disconnect();
       } catch {
         // Ignorovat chybu při úklidu
@@ -148,7 +213,7 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
     const res = await fetch(`${baseUrl}/groups/${groupId}/settings`, {
       method: 'GET',
       headers: {
-        'x-user-id': superAdmin.id,
+        'x-user-id': 'spoofed-id',
         'x-user-role': 'superAdmin',
       },
     });
@@ -161,7 +226,7 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'x-user-id': superAdmin.id,
+        'x-user-id': 'spoofed-id',
         'x-user-role': 'superAdmin',
       },
       body: JSON.stringify({ name: 'Útok' }),
@@ -170,15 +235,28 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
     assert.equal(res.status, 401);
   });
 
+  test('P0 Bezpečnost: Nepodepsaná raw cookie vrátí 401 Unauthorized', async () => {
+    const res = await fetch(`${baseUrl}/groups/${groupId}/settings`, {
+      headers: {
+        Cookie: 'better-auth.session_token=raw-unsigned-fake-token',
+      },
+    });
+
+    assert.equal(res.status, 401);
+  });
+
   test('Člen vidí nastavení skupiny v režimu čtení bez e-mailu vlastníka', async (t) => {
     if (!isDbAvailable) {
-      t.skip('MongoDB není dostupné');
+      if (process.env.CI) {
+        assert.fail(`Test selhal, protože DB setup selhal v CI: ${setupError?.message}`);
+      }
+      t.skip(`MongoDB není dostupné (${setupError?.message})`);
       return;
     }
 
     const res = await fetch(`${baseUrl}/groups/${groupId}/settings`, {
       headers: {
-        Cookie: `better-auth.session_token=${tokens.adam}`,
+        Cookie: adamCookie,
       },
     });
 
@@ -191,13 +269,16 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
     assert.equal(data.permissions.canEdit, false);
     assert.equal(data.permissions.canLeaveGroup, true);
     assert.ok(data.owner);
-    assert.equal(data.owner.id, tereza.id);
+    assert.equal(data.owner.id, terezaId);
     assert.equal('email' in data.owner, false);
   });
 
   test('Člen nemůže upravit nastavení skupiny (PATCH vrátí 403 Forbidden)', async (t) => {
     if (!isDbAvailable) {
-      t.skip('MongoDB není dostupné');
+      if (process.env.CI) {
+        assert.fail(`Test selhal, protože DB setup selhal v CI: ${setupError?.message}`);
+      }
+      t.skip(`MongoDB není dostupné (${setupError?.message})`);
       return;
     }
 
@@ -205,7 +286,7 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Cookie: `better-auth.session_token=${tokens.adam}`,
+        Cookie: adamCookie,
       },
       body: JSON.stringify({ name: 'Neoprávněná změna' }),
     });
@@ -215,13 +296,16 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
 
   test('Nečlen skupiny dostane 403 Forbidden při pokusu o zobrazení', async (t) => {
     if (!isDbAvailable) {
-      t.skip('MongoDB není dostupné');
+      if (process.env.CI) {
+        assert.fail(`Test selhal, protože DB setup selhal v CI: ${setupError?.message}`);
+      }
+      t.skip(`MongoDB není dostupné (${setupError?.message})`);
       return;
     }
 
     const res = await fetch(`${baseUrl}/groups/${groupId}/settings`, {
       headers: {
-        Cookie: `better-auth.session_token=${tokens.outsider}`,
+        Cookie: outsiderCookie,
       },
     });
 
@@ -230,13 +314,16 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
 
   test('Super admin bez členství vidí plná práva i e-mail vlastníka', async (t) => {
     if (!isDbAvailable) {
-      t.skip('MongoDB není dostupné');
+      if (process.env.CI) {
+        assert.fail(`Test selhal, protože DB setup selhal v CI: ${setupError?.message}`);
+      }
+      t.skip(`MongoDB není dostupné (${setupError?.message})`);
       return;
     }
 
     const res = await fetch(`${baseUrl}/groups/${groupId}/settings`, {
       headers: {
-        Cookie: `better-auth.session_token=${tokens.superAdmin}`,
+        Cookie: superAdminCookie,
       },
     });
 
@@ -247,12 +334,15 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
     assert.equal(data.currentUserRole, null);
     assert.equal(data.permissions.canEdit, true);
     assert.ok(data.owner);
-    assert.equal(data.owner.email, tereza.email);
+    assert.equal(data.owner.email, terezaData.email);
   });
 
   test('Vlastník může upravit nastavení a změny přetrvají v databázi', async (t) => {
     if (!isDbAvailable) {
-      t.skip('MongoDB není dostupné');
+      if (process.env.CI) {
+        assert.fail(`Test selhal, protože DB setup selhal v CI: ${setupError?.message}`);
+      }
+      t.skip(`MongoDB není dostupné (${setupError?.message})`);
       return;
     }
 
@@ -260,7 +350,7 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Cookie: `better-auth.session_token=${tokens.tereza}`,
+        Cookie: terezaCookie,
       },
       body: JSON.stringify({
         name: 'Vývojový tým Alfa (Aktualizováno)',
@@ -284,7 +374,7 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
     // Ověření po reloadu z databáze novým GET požadavkem
     const getRes = await fetch(`${baseUrl}/groups/${groupId}/settings`, {
       headers: {
-        Cookie: `better-auth.session_token=${tokens.tereza}`,
+        Cookie: terezaCookie,
       },
     });
 
@@ -297,13 +387,16 @@ describe('Nastavení skupiny – HTTP & Bezpečnost', () => {
 
   test('Skupina bez vlastníka vrátí 200 s owner: null bez chyby validace', async (t) => {
     if (!isDbAvailable) {
-      t.skip('MongoDB není dostupné');
+      if (process.env.CI) {
+        assert.fail(`Test selhal, protože DB setup selhal v CI: ${setupError?.message}`);
+      }
+      t.skip(`MongoDB není dostupné (${setupError?.message})`);
       return;
     }
 
     const res = await fetch(`${baseUrl}/groups/${ownerlessGroupId}/settings`, {
       headers: {
-        Cookie: `better-auth.session_token=${tokens.superAdmin}`,
+        Cookie: superAdminCookie,
       },
     });
 

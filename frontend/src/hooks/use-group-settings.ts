@@ -9,7 +9,7 @@ export type UseGroupSettingsResult = {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  updateSettings: (body: UpdateGroupSettingsBody) => Promise<boolean>;
+  updateSettings: (body: UpdateGroupSettingsBody) => Promise<GroupSettingsResponse | null>;
 };
 
 export function useGroupSettings(groupId: string): UseGroupSettingsResult {
@@ -70,13 +70,13 @@ export function useGroupSettings(groupId: string): UseGroupSettingsResult {
 
   const update = useCallback(
     async (body: UpdateGroupSettingsBody) => {
-      if (!groupId) return false;
+      if (!groupId) return null;
       try {
         const updated = await updateGroupSettings(groupId, body);
         setSettings(updated);
-        return true;
+        return updated;
       } catch {
-        return false;
+        return null;
       }
     },
     [groupId],

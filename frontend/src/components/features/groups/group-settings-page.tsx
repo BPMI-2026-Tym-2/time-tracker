@@ -117,10 +117,11 @@ function GroupSettingsForm({
   updateSettings,
 }: {
   settings: GroupSettingsResponse;
-  updateSettings: (body: UpdateGroupSettingsBody) => Promise<boolean>;
+  updateSettings: (body: UpdateGroupSettingsBody) => Promise<GroupSettingsResponse | null>;
 }) {
   const canEdit = settings.permissions.canEdit;
 
+  const [baseline, setBaseline] = useState<GroupSettingsResponse>(settings);
   const [name, setName] = useState(settings.name);
   const [description, setDescription] = useState(settings.description ?? '');
   const [visibility, setVisibility] = useState<'private' | 'public'>(
@@ -131,6 +132,7 @@ function GroupSettingsForm({
   const [selectedCategory, setSelectedCategory] = useState(settings.category ?? 'Vývoj aplikací');
 
   const [members, setMembers] = useState<GroupMemberResponse[]>([]);
+  const [totalMembers, setTotalMembers] = useState(settings.membersCount);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [membersError, setMembersError] = useState<string | null>(null);
 
@@ -148,6 +150,7 @@ function GroupSettingsForm({
         const result = await fetchGroupMembers(settings.id);
         if (active) {
           setMembers(result.items);
+          setTotalMembers(result.pageInfo.total);
           setMembersError(null);
         }
       } catch (err) {
@@ -168,13 +171,17 @@ function GroupSettingsForm({
     };
   }, [settings.id]);
 
-  const hasUnsavedChanges =
-    name !== settings.name ||
-    description !== (settings.description ?? '') ||
-    visibility !== (settings.visibility ?? 'private') ||
-    selectedLogo !== (settings.logo ?? 'rocket') ||
-    selectedColor !== (settings.color ?? 'blue') ||
-    selectedCategory !== (settings.category ?? 'Vývoj aplikací');
+  // Posílat v PATCH pouze pole, která byla skutečně změněna oproti baseline
+  const diffPayload: UpdateGroupSettingsBody = {};
+  if (name !== baseline.name) diffPayload.name = name;
+  if (description !== (baseline.description ?? '')) diffPayload.description = description;
+  if (visibility !== (baseline.visibility ?? 'private')) diffPayload.visibility = visibility;
+  if (selectedLogo !== (baseline.logo ?? 'rocket')) diffPayload.logo = selectedLogo;
+  if (selectedColor !== (baseline.color ?? 'blue')) diffPayload.color = selectedColor;
+  if (selectedCategory !== (baseline.category ?? 'Vývoj aplikací'))
+    diffPayload.category = selectedCategory;
+
+  const hasUnsavedChanges = Object.keys(diffPayload).length > 0;
 
   const handleCopyGroupId = async () => {
     if (!settings.id) return;
@@ -195,33 +202,34 @@ function GroupSettingsForm({
   };
 
   const handleResetChanges = () => {
-    setName(settings.name);
-    setDescription(settings.description ?? '');
-    setVisibility(settings.visibility ?? 'private');
-    setSelectedLogo(settings.logo ?? 'rocket');
-    setSelectedColor(settings.color ?? 'blue');
-    setSelectedCategory(settings.category ?? 'Vývoj aplikací');
+    setName(baseline.name);
+    setDescription(baseline.description ?? '');
+    setVisibility(baseline.visibility ?? 'private');
+    setSelectedLogo(baseline.logo ?? 'rocket');
+    setSelectedColor(baseline.color ?? 'blue');
+    setSelectedCategory(baseline.category ?? 'Vývoj aplikací');
     setSaveError(null);
     triggerNotification('Změny byly zrušeny a původní nastavení obnoveno');
   };
 
   const handleSaveChanges = async () => {
-    if (!canEdit) return;
+    if (!canEdit || !hasUnsavedChanges) return;
     setIsSaving(true);
     setSaveError(null);
     try {
-      const ok = await updateSettings({
-        name,
-        description,
-        visibility,
-        logo: selectedLogo,
-        color: selectedColor,
-        category: selectedCategory,
-      });
+      const updated = await updateSettings(diffPayload);
 
-      if (!ok) {
+      if (!updated) {
         throw new Error('Systém nedokázal uložit provedené změny');
       }
+
+      setBaseline(updated);
+      setName(updated.name);
+      setDescription(updated.description ?? '');
+      setVisibility(updated.visibility ?? 'private');
+      setSelectedLogo(updated.logo ?? 'rocket');
+      setSelectedColor(updated.color ?? 'blue');
+      setSelectedCategory(updated.category ?? 'Vývoj aplikací');
 
       triggerNotification('Nastavení skupiny bylo úspěšně uloženo');
     } catch {
@@ -621,13 +629,13 @@ function GroupSettingsForm({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <Users className={`h-5 w-5 ${currentTheme.text}`} />
-            Členové skupiny
+            Členové skupiny ({totalMembers})
           </CardTitle>
           <CardDescription>
-            Aktuální seznam uživatelů registrovaných v této skupině ({members.length}).
+            Aktuální seznam uživatelů registrovaných v této skupině.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {isLoadingMembers ? (
             <div className="space-y-3">
               <div className="bg-muted h-12 animate-pulse rounded-xl" />
@@ -671,6 +679,12 @@ function GroupSettingsForm({
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {totalMembers > members.length && (
+            <div className="rounded-xl border border-blue-200/60 bg-blue-50/50 p-3 text-center text-xs text-blue-800 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-300">
+              Zobrazeno prvních {members.length} z celkem {totalMembers} členů skupiny.
             </div>
           )}
         </CardContent>
