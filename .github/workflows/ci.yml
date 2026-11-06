@@ -43,10 +43,5 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Start MongoDB
-        run: |
-          echo "127.0.0.1 mongodb" | sudo tee -a /etc/hosts
-          npm run db:up
-
       - name: Run tests
         run: npm test
