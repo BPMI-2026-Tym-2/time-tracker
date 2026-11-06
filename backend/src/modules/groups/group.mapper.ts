@@ -49,11 +49,7 @@ const toSettingsResponse = (
         surname: ownerMember.user.surname,
         ...(includeOwnerEmail && { email: ownerMember.user.email }),
       }
-    : {
-        id: '',
-        name: 'Neznámý',
-        surname: 'vlastník',
-      };
+    : null;
 
   return {
     id: group.id,

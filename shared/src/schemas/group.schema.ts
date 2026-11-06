@@ -50,12 +50,14 @@ const groupSettingsResponse = z.object({
   visibility: z.enum(['public', 'private']).default('private'),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-  owner: z.object({
-    id: z.string().min(1),
-    name: z.string(),
-    surname: z.string(),
-    email: z.email().optional(),
-  }),
+  owner: z
+    .object({
+      id: z.string().min(1),
+      name: z.string(),
+      surname: z.string(),
+      email: z.string().email().optional(),
+    })
+    .nullable(),
   membersCount: z.number().int(),
   currentUserRole: role.nullable(),
   permissions: z.object({

@@ -1,6 +1,7 @@
 import {
   groupSchema,
   type GroupSettingsResponse,
+  type ListGroupMembersResponse,
   type UpdateGroupSettingsBody,
 } from '@time-tracker/shared';
 
@@ -16,87 +17,77 @@ export class ApiError extends Error {
   }
 }
 
-export const MOCK_GROUP_SETTINGS: GroupSettingsResponse = {
-  id: 'c7a8109d-0b73-424a-a2c7-0897a8ec9df4',
-  name: 'Vývojový tým Alfa',
-  description:
-    'Tým zaměřený na vývoj klientského rozhraní, UX architekturu a komponentní knihovnu.',
-  category: 'Vývoj aplikací',
-  color: 'blue',
-  logo: 'rocket',
-  visibility: 'private',
-  createdAt: new Date('2026-10-15T09:00:00.000Z'),
-  updatedAt: new Date('2026-11-04T16:20:00.000Z'),
-  owner: {
-    id: 'u1-owner-uuid',
-    name: 'Jan',
-    surname: 'Novák',
-    email: 'jan.novak@unicorn.cz',
-  },
-  membersCount: 8,
-  currentUserRole: 'owner',
-  permissions: {
-    canEdit: true,
-    canDelete: true,
-    canManageMembers: true,
-    canLeaveGroup: false,
-  },
-};
+async function extractErrorMessage(response: Response): Promise<string> {
+  try {
+    const errorBody = await response.json();
+    if (typeof errorBody?.error?.message === 'string') {
+      return errorBody.error.message;
+    }
+    if (typeof errorBody?.message === 'string') {
+      return errorBody.message;
+    }
+  } catch {
+    // ignorovat chybu při parsování těla chyby
+  }
+  return response.statusText || `Požadavek selhal s kódem ${response.status}`;
+}
 
 export async function fetchGroupSettings(groupId: string): Promise<GroupSettingsResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}/settings`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      cache: 'no-store',
-    });
+  const response = await fetch(`${API_BASE_URL}/groups/${groupId}/settings`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    cache: 'no-store',
+  });
 
-    if (response.ok) {
-      const data = await response.json();
-      return groupSchema.groupSettingsResponse.parse(data);
-    }
-
-    return {
-      ...MOCK_GROUP_SETTINGS,
-      id: groupId || MOCK_GROUP_SETTINGS.id,
-    };
-  } catch {
-    return {
-      ...MOCK_GROUP_SETTINGS,
-      id: groupId || MOCK_GROUP_SETTINGS.id,
-    };
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
   }
+
+  const data = await response.json();
+  return groupSchema.groupSettingsResponse.parse(data);
 }
 
 export async function updateGroupSettings(
   groupId: string,
   body: UpdateGroupSettingsBody,
 ): Promise<GroupSettingsResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}/settings`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    });
+  const response = await fetch(`${API_BASE_URL}/groups/${groupId}/settings`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
 
-    if (response.ok) {
-      const data = await response.json();
-      return groupSchema.groupSettingsResponse.parse(data);
-    }
-  } catch {
-    // fallback
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
   }
 
-  return {
-    ...MOCK_GROUP_SETTINGS,
-    id: groupId || MOCK_GROUP_SETTINGS.id,
-    ...body,
-    updatedAt: new Date(),
-  };
+  const data = await response.json();
+  return groupSchema.groupSettingsResponse.parse(data);
+}
+
+export async function fetchGroupMembers(groupId: string): Promise<ListGroupMembersResponse> {
+  const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
+  }
+
+  const data = await response.json();
+  return groupSchema.listMembersResponse.parse(data);
 }

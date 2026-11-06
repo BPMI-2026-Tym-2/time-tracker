@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import type { GroupSettingsResponse, UpdateGroupSettingsBody } from '@time-tracker/shared';
+import type {
+  GroupMemberResponse,
+  GroupSettingsResponse,
+  UpdateGroupSettingsBody,
+} from '@time-tracker/shared';
 import {
   Users,
-  Settings,
   Copy,
   Check,
   Calendar,
@@ -15,9 +18,6 @@ import {
   RefreshCw,
   Palette,
   Tag,
-  UserPlus,
-  Plus,
-  Trash2,
   Lock,
   Globe,
   Rocket,
@@ -30,8 +30,10 @@ import {
   Save,
   RotateCcw,
   AlertCircle,
+  Info,
 } from 'lucide-react';
 import { useGroupSettings } from '@/hooks/use-group-settings';
+import { fetchGroupMembers } from '@/lib/api/groups';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -100,7 +102,7 @@ const COLOR_THEMES = [
   },
 ] as const;
 
-const DEFAULT_CATEGORIES = [
+const POPULAR_CATEGORIES = [
   'Vývoj aplikací',
   'UI/UX Design',
   'Marketing',
@@ -117,43 +119,61 @@ function GroupSettingsForm({
   settings: GroupSettingsResponse;
   updateSettings: (body: UpdateGroupSettingsBody) => Promise<boolean>;
 }) {
+  const canEdit = settings.permissions.canEdit;
+
   const [name, setName] = useState(settings.name);
   const [description, setDescription] = useState(settings.description ?? '');
   const [visibility, setVisibility] = useState<'private' | 'public'>(
     settings.visibility ?? 'private',
   );
   const [selectedLogo, setSelectedLogo] = useState(settings.logo ?? 'rocket');
-  const [selectedColor, setSelectedColor] = useState(settings.color ?? 'indigo');
+  const [selectedColor, setSelectedColor] = useState(settings.color ?? 'blue');
   const [selectedCategory, setSelectedCategory] = useState(settings.category ?? 'Vývoj aplikací');
-  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const [members, setMembers] = useState<GroupMemberResponse[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+  const [membersError, setMembersError] = useState<string | null>(null);
 
   const [copiedId, setCopiedId] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
-  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-  const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [newMemberRole, setNewMemberRole] = useState<'member' | 'owner'>('member');
-  const [membersList, setMembersList] = useState<
-    Array<{ id: string; name: string; email: string; role: 'member' | 'owner'; isOwner?: boolean }>
-  >([
-    {
-      id: settings.owner.id,
-      name: `${settings.owner.name} ${settings.owner.surname}`,
-      email: settings.owner.email ?? 'vlastnik@unicorn.cz',
-      role: 'owner',
-      isOwner: true,
-    },
-  ]);
+  // Načtení skutečných členů ze serverového endpointu
+  useEffect(() => {
+    let active = true;
+    async function loadMembers() {
+      try {
+        setIsLoadingMembers(true);
+        const result = await fetchGroupMembers(settings.id);
+        if (active) {
+          setMembers(result.items);
+          setMembersError(null);
+        }
+      } catch (err) {
+        if (active) {
+          setMembersError(
+            err instanceof Error ? err.message : 'Nepodařilo se načíst seznam členů skupiny',
+          );
+        }
+      } finally {
+        if (active) {
+          setIsLoadingMembers(false);
+        }
+      }
+    }
+    void loadMembers();
+    return () => {
+      active = false;
+    };
+  }, [settings.id]);
 
   const hasUnsavedChanges =
     name !== settings.name ||
     description !== (settings.description ?? '') ||
     visibility !== (settings.visibility ?? 'private') ||
     selectedLogo !== (settings.logo ?? 'rocket') ||
-    selectedColor !== (settings.color ?? 'indigo') ||
+    selectedColor !== (settings.color ?? 'blue') ||
     selectedCategory !== (settings.category ?? 'Vývoj aplikací');
 
   const handleCopyGroupId = async () => {
@@ -163,8 +183,15 @@ function GroupSettingsForm({
       setCopiedId(true);
       setTimeout(() => setCopiedId(false), 2000);
     } catch {
-      // noop
+      // ignorovat chybu schránky
     }
+  };
+
+  const triggerNotification = (msg: string) => {
+    setSaveSuccessMsg(msg);
+    setTimeout(() => {
+      setSaveSuccessMsg(null);
+    }, 3500);
   };
 
   const handleResetChanges = () => {
@@ -172,13 +199,14 @@ function GroupSettingsForm({
     setDescription(settings.description ?? '');
     setVisibility(settings.visibility ?? 'private');
     setSelectedLogo(settings.logo ?? 'rocket');
-    setSelectedColor(settings.color ?? 'indigo');
+    setSelectedColor(settings.color ?? 'blue');
     setSelectedCategory(settings.category ?? 'Vývoj aplikací');
     setSaveError(null);
     triggerNotification('Změny byly zrušeny a původní nastavení obnoveno');
   };
 
   const handleSaveChanges = async () => {
+    if (!canEdit) return;
     setIsSaving(true);
     setSaveError(null);
     try {
@@ -203,179 +231,157 @@ function GroupSettingsForm({
     }
   };
 
-  const handleAddCategory = () => {
-    const trimmed = newCategoryName.trim();
-    if (!trimmed || categories.includes(trimmed)) return;
-    setCategories((prev) => [...prev, trimmed]);
-    setSelectedCategory(trimmed);
-    setNewCategoryName('');
-    triggerNotification(`Kategorie „${trimmed}“ byla přidána`);
-  };
-
-  const handleRemoveCategory = (cat: string) => {
-    if (categories.length <= 1) return;
-    setCategories((prev) => prev.filter((c) => c !== cat));
-    if (selectedCategory === cat) {
-      const remaining = categories.filter((c) => c !== cat);
-      setSelectedCategory(remaining[0] ?? 'Obecné');
-    }
-    triggerNotification(`Kategorie „${cat}“ byla odebrána`);
-  };
-
-  const handleAddMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMemberEmail.trim()) return;
-
-    const emailName = newMemberEmail.split('@')[0] ?? 'Uživatel';
-    const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
-
-    const newMember = {
-      id: `usr_${membersList.length + 1}`,
-      name: capitalizedName,
-      email: newMemberEmail.trim(),
-      role: newMemberRole,
-    };
-
-    setMembersList((prev) => [...prev, newMember]);
-    setNewMemberEmail('');
-    setIsAddMemberOpen(false);
-    triggerNotification(`Uživatel ${newMember.email} byl přidán do skupiny`);
-  };
-
-  const handleRemoveMember = (memberId: string, memberEmail: string) => {
-    setMembersList((prev) => prev.filter((m) => m.id !== memberId));
-    triggerNotification(`Uživatel ${memberEmail} byl odebrán ze skupiny`);
-  };
-
-  const triggerNotification = (msg: string) => {
-    setSaveSuccessMsg(msg);
-    setTimeout(() => {
-      setSaveSuccessMsg(null);
-    }, 3500);
-  };
+  const currentTheme = COLOR_THEMES.find((theme) => theme.id === selectedColor) ?? COLOR_THEMES[0];
+  const activeLogoItem =
+    LOGO_PRESETS.find((preset) => preset.id === selectedLogo) ?? LOGO_PRESETS[0];
+  const LogoIcon = activeLogoItem.icon;
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('cs-CZ', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     }).format(new Date(date));
   };
 
-  const currentTheme = COLOR_THEMES.find((t) => t.id === selectedColor) ?? COLOR_THEMES[0]!;
-  const currentLogoPreset = LOGO_PRESETS.find((l) => l.id === selectedLogo) ?? LOGO_PRESETS[0]!;
-  const LogoIcon = currentLogoPreset.icon;
-
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-6 pb-24">
+    <div className="mx-auto max-w-5xl space-y-8 p-4 pb-28 md:p-8">
+      {/* Informační pruh pro režim čtení */}
+      {!canEdit && (
+        <div className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 text-sm text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-200">
+          <Info className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+          <div>
+            <div className="font-semibold">Režim pouze pro čtení</div>
+            <div className="text-xs text-blue-700 dark:text-blue-300">
+              Prohlížíte nastavení skupiny jako člen. Úpravy nastavení může provádět pouze vlastník
+              skupiny nebo administrátor.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Oznámení o úspěchu */}
       {saveSuccessMsg && (
-        <div className="animate-in fade-in slide-in-from-top-3 fixed top-5 right-5 z-50 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 shadow-lg dark:bg-emerald-950 dark:text-emerald-200">
-          <Check className="h-4 w-4 text-emerald-600" />
+        <div className="animate-in fade-in slide-in-from-top-4 fixed top-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg">
+          <Check className="h-4 w-4" />
           <span>{saveSuccessMsg}</span>
         </div>
       )}
 
+      {/* A3: Chybové hlášení při ukládání */}
       {saveError && (
-        <div className="border-destructive/30 bg-destructive/10 text-destructive flex items-center justify-between rounded-xl border p-4 text-sm">
+        <div className="border-destructive/30 bg-destructive/10 text-destructive flex items-start justify-between gap-3 rounded-2xl border p-4 text-sm">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 shrink-0" />
-            <span>{saveError}</span>
+            <div>
+              <div className="font-semibold">Chyba při ukládání nastavení</div>
+              <div className="text-xs opacity-90">{saveError}</div>
+            </div>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => void handleSaveChanges()}
-            className="border-destructive/30 text-destructive hover:bg-destructive/10"
-          >
-            Zkusit znovu
-          </Button>
+          {canEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleSaveChanges()}
+              className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 text-xs"
+            >
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              Zkusit znovu
+            </Button>
+          )}
         </div>
       )}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-muted-foreground flex items-center gap-2 text-sm">
-            <Link href="/" className="hover:text-foreground transition-colors">
-              Skupiny
-            </Link>
-            <span>/</span>
-            <span className="text-foreground font-medium">{settings.name}</span>
-            <span>/</span>
-            <span>Nastavení</span>
+      {/* Záhlaví stránky */}
+      <div className="border-border/70 flex flex-col gap-4 border-b pb-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <div
+            className={`flex h-14 w-14 items-center justify-center rounded-2xl border ${currentTheme.bg} ${currentTheme.border} ${currentTheme.text} shadow-xs transition-colors`}
+          >
+            <LogoIcon className="h-7 w-7" />
           </div>
-          <div className="mt-3 flex items-center gap-3.5">
-            <div
-              className={`flex h-13 w-13 items-center justify-center rounded-2xl border ${currentTheme.border} ${currentTheme.bg} ${currentTheme.text} shadow-xs transition-all`}
-            >
-              <LogoIcon className="h-7 w-7" />
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-foreground text-2xl font-bold tracking-tight md:text-3xl">
+                {name || 'Bez názvu'}
+              </h1>
+              <Badge
+                variant={visibility === 'private' ? 'secondary' : 'default'}
+                className="text-xs"
+              >
+                {visibility === 'private' ? (
+                  <>
+                    <Lock className="mr-1 h-3 w-3" /> Soukromá
+                  </>
+                ) : (
+                  <>
+                    <Globe className="mr-1 h-3 w-3" /> Veřejná
+                  </>
+                )}
+              </Badge>
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-foreground text-2xl font-bold tracking-tight">
-                  {name || settings.name}
-                </h1>
-                <Badge
-                  variant="outline"
-                  className={`gap-1 border ${currentTheme.border} ${currentTheme.text}`}
-                >
-                  <Tag className="h-3 w-3" />
-                  {selectedCategory}
-                </Badge>
-              </div>
-              <p className="text-muted-foreground mt-0.5 text-xs">
-                Správa, vizuální styl a členové skupiny
-              </p>
-            </div>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {description || 'Skupina nemá zadaný popisek.'}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Badge variant="default" className="gap-1.5 px-3 py-1">
-            <Shield className="h-3.5 w-3.5" />
-            Vlastník skupiny
-          </Badge>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <Calendar className="h-4 w-4" />
+          <span>Vytvořeno {formatDate(settings.createdAt)}</span>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Settings className={`h-5 w-5 ${currentTheme.text}`} />
-            Základní informace a viditelnost
-          </CardTitle>
-          <CardDescription>
-            Nastavte název skupiny a určete, kdo k ní může mít přístup.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
+      {/* Karty nastavení */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Základní informace */}
+        <Card className="border-border/70 shadow-xs">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Základní údaje skupiny</CardTitle>
+            <CardDescription>Upravte název a veřejný popis pro členy.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              <label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+              <label htmlFor="group-name" className="text-foreground text-xs font-semibold">
                 Název skupiny
               </label>
               <input
+                id="group-name"
                 type="text"
                 value={name}
+                disabled={!canEdit}
                 onChange={(e) => setName(e.target.value)}
-                className="border-border bg-background focus:ring-primary/30 mt-1.5 w-full rounded-xl border px-3 py-2 text-sm font-medium focus:ring-2 focus:outline-none"
-                placeholder="Zadejte název skupiny..."
+                maxLength={100}
+                className="border-border bg-background text-foreground disabled:bg-muted/40 mt-1.5 w-full rounded-xl border px-3.5 py-2 text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                Viditelnost skupiny
+              <label htmlFor="group-desc" className="text-foreground text-xs font-semibold">
+                Popisek skupiny
               </label>
-              <div className="mt-1.5 flex gap-2">
+              <textarea
+                id="group-desc"
+                rows={3}
+                value={description}
+                disabled={!canEdit}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={500}
+                className="border-border bg-background text-foreground disabled:bg-muted/40 mt-1.5 w-full rounded-xl border px-3.5 py-2 text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none disabled:cursor-not-allowed"
+              />
+            </div>
+
+            <div>
+              <span className="text-foreground text-xs font-semibold">Viditelnost skupiny</span>
+              <div className="mt-2 grid grid-cols-2 gap-3">
                 <button
                   type="button"
+                  disabled={!canEdit}
                   onClick={() => setVisibility('private')}
-                  className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border p-2 text-xs font-medium transition-all ${
+                  className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all disabled:cursor-not-allowed ${
                     visibility === 'private'
-                      ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs'
-                      : 'border-border/70 hover:bg-muted/50 text-muted-foreground'
+                      ? 'border-blue-600 bg-blue-50/70 font-semibold text-blue-700 shadow-xs ring-1 ring-blue-600/30 dark:bg-blue-950/40 dark:text-blue-300'
+                      : 'border-border/70 text-muted-foreground hover:bg-muted/40'
                   }`}
                 >
                   <Lock className="h-3.5 w-3.5" />
@@ -383,11 +389,12 @@ function GroupSettingsForm({
                 </button>
                 <button
                   type="button"
+                  disabled={!canEdit}
                   onClick={() => setVisibility('public')}
-                  className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border p-2 text-xs font-medium transition-all ${
+                  className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all disabled:cursor-not-allowed ${
                     visibility === 'public'
-                      ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs'
-                      : 'border-border/70 hover:bg-muted/50 text-muted-foreground'
+                      ? 'border-blue-600 bg-blue-50/70 font-semibold text-blue-700 shadow-xs ring-1 ring-blue-600/30 dark:bg-blue-950/40 dark:text-blue-300'
+                      : 'border-border/70 text-muted-foreground hover:bg-muted/40'
                   }`}
                 >
                   <Globe className="h-3.5 w-3.5" />
@@ -395,35 +402,109 @@ function GroupSettingsForm({
                 </button>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="border-border/60 border-t pt-4">
-            <label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-              Popisek skupiny
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="border-border bg-background focus:ring-primary/30 mt-1.5 w-full rounded-xl border p-3 text-sm focus:ring-2 focus:outline-none"
-              placeholder="Popište hlavní účel nebo zaměření skupiny..."
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        {/* Vlastník a oprávnění */}
+        <Card className="border-border/70 shadow-xs">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="text-base font-semibold">Vlastník a oprávnění</CardTitle>
+            <CardDescription>Správce skupiny a aktuální role volajícího.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <div className="border-border/70 bg-muted/30 rounded-xl border p-3.5">
+              <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                Vlastník skupiny
+              </div>
+              {settings.owner ? (
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-semibold text-white">
+                      {settings.owner.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-foreground font-semibold">
+                        {settings.owner.name} {settings.owner.surname}
+                      </div>
+                      {settings.owner.email && (
+                        <div className="text-muted-foreground text-xs">{settings.owner.email}</div>
+                      )}
+                    </div>
+                  </div>
+                  <Badge variant="default" className="text-xs">
+                    Vlastník
+                  </Badge>
+                </div>
+              ) : (
+                <div className="text-muted-foreground mt-2 text-xs italic">
+                  Skupina nemá přiřazeného vlastníka
+                </div>
+              )}
+            </div>
+
+            <div className="border-border/70 bg-muted/30 rounded-xl border p-3.5">
+              <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                Vaše role ve skupině
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <div className="text-foreground flex items-center gap-2 font-medium">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                  <span>
+                    {settings.currentUserRole === 'owner'
+                      ? 'Správce / Vlastník skupiny'
+                      : settings.currentUserRole === 'member'
+                        ? 'Řadový člen skupiny'
+                        : 'Administrátor (mimo členství)'}
+                  </span>
+                </div>
+                <Badge variant={canEdit ? 'default' : 'secondary'} className="text-xs">
+                  {canEdit ? 'Plná práva ke správě' : 'Pouze pro čtení'}
+                </Badge>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                ID skupiny
+              </span>
+              <div className="border-border/70 bg-muted/40 text-foreground mt-1.5 flex items-center justify-between rounded-xl border px-3 py-2 font-mono text-xs">
+                <span className="truncate pr-2">{settings.id}</span>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => void handleCopyGroupId()}
+                  className="h-7 gap-1 text-xs"
+                >
+                  {copiedId ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-blue-600" />
+                      <span className="text-blue-600">Zkopírováno</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Kopírovat</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Logo a barevná tematika */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Výběr loga */}
+        <Card className="border-border/70 shadow-xs">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <LogoIcon className={`h-5 w-5 ${currentTheme.text}`} />
               Logo a ikona skupiny
             </CardTitle>
-            <CardDescription>
-              Zvolte reprezentativní symbol pro identifikaci skupiny.
-            </CardDescription>
+            <CardDescription>Zvolte symbol reprezentující zaměření skupiny.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <div className="flex flex-wrap gap-2.5">
               {LOGO_PRESETS.map((preset) => {
                 const IconComp = preset.icon;
@@ -432,11 +513,12 @@ function GroupSettingsForm({
                   <button
                     key={preset.id}
                     type="button"
+                    disabled={!canEdit}
                     onClick={() => setSelectedLogo(preset.id)}
-                    className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all ${
+                    className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all disabled:cursor-not-allowed ${
                       isSelected
-                        ? `${currentTheme.bg} ${currentTheme.border} ${currentTheme.text} ring-primary/20 font-semibold shadow-xs ring-2`
-                        : 'border-border/70 hover:bg-muted/60 text-foreground'
+                        ? `${currentTheme.bg} ${currentTheme.border} ${currentTheme.text} font-semibold shadow-xs ring-2 ring-blue-600/20`
+                        : 'border-border/70 text-foreground hover:bg-muted/60'
                     }`}
                   >
                     <IconComp className="h-4 w-4" />
@@ -448,15 +530,16 @@ function GroupSettingsForm({
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Barevná tematika */}
+        <Card className="border-border/70 shadow-xs">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <Palette className={`h-5 w-5 ${currentTheme.text}`} />
               Barevná tematika skupiny
             </CardTitle>
-            <CardDescription>Barevný styl ovlivňující grafické prvky skupiny.</CardDescription>
+            <CardDescription>Výběr odstínu modré pro vizuální styl prvků.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {COLOR_THEMES.map((theme) => {
                 const isSelected = selectedColor === theme.id;
@@ -464,11 +547,12 @@ function GroupSettingsForm({
                   <button
                     key={theme.id}
                     type="button"
+                    disabled={!canEdit}
                     onClick={() => setSelectedColor(theme.id)}
-                    className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 text-xs font-medium transition-all ${
+                    className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 text-xs font-medium transition-all disabled:cursor-not-allowed ${
                       isSelected
-                        ? `${theme.bg} ${theme.border} ${theme.text} ring-2 ring-offset-1 ${theme.activeRing} font-semibold shadow-xs`
-                        : 'border-border/70 hover:bg-muted/50 text-foreground'
+                        ? `${theme.bg} ${theme.border} ${theme.text} font-semibold shadow-xs ring-2 ring-offset-1 ${theme.activeRing}`
+                        : 'border-border/70 text-foreground hover:bg-muted/50'
                     }`}
                   >
                     <span className={`h-3.5 w-3.5 rounded-full ${theme.dot} shrink-0`} />
@@ -481,288 +565,158 @@ function GroupSettingsForm({
         </Card>
       </div>
 
-      <Card>
+      {/* Kategorie skupiny */}
+      <Card className="border-border/70 shadow-xs">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <Tag className={`h-5 w-5 ${currentTheme.text}`} />
             Kategorie skupiny
           </CardTitle>
           <CardDescription>
-            Přidejte nebo odeberte kategorie a zařaďte skupinu do příslušného oboru.
+            Zvolte hlavní obor nebo zadejte vlastní kategorii skupiny.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => {
+            {POPULAR_CATEGORIES.map((cat) => {
               const isSelected = selectedCategory === cat;
               return (
-                <div
+                <button
                   key={cat}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  type="button"
+                  disabled={!canEdit}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`inline-flex cursor-pointer items-center rounded-full border px-3 py-1 text-xs font-medium transition-all disabled:cursor-not-allowed ${
                     isSelected
-                      ? `${currentTheme.bg} ${currentTheme.border} ${currentTheme.text} font-semibold shadow-xs`
-                      : 'border-border/70 text-muted-foreground'
+                      ? 'border-blue-600 bg-blue-600 font-semibold text-white shadow-xs'
+                      : 'border-border/70 text-muted-foreground hover:bg-muted/50'
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategory(cat)}
-                    className="cursor-pointer"
-                  >
-                    {cat}
-                  </button>
-                  {categories.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveCategory(cat)}
-                      className="text-muted-foreground hover:text-destructive ml-0.5 cursor-pointer"
-                      title="Odebrat kategorii"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
+                  {cat}
+                </button>
               );
             })}
           </div>
 
-          <div className="border-border/60 flex gap-2 border-t pt-3">
+          <div>
+            <label htmlFor="custom-category" className="text-foreground text-xs font-semibold">
+              Vlastní kategorie
+            </label>
             <input
+              id="custom-category"
               type="text"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              placeholder="Název nové kategorie..."
-              className="border-border bg-background focus:ring-primary/30 h-8 max-w-xs rounded-lg border px-3 text-xs focus:ring-2 focus:outline-none"
+              value={selectedCategory}
+              disabled={!canEdit}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              placeholder="Zadejte název kategorie"
+              maxLength={50}
+              className="border-border bg-background text-foreground disabled:bg-muted/40 mt-1.5 w-full max-w-md rounded-xl border px-3.5 py-2 text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none disabled:cursor-not-allowed"
             />
-            <Button size="sm" variant="outline" onClick={handleAddCategory} className="h-8 gap-1">
-              <Plus className="h-3.5 w-3.5" />
-              Přidat kategorii
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users className={`h-5 w-5 ${currentTheme.text}`} />
-              Správa členů a uživatelské role
-            </CardTitle>
-            <CardDescription>
-              Přidejte nové členy nebo odeberte stávající uživatele ze skupiny.
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="px-2.5 py-1 text-xs font-semibold">
-              {membersList.length}{' '}
-              {membersList.length === 1 ? 'člen' : membersList.length < 5 ? 'členové' : 'členů'}
-            </Badge>
-            <Button
-              size="sm"
-              onClick={() => setIsAddMemberOpen(!isAddMemberOpen)}
-              className="gap-1.5"
-            >
-              <UserPlus className="h-4 w-4" />+ Do skupiny
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-2">
-          {isAddMemberOpen && (
-            <form
-              onSubmit={handleAddMember}
-              className="bg-muted/40 border-border/80 animate-in fade-in space-y-3.5 rounded-2xl border p-4"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
-                  <UserPlus className="text-primary h-4 w-4" />
-                  Přidat nového uživatele do skupiny
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsAddMemberOpen(false)}
-                  className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="sm:col-span-2">
-                  <label className="text-muted-foreground text-xs font-medium">
-                    E-mail uživatele
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={newMemberEmail}
-                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                    placeholder="novy.clen@unicorn.cz"
-                    className="border-border bg-background focus:ring-primary/30 mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-xs font-medium">
-                    Role ve skupině
-                  </label>
-                  <select
-                    value={newMemberRole}
-                    onChange={(e) => setNewMemberRole(e.target.value as 'member' | 'owner')}
-                    className="border-border bg-background focus:ring-primary/30 mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-                  >
-                    <option value="member">Člen (member)</option>
-                    <option value="owner">Správce / Vlastník (owner)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsAddMemberOpen(false)}
-                >
-                  Zrušit
-                </Button>
-                <Button type="submit" size="sm" className="gap-1">
-                  <Plus className="h-4 w-4" />
-                  Přidat do skupiny
-                </Button>
-              </div>
-            </form>
-          )}
-
-          <div className="space-y-2.5">
-            {membersList.map((m) => (
-              <div
-                key={m.id}
-                className="border-border/60 bg-card flex items-center justify-between rounded-xl border p-3 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold">
-                    {m.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="text-foreground text-sm font-semibold">{m.name}</div>
-                    <div className="text-muted-foreground text-xs">{m.email}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  <Badge variant={m.role === 'owner' ? 'default' : 'secondary'} className="text-xs">
-                    {m.role === 'owner' ? 'Vlastník' : 'Člen'}
-                  </Badge>
-
-                  {!m.isOwner && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRemoveMember(m.id, m.email)}
-                      className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
-                      title="Odebrat uživatele ze skupiny"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
+      {/* Skuteční členové skupiny ze serveru */}
+      <Card className="border-border/70 shadow-xs">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Settings className="text-muted-foreground h-5 w-5" />
-            Systémové informace
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Users className={`h-5 w-5 ${currentTheme.text}`} />
+            Členové skupiny
           </CardTitle>
-          <CardDescription>Technické identifikátory a auditní data.</CardDescription>
+          <CardDescription>
+            Aktuální seznam uživatelů registrovaných v této skupině ({members.length}).
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3.5 text-xs">
-          <div>
-            <span className="text-muted-foreground font-medium tracking-wider uppercase">
-              ID skupiny
-            </span>
-            <div className="bg-muted/50 border-border/60 mt-1 flex items-center justify-between rounded-lg border p-2 font-mono text-xs">
-              <span className="truncate pr-2">{settings.id}</span>
+        <CardContent>
+          {isLoadingMembers ? (
+            <div className="space-y-3">
+              <div className="bg-muted h-12 animate-pulse rounded-xl" />
+              <div className="bg-muted h-12 animate-pulse rounded-xl" />
+            </div>
+          ) : membersError ? (
+            <div className="text-destructive text-xs">{membersError}</div>
+          ) : members.length === 0 ? (
+            <div className="text-muted-foreground py-4 text-center text-xs">
+              Skupina zatím nemá žádné registrované členy.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {members.map((m) => (
+                <div
+                  key={m.id}
+                  className="border-border/70 bg-card flex items-center justify-between rounded-xl border p-3 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600/10 font-semibold text-blue-700">
+                      {m.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-foreground text-sm font-semibold">
+                        {m.name} {m.surname}
+                      </div>
+                      {m.email && <div className="text-muted-foreground text-xs">{m.email}</div>}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted-foreground hidden text-xs sm:inline">
+                      Připojen(a) {formatDate(m.joinedAt)}
+                    </span>
+                    <Badge
+                      variant={m.role === 'owner' ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {m.role === 'owner' ? 'Vlastník' : 'Člen'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Spodní akční lišta pro uložení / zrušení změn */}
+      {canEdit && (
+        <div
+          className={`border-border/80 bg-background/90 fixed right-0 bottom-0 left-0 z-40 border-t p-4 shadow-lg backdrop-blur-md transition-all duration-300 ${
+            hasUnsavedChanges
+              ? 'translate-y-0 opacity-100'
+              : 'pointer-events-none translate-y-full opacity-0'
+          }`}
+        >
+          <div className="mx-auto flex max-w-5xl items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-600" />
+              <span className="text-foreground text-sm font-medium">
+                Máte neuložené změny v nastavení skupiny
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
               <Button
-                size="xs"
-                variant="ghost"
-                onClick={() => void handleCopyGroupId()}
-                className="h-7 gap-1"
+                variant="outline"
+                size="sm"
+                onClick={handleResetChanges}
+                disabled={!hasUnsavedChanges || isSaving}
+                className="gap-1.5"
               >
-                {copiedId ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-green-600" />
-                    <span className="text-green-600">Zkopírováno</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>Kopírovat</span>
-                  </>
-                )}
+                <RotateCcw className="h-4 w-4" />
+                Zrušit
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => void handleSaveChanges()}
+                disabled={isSaving}
+                className="gap-1.5 bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="h-4 w-4" />
+                {isSaving ? 'Ukládám...' : 'Uložit'}
               </Button>
             </div>
           </div>
-
-          <div className="border-border/60 grid grid-cols-2 gap-3 border-t pt-3">
-            <div>
-              <span className="text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" /> Vytvořeno
-              </span>
-              <div className="text-foreground mt-1 font-medium">
-                {formatDate(settings.createdAt)}
-              </div>
-            </div>
-            <div>
-              <span className="text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" /> Poslední změna
-              </span>
-              <div className="text-foreground mt-1 font-medium">
-                {formatDate(settings.updatedAt)}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="border-border/80 bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t p-4 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <div className="text-muted-foreground text-xs">
-            {hasUnsavedChanges ? (
-              <span className="font-medium text-amber-600 dark:text-amber-400">
-                Máte neuložené změny v nastavení skupiny.
-              </span>
-            ) : (
-              <span>Všechny změny jsou uloženy.</span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetChanges}
-              disabled={!hasUnsavedChanges || isSaving}
-              className="gap-1.5"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Zrušit
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => void handleSaveChanges()}
-              disabled={isSaving}
-              className="gap-1.5"
-            >
-              <Save className="h-4 w-4" />
-              {isSaving ? 'Ukládám...' : 'Uložit'}
-            </Button>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -788,7 +742,11 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
     );
   }
 
-  if (settings && settings.currentUserRole !== 'owner') {
+  // A2: Odepření přístupu nečlenům skupiny (403 Forbidden z backendu)
+  if (
+    error &&
+    (error.includes('oprávnění') || error.includes('403') || error.includes('Forbidden'))
+  ) {
     return (
       <div className="mx-auto max-w-2xl p-6 pt-16 text-center">
         <div className="bg-destructive/10 text-destructive mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full">
@@ -796,13 +754,14 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
         </div>
         <h1 className="text-foreground text-2xl font-bold">Přístup k nastavení skupiny odepřen</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          K zobrazení a úpravě nastavení této skupiny má oprávnění pouze její vlastník.
+          K zobrazení nastavení této skupiny nemáte dostatečná oprávnění. Stránka je přístupná pouze
+          členům skupiny a administrátorům.
         </p>
         <div className="mt-6 flex justify-center">
           <Link href="/">
             <Button variant="outline">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Zpět na přehled skupin
+              Zpět na přehled
             </Button>
           </Link>
         </div>
@@ -810,6 +769,7 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
     );
   }
 
+  // A3: Chyba načítání (404 nebo chyba spojení)
   if (error || !settings) {
     return (
       <div className="mx-auto max-w-2xl p-6 pt-16 text-center">
@@ -825,7 +785,7 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
               Zpět na přehled
             </Button>
           </Link>
-          <Button onClick={() => void refetch()}>
+          <Button onClick={() => void refetch()} className="bg-blue-600 hover:bg-blue-700">
             <RefreshCw className="mr-2 h-4 w-4" />
             Zkusit znovu
           </Button>

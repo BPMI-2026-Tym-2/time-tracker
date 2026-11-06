@@ -71,56 +71,18 @@ function findById(id: string): Promise<GroupRecord | null> {
   });
 }
 
-async function findSettingsById(id: string): Promise<GroupSettingsRecord | null> {
-  try {
-    return await prisma.group.findUnique({
-      where: { id },
-      select: groupSettingsSelect,
-    });
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      return {
-        id,
-        name: 'Vývojový tým (Dev)',
-        description: 'Tým zaměřený na vývoj klientského rozhraní a design systém.',
-        category: 'Vývoj aplikací',
-        color: 'blue',
-        logo: 'rocket',
-        visibility: 'private',
-        createdAt: new Date('2026-10-15T09:00:00.000Z'),
-        updatedAt: new Date('2026-11-04T16:20:00.000Z'),
-        members: [
-          {
-            role: 'owner',
-            user: {
-              id: 'dev-user-id',
-              name: 'Jan',
-              surname: 'Novák',
-              email: 'jan.novak@unicorn.cz',
-            },
-          },
-        ],
-        _count: {
-          members: 5,
-        },
-      };
-    }
-    throw error;
-  }
+function findSettingsById(id: string): Promise<GroupSettingsRecord | null> {
+  return prisma.group.findUnique({
+    where: { id },
+    select: groupSettingsSelect,
+  });
 }
 
-async function findMembership(groupId: string, userId: string): Promise<{ role: string } | null> {
-  try {
-    return await prisma.groupMember.findUnique({
-      where: { groupId_userId: { groupId, userId } },
-      select: { role: true },
-    });
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      return { role: 'owner' };
-    }
-    throw error;
-  }
+function findMembership(groupId: string, userId: string): Promise<{ role: string } | null> {
+  return prisma.groupMember.findUnique({
+    where: { groupId_userId: { groupId, userId } },
+    select: { role: true },
+  });
 }
 
 async function findMembers(
@@ -155,33 +117,15 @@ async function findMembers(
   return { items, total };
 }
 
-async function updateSettingsById(
+function updateSettingsById(
   id: string,
   data: Prisma.GroupUpdateInput,
 ): Promise<GroupSettingsRecord | null> {
-  try {
-    return await prisma.group.update({
-      where: { id },
-      data,
-      select: groupSettingsSelect,
-    });
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      const current = await findSettingsById(id);
-      if (!current) return null;
-      return {
-        ...current,
-        ...(typeof data.name === 'string' && { name: data.name }),
-        ...(data.description !== undefined && { description: data.description as string }),
-        ...(data.category !== undefined && { category: data.category as string }),
-        ...(data.color !== undefined && { color: data.color as string }),
-        ...(data.logo !== undefined && { logo: data.logo as string }),
-        ...(data.visibility !== undefined && { visibility: data.visibility as string }),
-        updatedAt: new Date(),
-      };
-    }
-    throw error;
-  }
+  return prisma.group.update({
+    where: { id },
+    data,
+    select: groupSettingsSelect,
+  });
 }
 
 const groupRepository = {
