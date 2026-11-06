@@ -1,11 +1,12 @@
 import { LoaderCircle, LucideEye, LucideEyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useRef, useState, type ChangeEvent, type SyntheticEvent } from 'react';
+import { useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { authClient } from '@/lib/auth-client';
 import Image from 'next/image';
+import { loginSchema } from '@time-tracker/shared';
+import { getFieldStyle, RequiredMark } from '@/lib/form-styles';
 
 type LoginFormProps = {
   email: string;
@@ -32,27 +33,16 @@ export function LoginForm({
   onSubmit,
   onGoogleLogin,
 }: LoginFormProps) {
-  const googleButtonRef = useRef<HTMLDivElement>(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    if (googleButtonRef.current) {
-      authClient.oneTap({
-        button: {
-          container: googleButtonRef.current,
-          config: {
-            theme: 'outline',
-            type: 'standard',
-            size: 'medium',
-            locale: 'cs',
-            shape: 'circle',
-          },
-        },
-        autoSelect: true,
-        cancelOnTapOutside: true,
-      });
-    }
-  }, []);
+  const isEmailValid = email.length > 0 && loginSchema.shape.email.safeParse(email).success;
+
+  const isPasswordValid =
+    password.length > 0 && loginSchema.shape.password.safeParse(password).success;
+
+  const emailFieldStyle = getFieldStyle(isEmailValid, email.length > 0);
+  const passwordFieldStyle = getFieldStyle(isPasswordValid, password.length > 0);
+
   return (
     <div className="flex w-xs flex-col gap-y-6 sm:w-md">
       <h1 className="text-center text-2xl font-bold">Přihlášení</h1>
@@ -60,8 +50,10 @@ export function LoginForm({
       <form onSubmit={onSubmit} noValidate>
         <FieldSet>
           <FieldGroup>
-            <Field className="gap-1">
-              <FieldLabel htmlFor="email">E-mail</FieldLabel>
+            <Field className="gap-1" data-invalid={!isEmailValid && email.length > 0}>
+              <FieldLabel htmlFor="email" className={emailFieldStyle}>
+                E-mail <RequiredMark />
+              </FieldLabel>
               <Input
                 id="email"
                 name="email"
@@ -71,11 +63,18 @@ export function LoginForm({
                 placeholder="jan.novak@seznam.cz"
                 value={email}
                 onChange={onEmailChange}
+                aria-invalid={!isEmailValid && email.length > 0}
+                className={emailFieldStyle}
               />
+              {!isEmailValid && email.length > 0 && (
+                <FieldError>Zadejte platnou e-mailovou adresu.</FieldError>
+              )}
             </Field>
 
-            <Field className="gap-1">
-              <FieldLabel htmlFor="password">Heslo</FieldLabel>
+            <Field className="gap-1" data-invalid={!isPasswordValid && password.length > 0}>
+              <FieldLabel htmlFor="password" className={passwordFieldStyle}>
+                Heslo <RequiredMark />
+              </FieldLabel>
               <span className="relative">
                 <Input
                   id="password"
@@ -86,6 +85,8 @@ export function LoginForm({
                   placeholder="••••••••"
                   value={password}
                   onChange={onPasswordChange}
+                  aria-invalid={!isPasswordValid && password.length > 0}
+                  className={passwordFieldStyle}
                 />
                 <button
                   type="button"
@@ -95,6 +96,9 @@ export function LoginForm({
                   {showPassword ? <LucideEye size="16" /> : <LucideEyeOff size="16" />}
                 </button>
               </span>
+              {!isPasswordValid && password.length > 0 && (
+                <FieldError>Heslo je povinné.</FieldError>
+              )}
             </Field>
           </FieldGroup>
 

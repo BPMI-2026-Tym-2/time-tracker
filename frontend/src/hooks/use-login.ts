@@ -3,26 +3,22 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
-
-type LoginValues = {
-  email: string;
-  password: string;
-};
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return 'Přihlášení se nepodařilo. Zkontrolujte e-mail a heslo.';
-}
+import { loginSchema, type LoginSchema } from '@time-tracker/shared';
 
 export function useLogin() {
   const router = useRouter();
 
   const loginMutation = useMutation({
-    mutationFn: async ({ email, password }: LoginValues) => {
-      const result = await authClient.signIn.email({ email, password });
+    mutationFn: async (values: LoginSchema) => {
+      const parsed = loginSchema.safeParse(values);
+
+      if (!parsed.success) {
+        const errorMessages = parsed.error.issues.map((error) => error.message).join(', ');
+
+        throw new Error(`Chyba validace: ${errorMessages}`);
+      }
+
+      const result = await authClient.signIn.email(parsed.data);
 
       if (result.error) {
         throw new Error(result.error.message ?? 'Přihlášení se nepodařilo.');
@@ -62,11 +58,11 @@ export function useLogin() {
     login: loginMutation.mutate,
     loginPending: loginMutation.isPending,
     loginError: loginMutation.error,
+    resetLoginError: loginMutation.reset,
     loginWithGoogle: googleMutation.mutate,
     googlePending: googleMutation.isPending,
     googleError: googleMutation.error,
     isPending: loginMutation.isPending || googleMutation.isPending,
     error: loginMutation.error ?? googleMutation.error,
-    getErrorMessage,
   };
 }
