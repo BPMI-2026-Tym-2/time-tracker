@@ -36,12 +36,26 @@ const listMembersResponse = z.object({
   }),
 });
 
+const createGroupRequest = z.object({
+  name: z.string().trim().min(1, 'Název skupiny je povinný').max(100),
+  description: z.string().trim().max(1000).optional(),
+});
+
+const createGroupResponse = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  description: z.string().nullable(),
+  createdAt: z.coerce.date(),
+});
+
 export const groupSchema = {
   role,
   listMembersParams,
   listMembersQuery,
-  memberResponse,
   listMembersResponse,
+  memberResponse,
+  createGroupRequest,
+  createGroupResponse,
 };
 
 export type GroupRole = z.infer<typeof role>;
@@ -49,3 +63,5 @@ export type ListGroupMembersParams = z.infer<typeof listMembersParams>;
 export type ListGroupMembersQuery = z.infer<typeof listMembersQuery>;
 export type GroupMemberResponse = z.infer<typeof memberResponse>;
 export type ListGroupMembersResponse = z.infer<typeof listMembersResponse>;
+export type CreateGroupRequest = z.infer<typeof createGroupRequest>;
+export type CreateGroupResponse = z.infer<typeof createGroupResponse>;
