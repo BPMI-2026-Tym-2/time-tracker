@@ -29,6 +29,26 @@ export type GroupMemberFilter = {
   role?: GroupRole;
 };
 
+export type GroupDeletionAuthorization = (
+  group: GroupRecord | null,
+  membership: { role: string } | null,
+) => void | Promise<void>;
+
+export type GroupRepository = {
+  deleteGroup: (
+    groupId: string,
+    userId: string,
+    authorize: GroupDeletionAuthorization,
+  ) => Promise<void>;
+  findById: (id: string) => Promise<GroupRecord | null>;
+  findMembership: (groupId: string, userId: string) => Promise<{ role: string } | null>;
+  findMembers: (
+    groupId: string,
+    filter: GroupMemberFilter,
+    pagination: { skip: number; take: number },
+  ) => Promise<{ items: GroupMemberRecord[]; total: number }>;
+};
+
 function findById(id: string): Promise<GroupRecord | null> {
   return prisma.group.findUnique({
     where: { id },
@@ -75,7 +95,29 @@ async function findMembers(
   return { items, total };
 }
 
-const groupRepository = {
+async function deleteGroup(
+  groupId: string,
+  userId: string,
+  authorize: GroupDeletionAuthorization,
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const group = await tx.group.findUnique({ where: { id: groupId }, select: groupSelect });
+    const membership = group
+      ? await tx.groupMember.findUnique({
+          where: { groupId_userId: { groupId, userId } },
+          select: { role: true },
+        })
+      : null;
+
+    // The service must authorize before any writes, using the same transaction snapshot.
+    await authorize(group, membership);
+    await tx.groupMember.deleteMany({ where: { groupId } });
+    await tx.group.delete({ where: { id: groupId } });
+  });
+}
+
+const groupRepository: GroupRepository = {
+  deleteGroup,
   findById,
   findMembership,
   findMembers,

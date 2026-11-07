@@ -6,6 +6,11 @@ const listMembersParams = z.object({
   groupId: z.uuid(),
 });
 
+const DeleteGroupParamsSchema = listMembersParams;
+const DeleteGroupResponseSchema = z.object({
+  message: z.literal('Skupina byla úspěšně odstraněna.'),
+});
+
 const listMembersQuery = z.object({
   search: z.string().trim().min(1).max(200).optional(),
   role: role.optional(),
@@ -37,6 +42,8 @@ const listMembersResponse = z.object({
 });
 
 export const groupSchema = {
+  deleteParams: DeleteGroupParamsSchema,
+  deleteResponse: DeleteGroupResponseSchema,
   role,
   listMembersParams,
   listMembersQuery,
@@ -45,7 +52,11 @@ export const groupSchema = {
 };
 
 export type GroupRole = z.infer<typeof role>;
+export type DeleteGroupParams = z.infer<typeof DeleteGroupParamsSchema>;
+export type DeleteGroupResponse = z.infer<typeof DeleteGroupResponseSchema>;
 export type ListGroupMembersParams = z.infer<typeof listMembersParams>;
 export type ListGroupMembersQuery = z.infer<typeof listMembersQuery>;
 export type GroupMemberResponse = z.infer<typeof memberResponse>;
 export type ListGroupMembersResponse = z.infer<typeof listMembersResponse>;
+
+export default groupSchema;

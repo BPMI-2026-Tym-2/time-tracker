@@ -1,10 +1,15 @@
-import type { ListGroupMembersQuery, ListGroupMembersResponse } from '@time-tracker/shared';
+import type {
+  DeleteGroupResponse,
+  ListGroupMembersQuery,
+  ListGroupMembersResponse,
+} from '@time-tracker/shared';
 import type { RequestingUser } from '../../shared/auth/types.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import groupRepository from './group.repository.js';
 import groupMapper from './group.mapper.js';
 
 export type GroupService = {
+  deleteGroup: (requestingUser: RequestingUser, groupId: string) => Promise<DeleteGroupResponse>;
   listMembers: (
     requestingUser: RequestingUser,
     groupId: string,
@@ -48,7 +53,33 @@ async function listMembers(
   };
 }
 
+async function deleteGroup(
+  requestingUser: RequestingUser,
+  groupId: string,
+): Promise<DeleteGroupResponse> {
+  try {
+    await groupRepository.deleteGroup(groupId, requestingUser.id, (group, membership) => {
+      if (!group) {
+        throw new AppError('Group not found', 404);
+      }
+
+      if (membership?.role !== 'owner') {
+        throw new AppError('Skupinu může odstranit pouze její vlastník', 403);
+      }
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    console.error('Group deletion failed', error);
+    throw new AppError('Odstranění skupiny se nezdařilo. Zkuste to prosím znovu', 500);
+  }
+
+  return { message: 'Skupina byla úspěšně odstraněna.' };
+}
+
 const groupService: GroupService = {
+  deleteGroup,
   listMembers,
 };
 
