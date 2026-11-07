@@ -59,7 +59,7 @@ model Group {
   @@map("group")
 }
 
-// Členství uživatele ve skupině. `role`: "member" | "owner" (zakladatel skupiny).
+// Členství uživatele ve skupině. `role`: "member" | "admin" | "owner" (zakladatel skupiny).
 // `joinedAt` určuje výchozí pořadí v seznamu členů.
 // Při smazání skupiny nebo uživatele se členství smažou automaticky (onDelete: Cascade).
 model GroupMember {

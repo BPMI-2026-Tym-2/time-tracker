@@ -134,6 +134,11 @@ function GroupSettingsForm({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [showDeleteNotice, setShowDeleteNotice] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<GroupMemberResponse | null>(null);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isGroupDeleted, setIsGroupDeleted] = useState(false);
+  const [adminCanAssign, setAdminCanAssign] = useState(true);
+  const [adminCanRemove, setAdminCanRemove] = useState(true);
 
   function handleGenerateInvitationCode() {
     if (!canEdit) return;
@@ -261,6 +266,32 @@ function GroupSettingsForm({
   const ownerDisplayName = settings.owner
     ? `${settings.owner.name} ${settings.owner.surname}`.trim()
     : '';
+
+  if (isGroupDeleted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-6">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+            <Trash2 className="h-6 w-6" />
+          </div>
+          <h2 className="mt-4 text-lg font-bold text-slate-900">Skupina byla odstraněna</h2>
+          <p className="mt-2 text-xs text-slate-600">
+            Skupina <strong className="text-slate-800">{name}</strong> byla úspěšně odstraněna v
+            souladu s alternativním tokem A4.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Zpět na přehled</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
@@ -577,17 +608,19 @@ function GroupSettingsForm({
                         <td className="py-2 text-center">
                           <input
                             type="checkbox"
-                            checked
-                            disabled
-                            className="h-3.5 w-3.5 rounded accent-blue-600"
+                            checked={adminCanAssign}
+                            onChange={(e) => setAdminCanAssign(e.target.checked)}
+                            disabled={!canEdit}
+                            className="h-3.5 w-3.5 rounded accent-blue-600 disabled:cursor-not-allowed"
                           />
                         </td>
                         <td className="py-2 text-center">
                           <input
                             type="checkbox"
-                            checked
-                            disabled
-                            className="h-3.5 w-3.5 rounded accent-blue-600"
+                            checked={adminCanRemove}
+                            onChange={(e) => setAdminCanRemove(e.target.checked)}
+                            disabled={!canEdit}
+                            className="h-3.5 w-3.5 rounded accent-blue-600 disabled:cursor-not-allowed"
                           />
                         </td>
                       </tr>
@@ -632,7 +665,7 @@ function GroupSettingsForm({
                 {canEdit && (
                   <button
                     type="button"
-                    onClick={handleCopyInvitationCode}
+                    onClick={() => setIsInviteModalOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50"
                   >
                     <UserPlus className="h-3.5 w-3.5 text-slate-500" />
@@ -650,7 +683,7 @@ function GroupSettingsForm({
                   <p className="text-xs text-red-600">{membersError}</p>
                 ) : (
                   <div className="divide-y divide-slate-100">
-                    {/* Zobrazení členů podle mockupu (Georgii Skvortcov, Anna Nováková, Martin Kříž) nebo načtených dat */}
+                    {/* Zobrazení členů podle mockupu s interaktivní změnou role a odstraněním */}
                     {members.length > 0 ? (
                       members.map((member) => {
                         const isOwner = member.role === 'owner';
@@ -677,18 +710,43 @@ function GroupSettingsForm({
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <div className="flex h-6 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
-                                <span>{isOwner ? 'Vlastník' : 'Člen'}</span>
-                                {!isOwner && <ChevronDown className="h-3 w-3 text-slate-400" />}
-                              </div>
+                              {isOwner ? (
+                                <div className="flex h-6 items-center rounded-md border border-slate-200 bg-slate-50 px-2 text-[11px] font-medium text-slate-700">
+                                  Vlastník
+                                </div>
+                              ) : canEdit ? (
+                                <div className="relative">
+                                  <select
+                                    value={member.role === 'admin' ? 'Administrátor' : 'Člen'}
+                                    onChange={(e) => {
+                                      const newRole =
+                                        e.target.value === 'Administrátor' ? 'admin' : 'member';
+                                      setMembers((prev) =>
+                                        prev.map((m) =>
+                                          m.id === member.id ? { ...m, role: newRole } : m,
+                                        ),
+                                      );
+                                    }}
+                                    className="h-6 appearance-none rounded-md border border-slate-200 bg-white pr-6 pl-2 text-[11px] font-medium text-slate-700 hover:bg-slate-50 focus:border-blue-500 focus:outline-none"
+                                  >
+                                    <option value="Administrátor">Administrátor</option>
+                                    <option value="Člen">Člen</option>
+                                  </select>
+                                  <ChevronDown className="pointer-events-none absolute top-1/2 right-1.5 h-3 w-3 -translate-y-1/2 text-slate-400" />
+                                </div>
+                              ) : (
+                                <div className="flex h-6 items-center rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
+                                  {member.role === 'admin' ? 'Administrátor' : 'Člen'}
+                                </div>
+                              )}
                               {!isOwner && canEdit && (
                                 <button
                                   type="button"
-                                  disabled
-                                  className="flex h-6 w-6 cursor-not-allowed items-center justify-center rounded-md text-slate-300 hover:text-red-500"
-                                  title="Správa členů probíhá v detailu členů skupiny"
+                                  onClick={() => setMemberToDelete(member)}
+                                  className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                                  title={`Odstranit člena ${member.name} ${member.surname}`}
                                 >
-                                  <Trash2 className="h-3 w-3 text-red-400" />
+                                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                 </button>
                               )}
                             </div>
@@ -696,55 +754,7 @@ function GroupSettingsForm({
                         );
                       })
                     ) : (
-                      <>
-                        <div className="flex items-center justify-between py-2 first:pt-0">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                              <Users className="h-3.5 w-3.5" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1 text-xs font-medium text-slate-900">
-                                <span>{ownerDisplayName || 'Vlastník skupiny'}</span>
-                                <Crown className="h-2.5 w-2.5 text-amber-500" />
-                              </div>
-                              <span className="text-[10px] text-slate-400">Vlastník</span>
-                            </div>
-                          </div>
-                          <div className="flex h-6 items-center rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
-                            Vlastník
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between py-2">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                              <Users className="h-3.5 w-3.5" />
-                            </div>
-                            <div className="text-xs font-medium text-slate-900">Anna Nováková</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-6 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
-                              <span>Administrátor</span>
-                              <ChevronDown className="h-3 w-3 text-slate-400" />
-                            </div>
-                            <Trash2 className="h-3 w-3 text-red-400" />
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between py-2 last:pb-0">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                              <Users className="h-3.5 w-3.5" />
-                            </div>
-                            <div className="text-xs font-medium text-slate-900">Martin Kříž</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-6 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700">
-                              <span>Člen</span>
-                              <ChevronDown className="h-3 w-3 text-slate-400" />
-                            </div>
-                            <Trash2 className="h-3 w-3 text-red-400" />
-                          </div>
-                        </div>
-                      </>
+                      <div className="py-2 text-xs text-slate-500">Žádní členové nenalezeni</div>
                     )}
                   </div>
                 )}
@@ -843,24 +853,119 @@ function GroupSettingsForm({
             </div>
           </div>
 
-          {/* Dialog upozornění při kliknutí na Odstranit skupinu */}
+          {/* Dialog A4: Odstranění skupiny */}
           {showDeleteNotice && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
               <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
                 <div className="flex items-center gap-3 text-red-600">
                   <AlertCircle className="h-6 w-6" />
                   <h3 className="text-base font-bold text-slate-900">Odstranění skupiny</h3>
                 </div>
-                <p className="mt-3 text-xs text-slate-600">
-                  Smazání skupiny bude implementováno v rámci use casu pro správu a rušení skupin.
+                <p className="mt-3 text-xs leading-relaxed text-slate-600">
+                  Opravdu chcete odstranit skupinu{' '}
+                  <strong className="text-slate-900">{name}</strong>? Tato akce je nevratná a
+                  odstraní všechna data, členy a nastavení spojená se skupinou.
                 </p>
-                <div className="mt-5 flex justify-end">
+                <div className="mt-5 flex justify-end gap-2.5">
                   <button
                     type="button"
                     onClick={() => setShowDeleteNotice(false)}
-                    className="rounded-lg bg-slate-100 px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
+                    className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    Rozumím
+                    Zrušit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDeleteNotice(false);
+                      setIsGroupDeleted(true);
+                    }}
+                    className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-red-700"
+                  >
+                    Odstranit skupinu
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Dialog A3: Odstranění člena skupiny */}
+          {memberToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+                <div className="flex items-center gap-3 text-red-600">
+                  <Trash2 className="h-5 w-5" />
+                  <h3 className="text-base font-bold text-slate-900">Odstranění člena</h3>
+                </div>
+                <p className="mt-3 text-xs text-slate-600">
+                  Opravdu chcete odebrat člena{' '}
+                  <strong className="text-slate-900">
+                    {memberToDelete.name} {memberToDelete.surname}
+                  </strong>{' '}
+                  ze skupiny? Uživatel ztratí přístup k aktivitám a obsahu skupiny.
+                </p>
+                <div className="mt-5 flex justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setMemberToDelete(null)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Zrušit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
+                      setSaveSuccessMsg(
+                        `Člen ${memberToDelete.name} ${memberToDelete.surname} byl odebrán ze skupiny.`,
+                      );
+                      setTimeout(() => setSaveSuccessMsg(null), 3000);
+                      setMemberToDelete(null);
+                    }}
+                    className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-red-700"
+                  >
+                    Odstranit člena
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Dialog: Pozvat člena do skupiny */}
+          {isInviteModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+                <div className="flex items-center gap-3 text-blue-600">
+                  <UserPlus className="h-5 w-5" />
+                  <h3 className="text-base font-bold text-slate-900">Pozvat člena do skupiny</h3>
+                </div>
+                <p className="mt-2.5 text-xs text-slate-600">
+                  Sdílejte níže uvedený unikátní pozvánkový kód s novým členem. Pomocí tohoto kódu
+                  se může připojit ke skupině.
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={invitationCode}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center font-mono text-sm font-bold tracking-widest text-slate-900"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleCopyInvitationCode}
+                    className="shrink-0 bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    <span>{copiedCode ? 'Zkopírováno' : 'Kopírovat kód'}</span>
+                  </Button>
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsInviteModalOpen(false)}
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Zavřít
                   </button>
                 </div>
               </div>

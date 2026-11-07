@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const role = z.enum(['member', 'owner']);
+const role = z.enum(['member', 'admin', 'owner']);
 
 const listMembersParams = z.object({
   groupId: z.uuid(),

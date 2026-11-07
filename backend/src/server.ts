@@ -114,11 +114,11 @@ async function startServer() {
           userId: annaId,
         },
       },
-      update: {},
+      update: { role: 'admin' },
       create: {
         groupId: defaultGroupId,
         userId: annaId,
-        role: 'member',
+        role: 'admin',
       },
     });
 
