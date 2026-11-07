@@ -11,31 +11,43 @@ import {
   Users,
   Copy,
   Check,
-  Calendar,
   Shield,
   ShieldAlert,
+  ShieldCheck,
   ArrowLeft,
   RefreshCw,
-  Palette,
   Tag,
-  Lock,
-  Globe,
   Rocket,
   Code,
   Flame,
   Zap,
   Target,
+  Globe,
   Star,
   Folder,
   Save,
   RotateCcw,
   AlertCircle,
   Info,
+  Pencil,
+  FileText,
+  Link as LinkIcon,
+  LayoutDashboard,
+  LayoutGrid,
+  GraduationCap,
+  Briefcase,
+  Coffee,
+  MoreHorizontal,
+  UserPlus,
+  Trash2,
+  Image as ImageIcon,
+  Camera,
+  Crown,
 } from 'lucide-react';
 import { useGroupSettings } from '@/hooks/use-group-settings';
 import { fetchGroupMembers } from '@/lib/api/groups';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 type GroupSettingsPageProps = {
@@ -43,9 +55,9 @@ type GroupSettingsPageProps = {
 };
 
 const LOGO_PRESETS = [
+  { id: 'users', label: 'Tým', icon: Users },
   { id: 'rocket', label: 'Raketa', icon: Rocket },
   { id: 'code', label: 'Kód', icon: Code },
-  { id: 'users', label: 'Tým', icon: Users },
   { id: 'flame', label: 'Oheň', icon: Flame },
   { id: 'zap', label: 'Blesk', icon: Zap },
   { id: 'target', label: 'Cíl', icon: Target },
@@ -54,63 +66,41 @@ const LOGO_PRESETS = [
   { id: 'folder', label: 'Projekt', icon: Folder },
 ] as const;
 
-const COLOR_THEMES = [
+const CATEGORY_PRESETS = [
+  { id: 'Obecná', label: 'Obecná', icon: null },
+  { id: 'Studium', label: 'Studium', icon: GraduationCap },
+  { id: 'Projekt', label: 'Projekt', icon: Briefcase },
+  { id: 'Volný čas', label: 'Volný čas', icon: Coffee },
+  { id: 'Ostatní', label: 'Ostatní', icon: MoreHorizontal },
+] as const;
+
+const BACKGROUND_THEMES = [
   {
-    id: 'blue',
-    name: 'Královská modrá',
-    bg: 'bg-blue-500/10',
-    text: 'text-blue-600 dark:text-blue-400',
-    border: 'border-blue-500/30',
-    dot: 'bg-blue-600',
-    activeRing: 'ring-blue-600',
+    id: 'blue-sky',
+    name: 'Modrá obloha',
+    previewClass: 'bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600',
   },
   {
-    id: 'sky',
-    name: 'Blankytně modrá',
-    bg: 'bg-sky-500/10',
-    text: 'text-sky-600 dark:text-sky-400',
-    border: 'border-sky-500/30',
-    dot: 'bg-sky-500',
-    activeRing: 'ring-sky-500',
+    id: 'sunset',
+    name: 'Západ slunce',
+    previewClass: 'bg-gradient-to-br from-amber-400 via-rose-500 to-pink-600',
+  },
+  {
+    id: 'forest',
+    name: 'Mlžný les',
+    previewClass: 'bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900',
   },
   {
     id: 'navy',
-    name: 'Námořnická modrá',
-    bg: 'bg-blue-900/10',
-    text: 'text-blue-900 dark:text-blue-300',
-    border: 'border-blue-900/30',
-    dot: 'bg-blue-900',
-    activeRing: 'ring-blue-900',
+    name: 'Hluboká modř',
+    previewClass: 'bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950',
   },
   {
-    id: 'cyan',
-    name: 'Ledově modrá / Cyan',
-    bg: 'bg-cyan-500/10',
-    text: 'text-cyan-600 dark:text-cyan-400',
-    border: 'border-cyan-500/30',
-    dot: 'bg-cyan-500',
-    activeRing: 'ring-cyan-500',
-  },
-  {
-    id: 'indigo',
-    name: 'Hluboká modř / Indigo',
-    bg: 'bg-indigo-500/10',
-    text: 'text-indigo-600 dark:text-indigo-400',
-    border: 'border-indigo-500/30',
-    dot: 'bg-indigo-600',
-    activeRing: 'ring-indigo-600',
+    id: 'abstract',
+    name: 'Pastelové vlny',
+    previewClass: 'bg-gradient-to-br from-indigo-300 via-purple-300 to-pink-300',
   },
 ] as const;
-
-const POPULAR_CATEGORIES = [
-  'Vývoj aplikací',
-  'UI/UX Design',
-  'Marketing',
-  'Projektový management',
-  'Výzkum & Analytika',
-  'Produktový tým',
-  'Obecné',
-];
 
 function GroupSettingsForm({
   settings,
@@ -124,22 +114,25 @@ function GroupSettingsForm({
   const [baseline, setBaseline] = useState<GroupSettingsResponse>(settings);
   const [name, setName] = useState(settings.name);
   const [description, setDescription] = useState(settings.description ?? '');
-  const [visibility, setVisibility] = useState<'private' | 'public'>(
-    settings.visibility ?? 'private',
-  );
-  const [selectedLogo, setSelectedLogo] = useState(settings.logo ?? 'rocket');
-  const [selectedColor, setSelectedColor] = useState(settings.color ?? 'blue');
-  const [selectedCategory, setSelectedCategory] = useState(settings.category ?? 'Vývoj aplikací');
+  const [selectedLogo, setSelectedLogo] = useState(settings.logo ?? 'users');
+  const [selectedCategory, setSelectedCategory] = useState(settings.category ?? 'Obecná');
+  const [selectedColor, setSelectedColor] = useState(settings.color ?? 'blue-sky');
+  const [isChoosingLogo, setIsChoosingLogo] = useState(false);
+  const [isChoosingBackground, setIsChoosingBackground] = useState(false);
 
   const [members, setMembers] = useState<GroupMemberResponse[]>([]);
   const [totalMembers, setTotalMembers] = useState(settings.membersCount);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [membersError, setMembersError] = useState<string | null>(null);
 
-  const [copiedId, setCopiedId] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Pozvánkový kód z API nebo deterministicky odvozený
+  const invitationCode =
+    settings.invitationCode ?? settings.id.replace(/-/g, '').slice(0, 6).toUpperCase();
 
   // Načtení skutečných členů ze serverového endpointu
   useEffect(() => {
@@ -175,562 +168,631 @@ function GroupSettingsForm({
   const diffPayload: UpdateGroupSettingsBody = {};
   if (name !== baseline.name) diffPayload.name = name;
   if (description !== (baseline.description ?? '')) diffPayload.description = description;
-  if (visibility !== (baseline.visibility ?? 'private')) diffPayload.visibility = visibility;
-  if (selectedLogo !== (baseline.logo ?? 'rocket')) diffPayload.logo = selectedLogo;
-  if (selectedColor !== (baseline.color ?? 'blue')) diffPayload.color = selectedColor;
-  if (selectedCategory !== (baseline.category ?? 'Vývoj aplikací'))
-    diffPayload.category = selectedCategory;
+  if (selectedLogo !== (baseline.logo ?? 'users')) diffPayload.logo = selectedLogo;
+  if (selectedCategory !== (baseline.category ?? 'Obecná')) diffPayload.category = selectedCategory;
+  if (selectedColor !== (baseline.color ?? 'blue-sky')) diffPayload.color = selectedColor;
 
   const hasUnsavedChanges = Object.keys(diffPayload).length > 0;
 
-  const handleCopyGroupId = async () => {
-    if (!settings.id) return;
-    try {
-      await navigator.clipboard.writeText(settings.id);
-      setCopiedId(true);
-      setTimeout(() => setCopiedId(false), 2000);
-    } catch {
-      // ignorovat chybu schránky
-    }
-  };
-
-  const triggerNotification = (msg: string) => {
-    setSaveSuccessMsg(msg);
-    setTimeout(() => {
-      setSaveSuccessMsg(null);
-    }, 3500);
-  };
-
-  const handleResetChanges = () => {
+  // A1: Zrušení provedených změn (reset do baseline)
+  function handleResetChanges() {
     setName(baseline.name);
     setDescription(baseline.description ?? '');
-    setVisibility(baseline.visibility ?? 'private');
-    setSelectedLogo(baseline.logo ?? 'rocket');
-    setSelectedColor(baseline.color ?? 'blue');
-    setSelectedCategory(baseline.category ?? 'Vývoj aplikací');
+    setSelectedLogo(baseline.logo ?? 'users');
+    setSelectedCategory(baseline.category ?? 'Obecná');
+    setSelectedColor(baseline.color ?? 'blue-sky');
     setSaveError(null);
-    triggerNotification('Změny byly zrušeny a původní nastavení obnoveno');
-  };
+    setSaveSuccessMsg(null);
+    setIsChoosingLogo(false);
+    setIsChoosingBackground(false);
+  }
 
-  const handleSaveChanges = async () => {
+  // Uložení změn na server
+  async function handleSaveChanges() {
     if (!canEdit || !hasUnsavedChanges) return;
-    setIsSaving(true);
-    setSaveError(null);
+
+    if (!name.trim()) {
+      setSaveError('Název skupiny nesmí být prázdný');
+      return;
+    }
+
     try {
+      setIsSaving(true);
+      setSaveError(null);
+      setSaveSuccessMsg(null);
+
       const updated = await updateSettings(diffPayload);
+      if (updated) {
+        setBaseline(updated);
+        setName(updated.name);
+        setDescription(updated.description ?? '');
+        setSelectedLogo(updated.logo ?? 'users');
+        setSelectedCategory(updated.category ?? 'Obecná');
+        setSelectedColor(updated.color ?? 'blue-sky');
 
-      if (!updated) {
-        throw new Error('Systém nedokázal uložit provedené změny');
+        setSaveSuccessMsg('Nastavení skupiny bylo úspěšně uloženo.');
+        setTimeout(() => setSaveSuccessMsg(null), 4000);
       }
-
-      setBaseline(updated);
-      setName(updated.name);
-      setDescription(updated.description ?? '');
-      setVisibility(updated.visibility ?? 'private');
-      setSelectedLogo(updated.logo ?? 'rocket');
-      setSelectedColor(updated.color ?? 'blue');
-      setSelectedCategory(updated.category ?? 'Vývoj aplikací');
-
-      triggerNotification('Nastavení skupiny bylo úspěšně uloženo');
-    } catch {
-      setSaveError('Nastala chyba při ukládání změn. Zkuste to prosím znovu.');
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Uložení nastavení skupiny selhalo');
     } finally {
       setIsSaving(false);
     }
-  };
+  }
 
-  const currentTheme = COLOR_THEMES.find((theme) => theme.id === selectedColor) ?? COLOR_THEMES[0];
-  const activeLogoItem =
-    LOGO_PRESETS.find((preset) => preset.id === selectedLogo) ?? LOGO_PRESETS[0];
-  const LogoIcon = activeLogoItem.icon;
+  function handleCopyInvitationCode() {
+    void navigator.clipboard.writeText(invitationCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  }
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('cs-CZ', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date(date));
-  };
+  const CurrentLogoIcon = LOGO_PRESETS.find((p) => p.id === selectedLogo)?.icon ?? Users;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 p-4 pb-28 md:p-8">
-      {/* Informační pruh pro režim čtení */}
-      {!canEdit && (
-        <div className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 text-sm text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-200">
-          <Info className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
-          <div>
-            <div className="font-semibold">Režim pouze pro čtení</div>
-            <div className="text-xs text-blue-700 dark:text-blue-300">
-              Prohlížíte nastavení skupiny jako člen. Úpravy nastavení může provádět pouze vlastník
-              skupiny nebo administrátor.
+    <div className="flex min-h-screen bg-slate-50/60">
+      {/* Postranní navigace (Sidebar) podle předlohy */}
+      <aside className="hidden w-60 shrink-0 border-r border-slate-200/80 bg-white p-5 md:block">
+        <div className="mb-6 px-3">
+          <div className="flex items-center gap-2 font-bold text-slate-900">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 font-bold text-white">
+              TT
             </div>
+            <span>Time Tracker</span>
           </div>
         </div>
-      )}
 
-      {/* Oznámení o úspěchu */}
-      {saveSuccessMsg && (
-        <div className="animate-in fade-in slide-in-from-top-4 fixed top-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg">
-          <Check className="h-4 w-4" />
-          <span>{saveSuccessMsg}</span>
-        </div>
-      )}
-
-      {/* A3: Chybové hlášení při ukládání */}
-      {saveError && (
-        <div className="border-destructive/30 bg-destructive/10 text-destructive flex items-start justify-between gap-3 rounded-2xl border p-4 text-sm">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <div>
-              <div className="font-semibold">Chyba při ukládání nastavení</div>
-              <div className="text-xs opacity-90">{saveError}</div>
-            </div>
-          </div>
-          {canEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void handleSaveChanges()}
-              className="border-destructive/30 hover:bg-destructive/10 text-destructive shrink-0 text-xs"
-            >
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-              Zkusit znovu
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Záhlaví stránky */}
-      <div className="border-border/70 flex flex-col gap-4 border-b pb-6 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div
-            className={`flex h-14 w-14 items-center justify-center rounded-2xl border ${currentTheme.bg} ${currentTheme.border} ${currentTheme.text} shadow-xs transition-colors`}
+        <nav className="space-y-1.5">
+          <Link
+            href="/"
+            className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100/80 hover:text-slate-900"
           >
-            <LogoIcon className="h-7 w-7" />
+            <LayoutDashboard className="h-4 w-4" />
+            <span>Přehled</span>
+          </Link>
+          <div className="flex items-center gap-3 rounded-xl bg-blue-50 px-3.5 py-2.5 text-sm font-semibold text-blue-600">
+            <Users className="h-4 w-4" />
+            <span>Skupiny</span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-foreground text-2xl font-bold tracking-tight md:text-3xl">
-                {name || 'Bez názvu'}
+          <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-400">
+            <LayoutGrid className="h-4 w-4" />
+            <span>Kategorie</span>
+          </div>
+          <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-400">
+            <Tag className="h-4 w-4" />
+            <span>Tagy</span>
+          </div>
+        </nav>
+      </aside>
+
+      {/* Hlavní obsahová část */}
+      <main className="flex-1 p-6 md:p-8">
+        <div className="mx-auto max-w-5xl space-y-6">
+          {/* Záhlaví stránky */}
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                Nastavení skupiny
               </h1>
+              <p className="text-sm text-slate-500">
+                Správa základních informací, členů a vizuálního motivu skupiny {baseline.name}
+              </p>
+            </div>
+            {!canEdit && (
               <Badge
-                variant={visibility === 'private' ? 'secondary' : 'default'}
-                className="text-xs"
+                variant="outline"
+                className="w-fit border-amber-300 bg-amber-50 text-amber-800"
               >
-                {visibility === 'private' ? (
-                  <>
-                    <Lock className="mr-1 h-3 w-3" /> Soukromá
-                  </>
-                ) : (
-                  <>
-                    <Globe className="mr-1 h-3 w-3" /> Veřejná
-                  </>
-                )}
+                Režim čtení (pouze pro čtení)
               </Badge>
-            </div>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {description || 'Skupina nemá zadaný popisek.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="text-muted-foreground flex items-center gap-2 text-xs">
-          <Calendar className="h-4 w-4" />
-          <span>Vytvořeno {formatDate(settings.createdAt)}</span>
-        </div>
-      </div>
-
-      {/* Karty nastavení */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Základní informace */}
-        <Card className="border-border/70 shadow-xs">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Základní údaje skupiny</CardTitle>
-            <CardDescription>Upravte název a veřejný popis pro členy.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label htmlFor="group-name" className="text-foreground text-xs font-semibold">
-                Název skupiny
-              </label>
-              <input
-                id="group-name"
-                type="text"
-                value={name}
-                disabled={!canEdit}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={100}
-                className="border-border bg-background text-foreground disabled:bg-muted/40 mt-1.5 w-full rounded-xl border px-3.5 py-2 text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="group-desc" className="text-foreground text-xs font-semibold">
-                Popisek skupiny
-              </label>
-              <textarea
-                id="group-desc"
-                rows={3}
-                value={description}
-                disabled={!canEdit}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={500}
-                className="border-border bg-background text-foreground disabled:bg-muted/40 mt-1.5 w-full rounded-xl border px-3.5 py-2 text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <span className="text-foreground text-xs font-semibold">Viditelnost skupiny</span>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => setVisibility('private')}
-                  className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all disabled:cursor-not-allowed ${
-                    visibility === 'private'
-                      ? 'border-blue-600 bg-blue-50/70 font-semibold text-blue-700 shadow-xs ring-1 ring-blue-600/30 dark:bg-blue-950/40 dark:text-blue-300'
-                      : 'border-border/70 text-muted-foreground hover:bg-muted/40'
-                  }`}
-                >
-                  <Lock className="h-3.5 w-3.5" />
-                  Soukromá
-                </button>
-                <button
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => setVisibility('public')}
-                  className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all disabled:cursor-not-allowed ${
-                    visibility === 'public'
-                      ? 'border-blue-600 bg-blue-50/70 font-semibold text-blue-700 shadow-xs ring-1 ring-blue-600/30 dark:bg-blue-950/40 dark:text-blue-300'
-                      : 'border-border/70 text-muted-foreground hover:bg-muted/40'
-                  }`}
-                >
-                  <Globe className="h-3.5 w-3.5" />
-                  Veřejná
-                </button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Vlastník a oprávnění */}
-        <Card className="border-border/70 shadow-xs">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Vlastník a oprávnění</CardTitle>
-            <CardDescription>Správce skupiny a aktuální role volajícího.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div className="border-border/70 bg-muted/30 rounded-xl border p-3.5">
-              <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                Vlastník skupiny
-              </div>
-              {settings.owner ? (
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-semibold text-white">
-                      {settings.owner.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="text-foreground font-semibold">
-                        {settings.owner.name} {settings.owner.surname}
-                      </div>
-                      {settings.owner.email && (
-                        <div className="text-muted-foreground text-xs">{settings.owner.email}</div>
-                      )}
-                    </div>
-                  </div>
-                  <Badge variant="default" className="text-xs">
-                    Vlastník
-                  </Badge>
-                </div>
-              ) : (
-                <div className="text-muted-foreground mt-2 text-xs italic">
-                  Skupina nemá přiřazeného vlastníka
-                </div>
-              )}
-            </div>
-
-            <div className="border-border/70 bg-muted/30 rounded-xl border p-3.5">
-              <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                Vaše role ve skupině
-              </div>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="text-foreground flex items-center gap-2 font-medium">
-                  <Shield className="h-4 w-4 text-blue-600" />
-                  <span>
-                    {settings.currentUserRole === 'owner'
-                      ? 'Správce / Vlastník skupiny'
-                      : settings.currentUserRole === 'member'
-                        ? 'Řadový člen skupiny'
-                        : 'Administrátor (mimo členství)'}
-                  </span>
-                </div>
-                <Badge variant={canEdit ? 'default' : 'secondary'} className="text-xs">
-                  {canEdit ? 'Plná práva ke správě' : 'Pouze pro čtení'}
-                </Badge>
-              </div>
-            </div>
-
-            <div>
-              <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                ID skupiny
-              </span>
-              <div className="border-border/70 bg-muted/40 text-foreground mt-1.5 flex items-center justify-between rounded-xl border px-3 py-2 font-mono text-xs">
-                <span className="truncate pr-2">{settings.id}</span>
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => void handleCopyGroupId()}
-                  className="h-7 gap-1 text-xs"
-                >
-                  {copiedId ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-blue-600" />
-                      <span className="text-blue-600">Zkopírováno</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" />
-                      <span>Kopírovat</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Logo a barevná tematika */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Výběr loga */}
-        <Card className="border-border/70 shadow-xs">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <LogoIcon className={`h-5 w-5 ${currentTheme.text}`} />
-              Logo a ikona skupiny
-            </CardTitle>
-            <CardDescription>Zvolte symbol reprezentující zaměření skupiny.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2.5">
-              {LOGO_PRESETS.map((preset) => {
-                const IconComp = preset.icon;
-                const isSelected = selectedLogo === preset.id;
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    disabled={!canEdit}
-                    onClick={() => setSelectedLogo(preset.id)}
-                    className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all disabled:cursor-not-allowed ${
-                      isSelected
-                        ? `${currentTheme.bg} ${currentTheme.border} ${currentTheme.text} font-semibold shadow-xs ring-2 ring-blue-600/20`
-                        : 'border-border/70 text-foreground hover:bg-muted/60'
-                    }`}
-                  >
-                    <IconComp className="h-4 w-4" />
-                    <span>{preset.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Barevná tematika */}
-        <Card className="border-border/70 shadow-xs">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Palette className={`h-5 w-5 ${currentTheme.text}`} />
-              Barevná tematika skupiny
-            </CardTitle>
-            <CardDescription>Výběr odstínu modré pro vizuální styl prvků.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {COLOR_THEMES.map((theme) => {
-                const isSelected = selectedColor === theme.id;
-                return (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    disabled={!canEdit}
-                    onClick={() => setSelectedColor(theme.id)}
-                    className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 text-xs font-medium transition-all disabled:cursor-not-allowed ${
-                      isSelected
-                        ? `${theme.bg} ${theme.border} ${theme.text} font-semibold shadow-xs ring-2 ring-offset-1 ${theme.activeRing}`
-                        : 'border-border/70 text-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    <span className={`h-3.5 w-3.5 rounded-full ${theme.dot} shrink-0`} />
-                    <span className="truncate">{theme.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Kategorie skupiny */}
-      <Card className="border-border/70 shadow-xs">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Tag className={`h-5 w-5 ${currentTheme.text}`} />
-            Kategorie skupiny
-          </CardTitle>
-          <CardDescription>
-            Zvolte hlavní obor nebo zadejte vlastní kategorii skupiny.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {POPULAR_CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`inline-flex cursor-pointer items-center rounded-full border px-3 py-1 text-xs font-medium transition-all disabled:cursor-not-allowed ${
-                    isSelected
-                      ? 'border-blue-600 bg-blue-600 font-semibold text-white shadow-xs'
-                      : 'border-border/70 text-muted-foreground hover:bg-muted/50'
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
+            )}
           </div>
 
-          <div>
-            <label htmlFor="custom-category" className="text-foreground text-xs font-semibold">
-              Vlastní kategorie
-            </label>
-            <input
-              id="custom-category"
-              type="text"
-              value={selectedCategory}
-              disabled={!canEdit}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              placeholder="Zadejte název kategorie"
-              maxLength={50}
-              className="border-border bg-background text-foreground disabled:bg-muted/40 mt-1.5 w-full max-w-md rounded-xl border px-3.5 py-2 text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none disabled:cursor-not-allowed"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Skuteční členové skupiny ze serveru */}
-      <Card className="border-border/70 shadow-xs">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <Users className={`h-5 w-5 ${currentTheme.text}`} />
-            Členové skupiny ({totalMembers})
-          </CardTitle>
-          <CardDescription>
-            Aktuální seznam uživatelů registrovaných v této skupině.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {isLoadingMembers ? (
-            <div className="space-y-3">
-              <div className="bg-muted h-12 animate-pulse rounded-xl" />
-              <div className="bg-muted h-12 animate-pulse rounded-xl" />
-            </div>
-          ) : membersError ? (
-            <div className="text-destructive text-xs">{membersError}</div>
-          ) : members.length === 0 ? (
-            <div className="text-muted-foreground py-4 text-center text-xs">
-              Skupina zatím nemá žádné registrované členy.
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {members.map((m) => (
-                <div
-                  key={m.id}
-                  className="border-border/70 bg-card flex items-center justify-between rounded-xl border p-3 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600/10 font-semibold text-blue-700">
-                      {m.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="text-foreground text-sm font-semibold">
-                        {m.name} {m.surname}
-                      </div>
-                      {m.email && <div className="text-muted-foreground text-xs">{m.email}</div>}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground hidden text-xs sm:inline">
-                      Připojen(a) {formatDate(m.joinedAt)}
-                    </span>
-                    <Badge
-                      variant={m.role === 'owner' ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {m.role === 'owner' ? 'Vlastník' : 'Člen'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {totalMembers > members.length && (
-            <div className="rounded-xl border border-blue-200/60 bg-blue-50/50 p-3 text-center text-xs text-blue-800 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-300">
-              Zobrazeno prvních {members.length} z celkem {totalMembers} členů skupiny.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Spodní akční lišta pro uložení / zrušení změn */}
-      {canEdit && (
-        <div
-          className={`border-border/80 bg-background/90 fixed right-0 bottom-0 left-0 z-40 border-t p-4 shadow-lg backdrop-blur-md transition-all duration-300 ${
-            hasUnsavedChanges
-              ? 'translate-y-0 opacity-100'
-              : 'pointer-events-none translate-y-full opacity-0'
-          }`}
-        >
-          <div className="mx-auto flex max-w-5xl items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-600" />
-              <span className="text-foreground text-sm font-medium">
-                Máte neuložené změny v nastavení skupiny
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
+          {/* Hlášení o chybě / úspěchu */}
+          {saveError && (
+            <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+              <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+              <div className="flex-1">
+                <span className="font-semibold">Chyba při ukládání změn:</span> {saveError}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleResetChanges}
-                disabled={!hasUnsavedChanges || isSaving}
-                className="gap-1.5"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Zrušit
-              </Button>
-              <Button
-                size="sm"
                 onClick={() => void handleSaveChanges()}
-                disabled={isSaving}
-                className="gap-1.5 bg-blue-600 hover:bg-blue-700"
+                className="h-8 border-red-200 bg-white text-red-700 hover:bg-red-50"
               >
-                <Save className="h-4 w-4" />
-                {isSaving ? 'Ukládám...' : 'Uložit'}
+                Zkusit znovu
               </Button>
             </div>
+          )}
+
+          {saveSuccessMsg && (
+            <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+              <Check className="h-5 w-5 shrink-0 text-emerald-600" />
+              <span>{saveSuccessMsg}</span>
+            </div>
+          )}
+
+          {/* KARTA 1: Základní informace */}
+          <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-slate-500" />
+                <CardTitle className="text-base font-semibold text-slate-900">
+                  Základní informace
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-[140px_1fr]">
+                {/* Logo a tlačítko změnit */}
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm ring-4 ring-blue-50">
+                    <CurrentLogoIcon className="h-12 w-12" />
+                  </div>
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsChoosingLogo((prev) => !prev)}
+                      className="h-8 gap-1.5 border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <Camera className="h-3.5 w-3.5 text-slate-500" />
+                      Změnit logo
+                    </Button>
+                  )}
+
+                  {/* Volba ikony loga při rozkliknutí */}
+                  {isChoosingLogo && canEdit && (
+                    <div className="w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-md">
+                      <div className="grid grid-cols-3 gap-2">
+                        {LOGO_PRESETS.map((item) => {
+                          const IconComp = item.icon;
+                          const isSelected = selectedLogo === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedLogo(item.id);
+                                setIsChoosingLogo(false);
+                              }}
+                              className={`flex flex-col items-center justify-center rounded-lg p-2 transition-all ${
+                                isSelected
+                                  ? 'bg-blue-50 text-blue-600 ring-2 ring-blue-500'
+                                  : 'text-slate-600 hover:bg-slate-100'
+                              }`}
+                              title={item.label}
+                            >
+                              <IconComp className="h-5 w-5" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Formulářová pole základních informací */}
+                <div className="space-y-4">
+                  {/* Název skupiny */}
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[150px_1fr] sm:items-center">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                      <Pencil className="h-4 w-4 text-slate-400" />
+                      <span>Název skupiny</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      disabled={!canEdit}
+                      maxLength={100}
+                      placeholder="Zadejte název skupiny"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                    />
+                  </div>
+
+                  {/* Popis skupiny */}
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[150px_1fr] sm:items-start">
+                    <label className="flex items-center gap-2 pt-2 text-sm font-medium text-slate-700">
+                      <FileText className="h-4 w-4 text-slate-400" />
+                      <span>Popis skupiny</span>
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      disabled={!canEdit}
+                      rows={2}
+                      maxLength={500}
+                      placeholder="Sdílený prostor pro plánování aktivit, záznamy a spolupráci členů skupiny."
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                    />
+                  </div>
+
+                  {/* Vlastník skupiny (read-only) */}
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[150px_1fr] sm:items-center">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                      <Users className="h-4 w-4 text-slate-400" />
+                      <span>Vlastník skupiny</span>
+                    </label>
+                    <div className="flex h-9.5 items-center rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 text-sm text-slate-700">
+                      {settings.owner ? (
+                        <span>
+                          {settings.owner.name} {settings.owner.surname}
+                          {settings.owner.email && (
+                            <span className="ml-2 text-xs text-slate-400">
+                              ({settings.owner.email})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">
+                          Skupina nemá určeného vlastníka
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pozvánkový kód */}
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[150px_1fr] sm:items-center">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                      <LinkIcon className="h-4 w-4 text-slate-400" />
+                      <span>Pozvánkový kód</span>
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        readOnly
+                        value={invitationCode}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 pr-11 font-mono text-sm tracking-wider text-slate-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCopyInvitationCode}
+                        className="absolute right-2 flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-900"
+                        title="Zkopírovat pozvánkový kód"
+                      >
+                        {copiedCode ? (
+                          <Check className="h-4 w-4 text-emerald-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* DVOJSLOUPEC 1: Kategorie & Role */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* KARTA 2: Kategorie skupiny */}
+            <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-slate-500" />
+                  <CardTitle className="text-base font-semibold text-slate-900">
+                    Kategorie skupiny
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-xs text-slate-500">
+                  Vyberte kategorii, která nejlépe vystihuje zaměření skupiny.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORY_PRESETS.map((cat) => {
+                    const isSelected = selectedCategory === cat.id;
+                    const IconComp = cat.icon;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        disabled={!canEdit}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-medium transition-all ${
+                          isSelected
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        {isSelected && <Check className="h-3.5 w-3.5 text-blue-600" />}
+                        {IconComp && !isSelected && (
+                          <IconComp className="h-3.5 w-3.5 text-slate-400" />
+                        )}
+                        <span>{cat.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* KARTA 3: Role a oprávnění */}
+            <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-slate-500" />
+                  <CardTitle className="text-base font-semibold text-slate-900">
+                    Role a oprávnění
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-xs text-slate-500">
+                  Nastavte role ve skupině a jejich oprávnění.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400">
+                        <th className="pb-2 font-medium">Role</th>
+                        <th className="pb-2 font-medium">Popis a hlavní oprávnění</th>
+                        <th className="pb-2 text-center font-medium">Může přiřazovat role</th>
+                        <th className="pb-2 text-center font-medium">Může odstraňovat členy</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      <tr>
+                        <td className="flex items-center gap-1 py-2.5 font-semibold text-slate-900">
+                          <Crown className="h-3.5 w-3.5 text-amber-500" />
+                          <span>Vlastník</span>
+                        </td>
+                        <td className="py-2.5 text-slate-500">
+                          Plná správa skupiny, všechny oprávnění.
+                        </td>
+                        <td className="py-2.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked
+                            disabled
+                            className="h-4 w-4 rounded accent-blue-600"
+                          />
+                        </td>
+                        <td className="py-2.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked
+                            disabled
+                            className="h-4 w-4 rounded accent-blue-600"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="flex items-center gap-1 py-2.5 font-semibold text-slate-900">
+                          <Shield className="h-3.5 w-3.5 text-blue-500" />
+                          <span>Administrátor</span>
+                        </td>
+                        <td className="py-2.5 text-slate-500">Správa členů a obsahu skupiny.</td>
+                        <td className="py-2.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked
+                            disabled
+                            className="h-4 w-4 rounded accent-blue-600"
+                          />
+                        </td>
+                        <td className="py-2.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked
+                            disabled
+                            className="h-4 w-4 rounded accent-blue-600"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="flex items-center gap-1 py-2.5 font-medium text-slate-800">
+                          <Users className="h-3.5 w-3.5 text-slate-400" />
+                          <span>Člen</span>
+                        </td>
+                        <td className="py-2.5 text-slate-500">
+                          Základní přístup k aktivitám a obsahu.
+                        </td>
+                        <td className="py-2.5 text-center">
+                          <input type="checkbox" disabled className="h-4 w-4 rounded" />
+                        </td>
+                        <td className="py-2.5 text-center">
+                          <input type="checkbox" disabled className="h-4 w-4 rounded" />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* DVOJSLOUPEC 2: Členové skupiny & Pozadí skupiny */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* KARTA 4: Členové skupiny */}
+            <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-slate-500" />
+                    <CardTitle className="text-base font-semibold text-slate-900">
+                      Členové skupiny
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="text-xs text-slate-500">
+                    Spravujte členy skupiny a jejich role.
+                  </CardDescription>
+                </div>
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyInvitationCode}
+                    className="h-8 gap-1.5 border-slate-200 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Pozvat člena
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isLoadingMembers ? (
+                  <div className="space-y-2 py-2">
+                    <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
+                    <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
+                  </div>
+                ) : membersError ? (
+                  <p className="text-xs text-red-600">{membersError}</p>
+                ) : members.length === 0 ? (
+                  <p className="text-xs text-slate-500">Ve skupině nejsou žádní další členové.</p>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {members.map((member) => {
+                      const isOwner = member.role === 'owner';
+                      const initials = `${member.name?.[0] ?? ''}${member.surname?.[0] ?? ''}`;
+                      return (
+                        <div
+                          key={member.id}
+                          className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
+                              {initials}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5 text-sm font-medium text-slate-900">
+                                <span>
+                                  {member.name} {member.surname}
+                                </span>
+                                {isOwner && <Crown className="h-3 w-3 text-amber-500" />}
+                              </div>
+                              <span className="text-xs text-slate-400 capitalize">
+                                {isOwner ? 'Vlastník' : 'Člen'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${
+                                isOwner
+                                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                  : 'border-slate-200 bg-slate-50 text-slate-600'
+                              }`}
+                            >
+                              {isOwner ? 'Vlastník' : 'Člen'}
+                            </Badge>
+                            {!isOwner && canEdit && (
+                              <button
+                                type="button"
+                                disabled
+                                className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-lg text-slate-300"
+                                title="Správa členů probíhá v detailu členů skupiny"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {totalMembers > members.length && (
+                  <p className="pt-2 text-center text-xs text-slate-400">
+                    Zobrazeno prvních {members.length} z celkem {totalMembers} členů skupiny.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* KARTA 5: Pozadí skupiny */}
+            <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-slate-500" />
+                  <CardTitle className="text-base font-semibold text-slate-900">
+                    Pozadí skupiny
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-xs text-slate-500">
+                  Vyberte vizuální motiv, který se bude zobrazovat v rámci skupiny.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-5 gap-2">
+                  {BACKGROUND_THEMES.map((theme) => {
+                    const isSelected = selectedColor === theme.id;
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        disabled={!canEdit}
+                        onClick={() => setSelectedColor(theme.id)}
+                        className={`relative h-14 w-full rounded-xl transition-all ${theme.previewClass} ${
+                          isSelected
+                            ? 'ring-2 ring-blue-500 ring-offset-2'
+                            : 'opacity-80 hover:opacity-100'
+                        } disabled:cursor-not-allowed`}
+                        title={theme.name}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-sm">
+                            <Check className="h-2.5 w-2.5 stroke-[3] text-blue-600" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsChoosingBackground((prev) => !prev)}
+                    className="h-8 gap-1.5 border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <ImageIcon className="h-3.5 w-3.5 text-slate-500" />
+                    Změnit pozadí
+                  </Button>
+                )}
+
+                {isChoosingBackground && canEdit && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs text-slate-500">
+                    Kliknutím na kteroukoli miniaturu výše vyberete barevný vizuální motiv pro tuto
+                    skupinu.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* SPODNÍ AKČNÍ LIŠTA */}
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResetChanges}
+              disabled={!hasUnsavedChanges || isSaving}
+              className="h-10 rounded-xl border-slate-200 px-5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" />
+              Zrušit
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void handleSaveChanges()}
+              disabled={!hasUnsavedChanges || isSaving}
+              className="h-10 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+            >
+              <Save className="mr-1.5 h-4 w-4" />
+              {isSaving ? 'Ukládám...' : 'Uložit'}
+            </Button>
           </div>
         </div>
-      )}
+      </main>
     </div>
   );
 }
@@ -742,15 +804,15 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
     return (
       <div className="mx-auto max-w-5xl space-y-6 p-6">
         <div className="flex items-center gap-3">
-          <div className="bg-muted h-12 w-12 animate-pulse rounded-2xl" />
+          <div className="h-12 w-12 animate-pulse rounded-2xl bg-slate-200" />
           <div className="space-y-2">
-            <div className="bg-muted h-7 w-52 animate-pulse rounded-md" />
-            <div className="bg-muted h-4 w-36 animate-pulse rounded-md" />
+            <div className="h-7 w-52 animate-pulse rounded-md bg-slate-200" />
+            <div className="h-4 w-36 animate-pulse rounded-md bg-slate-200" />
           </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="bg-card border-border/80 h-52 animate-pulse rounded-2xl border" />
-          <div className="bg-card border-border/80 h-52 animate-pulse rounded-2xl border" />
+          <div className="h-52 animate-pulse rounded-2xl border border-slate-200 bg-white" />
+          <div className="h-52 animate-pulse rounded-2xl border border-slate-200 bg-white" />
         </div>
       </div>
     );
@@ -763,17 +825,17 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
   ) {
     return (
       <div className="mx-auto max-w-2xl p-6 pt-16 text-center">
-        <div className="bg-destructive/10 text-destructive mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600">
           <ShieldAlert className="h-7 w-7" />
         </div>
-        <h1 className="text-foreground text-2xl font-bold">Přístup k nastavení skupiny odepřen</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
+        <h1 className="text-2xl font-bold text-slate-900">Přístup k nastavení skupiny odepřen</h1>
+        <p className="mt-2 text-sm text-slate-600">
           K zobrazení nastavení této skupiny nemáte dostatečná oprávnění. Stránka je přístupná pouze
           členům skupiny a administrátorům.
         </p>
         <div className="mt-6 flex justify-center">
           <Link href="/">
-            <Button variant="outline">
+            <Button variant="outline" className="border-slate-200">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Zpět na přehled
             </Button>
@@ -787,14 +849,14 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
   if (error || !settings) {
     return (
       <div className="mx-auto max-w-2xl p-6 pt-16 text-center">
-        <div className="bg-destructive/10 text-destructive mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-foreground text-2xl font-bold">Skupinu se nepodařilo načíst</h1>
-        <p className="text-muted-foreground mt-2 text-sm">{error ?? 'Skupina nebyla nalezena.'}</p>
+        <h1 className="text-2xl font-bold text-slate-900">Skupinu se nepodařilo načíst</h1>
+        <p className="mt-2 text-sm text-slate-600">{error ?? 'Skupina nebyla nalezena.'}</p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/">
-            <Button variant="outline">
+            <Button variant="outline" className="border-slate-200">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Zpět na přehled
             </Button>

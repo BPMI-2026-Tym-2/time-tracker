@@ -50,6 +50,7 @@ const groupSettingsResponse = z.object({
   visibility: z.enum(['public', 'private']).default('private'),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
+  invitationCode: z.string().optional(),
   owner: z
     .object({
       id: z.string().min(1),
