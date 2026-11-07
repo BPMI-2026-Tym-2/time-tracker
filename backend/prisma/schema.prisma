@@ -50,8 +50,9 @@ model Group {
   category    String?       @default("Vývoj")
   color       String?       @default("blue")
   logo        String?       @default("rocket")
-  visibility  String?       @default("private")
-  createdAt   DateTime      @default(now())
+  visibility     String?       @default("private")
+  invitationCode String?       @default("A7F3D9")
+  createdAt      DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   members     GroupMember[]
 

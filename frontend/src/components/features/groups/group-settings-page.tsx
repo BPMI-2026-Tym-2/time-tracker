@@ -126,15 +126,24 @@ function GroupSettingsForm({
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [membersError, setMembersError] = useState<string | null>(null);
 
+  const [invitationCode, setInvitationCode] = useState(
+    settings.invitationCode ?? settings.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
+  );
   const [copiedCode, setCopiedCode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [showDeleteNotice, setShowDeleteNotice] = useState(false);
 
-  // Pozvánkový kód z API nebo deterministicky odvozený podle mockupu
-  const invitationCode =
-    settings.invitationCode ?? settings.id.replace(/-/g, '').slice(0, 6).toUpperCase();
+  function handleGenerateInvitationCode() {
+    if (!canEdit) return;
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let newCode = '';
+    for (let i = 0; i < 6; i++) {
+      newCode += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setInvitationCode(newCode);
+  }
 
   // Načtení skutečných členů ze serverového endpointu
   useEffect(() => {
@@ -172,6 +181,12 @@ function GroupSettingsForm({
   if (selectedLogo !== (baseline.logo ?? 'users')) diffPayload.logo = selectedLogo;
   if (selectedCategory !== (baseline.category ?? 'Obecná')) diffPayload.category = selectedCategory;
   if (selectedColor !== (baseline.color ?? 'blue-sky')) diffPayload.color = selectedColor;
+  if (
+    invitationCode !==
+    (baseline.invitationCode ?? baseline.id.replace(/-/g, '').slice(0, 6).toUpperCase())
+  ) {
+    diffPayload.invitationCode = invitationCode;
+  }
 
   const hasUnsavedChanges = Object.keys(diffPayload).length > 0;
 
@@ -186,6 +201,9 @@ function GroupSettingsForm({
     setSelectedLogo(baseline.logo ?? 'users');
     setSelectedCategory(baseline.category ?? 'Obecná');
     setSelectedColor(baseline.color ?? 'blue-sky');
+    setInvitationCode(
+      baseline.invitationCode ?? baseline.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
+    );
     setSaveError(null);
     setSaveSuccessMsg(null);
     setIsChoosingLogo(false);
@@ -217,6 +235,9 @@ function GroupSettingsForm({
         setSelectedLogo(updated.logo ?? 'users');
         setSelectedCategory(updated.category ?? 'Obecná');
         setSelectedColor(updated.color ?? 'blue-sky');
+        setInvitationCode(
+          updated.invitationCode ?? updated.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
+        );
 
         setSaveSuccessMsg('Nastavení skupiny bylo úspěšně uloženo.');
         setTimeout(() => setSaveSuccessMsg(null), 4000);
@@ -238,8 +259,8 @@ function GroupSettingsForm({
 
   // Jméno vlastníka pro zobrazení
   const ownerDisplayName = settings.owner
-    ? `${settings.owner.name} ${settings.owner.surname}`
-    : 'Georgii Skvortcov';
+    ? `${settings.owner.name} ${settings.owner.surname}`.trim()
+    : '';
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
@@ -413,25 +434,38 @@ function GroupSettingsForm({
                       <LinkIcon className="h-3.5 w-3.5 text-slate-400" />
                       <span>Pozvánkový kód</span>
                     </label>
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        readOnly
-                        value={invitationCode}
-                        className="w-full rounded-lg border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 pr-9 font-mono text-xs tracking-wider text-slate-800"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCopyInvitationCode}
-                        className="absolute right-1.5 flex h-6 w-6 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/70 hover:text-slate-900"
-                        title="Zkopírovat pozvánkový kód"
-                      >
-                        {copiedCode ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-600" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                      </button>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          readOnly
+                          value={invitationCode}
+                          className="w-full rounded-lg border border-slate-200/80 bg-slate-50/60 px-3 py-1.5 pr-9 font-mono text-xs tracking-wider text-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCopyInvitationCode}
+                          className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/70 hover:text-slate-900"
+                          title="Zkopírovat pozvánkový kód"
+                        >
+                          {copiedCode ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={handleGenerateInvitationCode}
+                          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 shadow-xs transition-colors hover:bg-slate-50 hover:text-blue-600"
+                          title="Vygenerovat nový pozvánkový kód skupiny"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
+                          <span>Vygenerovat kód</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -670,7 +704,7 @@ function GroupSettingsForm({
                             </div>
                             <div>
                               <div className="flex items-center gap-1 text-xs font-medium text-slate-900">
-                                <span>Georgii Skvortcov</span>
+                                <span>{ownerDisplayName || 'Vlastník skupiny'}</span>
                                 <Crown className="h-2.5 w-2.5 text-amber-500" />
                               </div>
                               <span className="text-[10px] text-slate-400">Vlastník</span>
@@ -885,6 +919,7 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
             category: body.category !== undefined ? body.category : MOCK_PREVIEW_SETTINGS.category,
             logo: body.logo !== undefined ? body.logo : MOCK_PREVIEW_SETTINGS.logo,
             color: body.color !== undefined ? body.color : MOCK_PREVIEW_SETTINGS.color,
+            invitationCode: body.invitationCode ?? MOCK_PREVIEW_SETTINGS.invitationCode,
           };
         }}
       />

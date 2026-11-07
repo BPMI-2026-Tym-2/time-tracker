@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';

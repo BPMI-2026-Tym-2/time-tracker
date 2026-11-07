@@ -76,6 +76,7 @@ const updateSettingsBody = z.object({
   color: z.string().max(30).nullable().optional(),
   logo: z.string().max(30).nullable().optional(),
   visibility: z.enum(['public', 'private']).optional(),
+  invitationCode: z.string().max(20).nullable().optional(),
 });
 
 export const groupSchema = {

@@ -35,9 +35,20 @@ app.use(async (req, _res, next) => {
         id: session.user.id,
         role: role || 'user',
       };
+    } else if (process.env.NODE_ENV === 'development' && !process.env.CI) {
+      // V lokálním dev režimu (pro pohodlné zkoušení v prohlížeči)
+      req.user = {
+        id: 'user-jan-id',
+        role: 'user',
+      };
     }
   } catch {
-    // Při chybě zůstává req.user nedefinovaný
+    if (process.env.NODE_ENV === 'development' && !process.env.CI) {
+      req.user = {
+        id: 'user-jan-id',
+        role: 'user',
+      };
+    }
   }
   next();
 });

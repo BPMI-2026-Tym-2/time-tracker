@@ -28,6 +28,7 @@ const groupSettingsSelect = {
   color: true,
   logo: true,
   visibility: true,
+  invitationCode: true,
   createdAt: true,
   updatedAt: true,
   members: {

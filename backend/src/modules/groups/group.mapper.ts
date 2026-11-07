@@ -61,7 +61,7 @@ const toSettingsResponse = (
     visibility: (group.visibility as 'public' | 'private') ?? 'private',
     createdAt: group.createdAt,
     updatedAt: group.updatedAt,
-    invitationCode: group.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
+    invitationCode: group.invitationCode ?? group.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
     owner,
     membersCount: group._count.members,
     currentUserRole,
