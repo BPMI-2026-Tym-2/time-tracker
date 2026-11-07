@@ -5,6 +5,8 @@ import { prisma } from '../../db/prisma.js';
 const groupSelect = {
   id: true,
   name: true,
+  description: true,
+  createdAt: true,
 } satisfies Prisma.GroupSelect;
 
 const groupMemberSelect = {
@@ -35,6 +37,7 @@ export type GroupDeletionAuthorization = (
 ) => void | Promise<void>;
 
 export type GroupRepository = {
+  createGroup: (data: Prisma.GroupCreateInput) => Promise<GroupRecord>;
   deleteGroup: (
     groupId: string,
     userId: string,
@@ -116,11 +119,19 @@ async function deleteGroup(
   });
 }
 
+function createGroup(data: Prisma.GroupCreateInput): Promise<GroupRecord> {
+  return prisma.group.create({
+    data,
+    select: groupSelect,
+  });
+}
+
 const groupRepository: GroupRepository = {
   deleteGroup,
   findById,
   findMembership,
   findMembers,
+  createGroup,
 };
 
 export default groupRepository;

@@ -11,6 +11,7 @@ groupRouter.delete(
   asyncHandler(groupController.deleteGroup),
 );
 
+groupRouter.post('/', asyncHandler(groupController.createGroup));
 groupRouter.get('/:groupId/members', asyncHandler(groupController.listMembers));
 
 export default groupRouter;
