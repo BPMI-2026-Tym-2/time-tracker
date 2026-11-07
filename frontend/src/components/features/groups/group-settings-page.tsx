@@ -838,8 +838,58 @@ function GroupSettingsForm({
   );
 }
 
+const MOCK_PREVIEW_SETTINGS: GroupSettingsResponse = {
+  id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+  name: 'Skupina 1',
+  description: 'Sdílený prostor pro plánování aktivit, záznamy a spolupráci členů skupiny.',
+  category: 'Obecná',
+  color: 'blue-sky',
+  logo: 'users',
+  visibility: 'private',
+  invitationCode: 'A7F3D9',
+  createdAt: new Date('2026-01-01'),
+  updatedAt: new Date('2026-01-01'),
+  owner: {
+    id: 'user-georgii-id',
+    name: 'Georgii',
+    surname: 'Skvortcov',
+    email: 'georgii@unicorn.cz',
+  },
+  membersCount: 3,
+  currentUserRole: 'owner',
+  permissions: {
+    canEdit: true,
+    canDelete: true,
+    canManageMembers: true,
+    canLeaveGroup: false,
+  },
+};
+
 export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
+  const isDirectPreview = groupId === 'preview';
+  const [showPreview, setShowPreview] = useState(isDirectPreview);
   const { settings, isLoading, error, refetch, updateSettings } = useGroupSettings(groupId);
+
+  if (showPreview) {
+    return (
+      <GroupSettingsForm
+        key="preview"
+        settings={MOCK_PREVIEW_SETTINGS}
+        updateSettings={async (body) => {
+          return {
+            ...MOCK_PREVIEW_SETTINGS,
+            ...body,
+            name: body.name ?? MOCK_PREVIEW_SETTINGS.name,
+            description:
+              body.description !== undefined ? body.description : MOCK_PREVIEW_SETTINGS.description,
+            category: body.category !== undefined ? body.category : MOCK_PREVIEW_SETTINGS.category,
+            logo: body.logo !== undefined ? body.logo : MOCK_PREVIEW_SETTINGS.logo,
+            color: body.color !== undefined ? body.color : MOCK_PREVIEW_SETTINGS.color,
+          };
+        }}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -886,25 +936,40 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
     );
   }
 
-  // A3: Chyba načítání (404 nebo chyba spojení)
+  // A3: Chyba načítání (404, chyba spojení nebo nepřihlášený uživatel)
   if (error || !settings) {
+    const isFetchError = error?.includes('fetch') || error?.includes('Failed');
+    const isAuthError = error?.includes('authenticated') || error?.includes('401');
+
     return (
       <div className="mx-auto max-w-2xl p-6 pt-16 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600">
           <AlertCircle className="h-7 w-7" />
         </div>
         <h1 className="text-2xl font-bold text-slate-900">Skupinu se nepodařilo načíst</h1>
-        <p className="mt-2 text-sm text-slate-600">{error ?? 'Skupina nebyla nalezena.'}</p>
-        <div className="mt-6 flex justify-center gap-3">
+        <p className="mt-2 text-sm text-slate-600">
+          {isFetchError
+            ? 'Backend API na portu 3001 není dostupné (Failed to fetch). Pro zobrazení grafického návrhu můžete přepnout do režimu náhledu.'
+            : isAuthError
+              ? 'Pro přístup k serverovým datům skupiny je vyžadováno přihlášení. Můžete si ale prohlédnout stránku v režimu náhledu.'
+              : (error ?? 'Skupina nebyla nalezena.')}
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link href="/">
             <Button variant="outline" className="border-slate-200">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Zpět na přehled
             </Button>
           </Link>
-          <Button onClick={() => void refetch()} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => void refetch()} variant="outline" className="border-slate-200">
             <RefreshCw className="mr-2 h-4 w-4" />
             Zkusit znovu
+          </Button>
+          <Button
+            onClick={() => setShowPreview(true)}
+            className="bg-blue-600 font-medium text-white shadow-xs hover:bg-blue-700"
+          >
+            Zobrazit náhled designu
           </Button>
         </div>
       </div>
