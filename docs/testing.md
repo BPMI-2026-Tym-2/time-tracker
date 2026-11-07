@@ -47,3 +47,14 @@ node --import tsx --test tests/group-members.test.ts
 
 Pokud test vyžaduje MongoDB, musí to být v jeho názvu nebo dokumentaci
 zřejmé. Kontroly lint, formátování, typecheck a build databázi nepotřebují.
+
+## Test registrace
+
+Test kontrol registrace.
+Kontrola (e-mail už je registrovaný) vyžaduje běžící MongoDB replica set,
+databáze se bere z `DATABASE_URL` (jinak z `backend/.env`):
+
+```sh
+npm run db:up
+npm run test:registration
+```

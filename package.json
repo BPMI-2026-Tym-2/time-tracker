@@ -29,6 +29,7 @@
     "format:check": "prettier --check .",
     "typecheck": "npm run generate && npm run typecheck --workspaces --if-present",
     "verify": "npm run lint && npm run format:check && npm run typecheck && npm run build",
+    "test:registration": "node --env-file-if-exists=backend/.env --import tsx --test tests/registration.test.ts",
     "prepare": "husky",
     "postinstall": "npm run generate"
   },
