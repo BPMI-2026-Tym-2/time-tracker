@@ -5,10 +5,10 @@ import type { GroupMemberResponse } from '@time-tracker/shared';
 import { Button } from '@/components/ui/button';
 
 type SettingsDialogsProps = {
-  groupName: string;
-  showDeleteGroup: boolean;
-  onCancelDeleteGroup: () => void;
-  onConfirmDeleteGroup: () => void;
+  groupName?: string;
+  showDeleteGroup?: boolean;
+  onCancelDeleteGroup?: () => void;
+  onConfirmDeleteGroup?: () => void;
   memberToDelete: GroupMemberResponse | null;
   onCancelDeleteMember: () => void;
   onConfirmDeleteMember: (member: GroupMemberResponse) => void;
