@@ -6,10 +6,11 @@ import type {
   GroupSettingsResponse,
   UpdateGroupSettingsBody,
 } from '@time-tracker/shared';
-import { AlertCircle, Check } from 'lucide-react';
+import { AlertCircle, Check, Trash2 } from 'lucide-react';
 import { useGroupSettings } from '@/hooks/use-group-settings';
 import { fetchGroupMembers } from '@/lib/api/groups';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
 import { BasicInfoCard } from './settings/basic-info-card';
 import { CategoriesCard } from './settings/categories-card';
 import { RolesCard } from './settings/roles-card';
@@ -68,6 +69,7 @@ function GroupSettingsForm({
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
   // Dialogy a modální stavy
+  const [showDeleteNotice, setShowDeleteNotice] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<GroupMemberResponse | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isGroupDeleted, setIsGroupDeleted] = useState(false);
@@ -281,7 +283,18 @@ function GroupSettingsForm({
 
           {/* Spodní akční lišta */}
           <div className="flex items-center justify-between pt-3">
-            <div>
+            <div className="flex items-center gap-2.5">
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteNotice(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Odstranit skupinu</span>
+                </button>
+              )}
+
               <OdstraneniSkupiny
                 groupId={settings.id}
                 groupName={name}
@@ -310,8 +323,20 @@ function GroupSettingsForm({
             </div>
           </div>
 
-          {/* Dialogy pro alternativní toky (A3 - Smazání člena, Pozvánka) */}
+          {/* Dialogy pro alternativní toky (A3 - Smazání člena, A4 - Smazání skupiny, Pozvánka) */}
           <SettingsDialogs
+            groupName={name}
+            showDeleteGroup={showDeleteNotice}
+            onCancelDeleteGroup={() => setShowDeleteNotice(false)}
+            onConfirmDeleteGroup={() => {
+              setShowDeleteNotice(false);
+              setIsGroupDeleted(true);
+              toast.add({
+                type: 'success',
+                title: 'Skupina byla úspěšně odstraněna.',
+                description: `Skupina "${name}" byla smazána.`,
+              });
+            }}
             memberToDelete={memberToDelete}
             onCancelDeleteMember={() => setMemberToDelete(null)}
             onConfirmDeleteMember={(m) => {
