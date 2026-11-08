@@ -1,11 +1,12 @@
 import type { Request, Response } from 'express';
-import { AppError } from '../../shared/errors/app-error.js';
 import { sendData } from '../../shared/http/response.js';
+import { AppError } from '../../shared/errors/app-error.js';
 import groupService from './group.service.js';
 import { groupSchema } from '@time-tracker/shared';
 
 export type GroupController = {
   listMembers: (request: Request, response: Response) => Promise<void>;
+  createGroup: (request: Request, response: Response) => Promise<void>;
 };
 
 async function listMembers(request: Request, response: Response) {
@@ -20,9 +21,20 @@ async function listMembers(request: Request, response: Response) {
   sendData(response, groupSchema.listMembersResponse.parse(result));
 }
 
+async function createGroup(request: Request, response: Response) {
+  if (!request.user) {
+    throw new AppError('Not authenticated', 401);
+  }
+
+  const input = groupSchema.createGroupRequest.parse(request.body);
+  const group = await groupService.createGroup(input);
+
+  sendData(response, groupSchema.createGroupResponse.parse(group), 201);
+}
+
 const groupController: GroupController = {
   listMembers,
-  // dalsi metody kontroleru
+  createGroup,
 };
 
 export default groupController;

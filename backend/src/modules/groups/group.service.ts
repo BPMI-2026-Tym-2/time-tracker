@@ -1,4 +1,9 @@
-import type { ListGroupMembersQuery, ListGroupMembersResponse } from '@time-tracker/shared';
+import type {
+  CreateGroupRequest,
+  CreateGroupResponse,
+  ListGroupMembersQuery,
+  ListGroupMembersResponse,
+} from '@time-tracker/shared';
 import type { RequestingUser } from '../../shared/auth/types.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import groupRepository from './group.repository.js';
@@ -10,6 +15,7 @@ export type GroupService = {
     groupId: string,
     query: ListGroupMembersQuery,
   ) => Promise<ListGroupMembersResponse>;
+  createGroup: (input: CreateGroupRequest) => Promise<CreateGroupResponse>;
 };
 
 // Seznam členů skupiny smí vidět člen, zakladatel skupiny a super admin.
@@ -48,8 +54,18 @@ async function listMembers(
   };
 }
 
+async function createGroup(input: CreateGroupRequest): Promise<CreateGroupResponse> {
+  const group = await groupRepository.createGroup({
+    name: input.name,
+    description: input.description,
+  });
+
+  return groupMapper.toGroupResponse(group);
+}
+
 const groupService: GroupService = {
   listMembers,
+  createGroup,
 };
 
 export default groupService;

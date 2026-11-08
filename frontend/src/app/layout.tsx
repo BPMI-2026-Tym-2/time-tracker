@@ -1,25 +1,16 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Figtree } from 'next/font/google';
+import { Figtree, Roboto, Roboto_Slab } from 'next/font/google';
 import type { ReactNode } from 'react';
 import './globals.css';
 import { cn } from '@/lib/utils';
+import { getPageMetadata } from '@/lib/page-metadata';
+import { QueryProvider } from '@/components/providers/query-provider';
 
-const figtree = Figtree({ subsets: ['latin'], variable: '--font-sans' });
+const roboto = Roboto({ subsets: ['latin'], variable: '--font-roboto-font' });
+const robotoSlab = Roboto_Slab({ subsets: ['latin'], variable: '--font-roboto-slab-font' });
+const figtree = Figtree({ subsets: ['latin'], variable: '--font-figtree-font' });
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
-
-export const metadata: Metadata = {
-  title: 'Time Tracker',
-  description: 'Track your time and tasks efficiently with Time Tracker.',
-};
+export const metadata: Metadata = getPageMetadata('/');
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -28,13 +19,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={cn(
         'h-full',
         'antialiased',
-        geistSans.variable,
-        geistMono.variable,
-        'font-sans',
+        roboto.variable,
+        robotoSlab.variable,
         figtree.variable,
       )}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <QueryProvider>{children}</QueryProvider>
+      </body>
     </html>
   );
 }
