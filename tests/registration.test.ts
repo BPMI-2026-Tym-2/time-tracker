@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, describe, test } from 'node:test';
 import { prisma } from '../backend/src/db/prisma.js';
+import { registrationMessages } from '../backend/src/modules/auth/auth.messages.js';
 import {
   checkRegistration,
-  registrationMessages,
   validateRegistration,
-} from '../backend/src/modules/auth/registration.js';
+} from '../backend/src/modules/auth/auth.service.js';
 
 const tereza = {
   name: 'Tereza',
