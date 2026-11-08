@@ -10,7 +10,12 @@ type OdstraneniSkupinyProps = {
   onDeleted?: () => void; //callback zavolaný po úspěšném odstraněním, třeba k přesměrování
 };
 
-export default function OdstraneniSkupiny({ groupName, isOwner }: OdstraneniSkupinyProps) {
+export default function OdstraneniSkupiny({
+  groupId,
+  groupName,
+  isOwner,
+  onDeleted,
+}: OdstraneniSkupinyProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   function openDialog() {
@@ -21,19 +26,18 @@ export default function OdstraneniSkupiny({ groupName, isOwner }: OdstraneniSkup
   }
 
   async function handleDelete() {
-    const simulateSuccess = false; //prozatimní simulace odpovědi backendu, později smazat
-
     try {
-      if (!simulateSuccess) {
-        throw new Error('Simulated deletion failure');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/groups/${encodeURIComponent(groupId)}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error('Group deletion failed');
       }
-
-      closeDialog();
-
-      toast.add({
-        type: 'success',
-        title: 'Skupina byla úspěšně odstraněna.',
-      });
     } catch {
       closeDialog();
 
@@ -42,7 +46,17 @@ export default function OdstraneniSkupiny({ groupName, isOwner }: OdstraneniSkup
         title: 'Odstranění skupiny se nezdařilo.',
         description: 'Zkuste to prosím znovu.',
       });
+
+      return;
     }
+
+    closeDialog();
+
+    toast.add({
+      type: 'success',
+      title: 'Skupina byla úspěšně odstraněna.',
+    });
+    onDeleted?.();
   }
 
   if (!isOwner) {
