@@ -3,6 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { env, requiredEnv } from '../../config/env.js';
 import { prisma } from '../../db/prisma.js';
 import { oneTap } from 'better-auth/plugins';
+import { registrationHooks } from './auth.hooks.js';
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -12,6 +13,7 @@ export const auth = betterAuth({
   basePath: '/auth',
   secret: requiredEnv('BETTER_AUTH_SECRET'),
   trustedOrigins: [env.corsOrigin],
+  hooks: registrationHooks,
   plugins: [
     oneTap({
       clientId: requiredEnv('GOOGLE_CLIENT_ID'),
