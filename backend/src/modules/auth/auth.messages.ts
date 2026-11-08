@@ -1,7 +1,7 @@
 export const registrationMessages = {
   emptyFields: (fields: string[]) => `Pole ${fields.join(', ')} nesmí být prázdné`,
   invalidEmail: 'Zadaný email je v nesprávném tvaru',
-  emailTaken: 'Uživatel s tímto e-mailem je již registrován',
+  emailTaken: 'Účet s tímto emailem již existuje',
 } as const;
 
 export const registrationFieldLabels = {
