@@ -65,6 +65,44 @@ Aktuálně jsou implementované:
 Požadavek se validuje přes schema ze shared balíčku, service zavolá
 repository, mapper připraví API response a response se ověří response schema.
 
+## Group modul – Nastavení a správa skupiny
+
+Modul implementuje use case **Zobrazit nastavení skupiny + úprava skupiny** podle BUC specifikace:
+
+- `GET /groups/:groupId/settings` – načtení nastavení skupiny, oprávnění přihlášeného uživatele a citlivých informací dle role.
+- `PATCH /groups/:groupId/settings` – parciální aktualizace názvu, popisu, kategorie, barevného tématu a loga.
+
+### Tok zpracování požadavku
+
+```text
+HTTP Request
+    │
+    ▼
+groupRouter (backend/src/modules/groups/group.routes.ts)
+    │
+    ▼
+groupController (validace vstupních Zod schémat: getSettingsParams, updateSettingsBody)
+    │
+    ▼
+groupService (ověření Better Auth session, kontrola členství a RBAC oprávnění)
+    │
+    ▼
+groupRepository (dotaz do MongoDB přes Prisma Client: findGroupSettingsById, updateGroupSettings)
+    │
+    ▼
+groupMapper (toGroupSettingsResponse: sanitizace dat podle role - např. skrytí e-mailu pro běžné členy)
+    │
+    ▼
+HTTP Response (validováno přes Zod groupSettingsResponse)
+```
+
+### Bezpečnost a řízení přístupu (RBAC)
+
+- Autentizace je navázána na podepsané Better Auth session cookies (`auth.api.getSession`).
+- Podvržené hlavičky (např. `x-user-id`) jsou ignorovány.
+- Uživatel, který není členem dané skupiny, obdrží `403 Forbidden` (aniž by se prozradily citlivé údaje).
+- Pouze uživatel s rolí `owner` (vlastník skupiny) nebo globální `superAdmin` může volat `PATCH` a spravovat pozvánkový kód či vidět e-mail vlastníka. Běžný člen (`member`) má nastavení v režimu read-only.
+
 ## Sdílená backendová infrastruktura
 
 `backend/src/shared` obsahuje obecné backendové části, například:

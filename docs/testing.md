@@ -38,6 +38,25 @@ npm run db:up
 node --import tsx --test tests/group-members.test.ts
 ```
 
+## Test nastavení skupiny a zabezpečení
+
+HTTP testy pro use case _Zobrazit nastavení skupiny + úprava skupiny_ ověřují kompletní bezpečnostní a autorizační pravidla:
+
+- CORS preflight a povolení metody `PATCH`,
+- Odmítnutí nepodepsaných cookies a podvržených hlaviček (`x-user-*`) kódem `401 Unauthorized`,
+- Odepření přístupu pro nečlena skupiny (`403 Forbidden`),
+- Read-only režim pro běžného člena (skrytí e-mailu zakladatele, zákaz `PATCH`),
+- Úpravu nastavení vlastníkem a superAdminem,
+- Podporu skupin bez vlastníka (`owner: null`).
+
+Spuštění testů:
+
+```sh
+npm test
+# nebo explicitně:
+node --import tsx --test tests/group-settings.test.ts
+```
+
 ## Kam přidávat testy
 
 - databázové testy patří do `tests/`,

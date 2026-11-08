@@ -42,7 +42,15 @@ API response není přímo Prisma model. Převod zajišťuje
 
 ### Skupiny
 
-- `Group` – `id`, `name`, `createdAt`, `updatedAt`.
+- `Group` – reprezentuje skupinu a její nastavení:
+  - `id` (String / UUID),
+  - `name` (String, název skupiny),
+  - volitelný `description` (String, popisek),
+  - volitelná `category` (String, kategorie pro organizaci skupin),
+  - volitelná `color` (String, barevné téma pro vizuál skupiny v hex formátu),
+  - volitelné `logo` (String, identifikátor ikony/loga),
+  - `visibility` (String, výchozí `"private"`, volitelně `"public"`),
+  - `createdAt`, `updatedAt`.
 - `GroupMember` – členství uživatele ve skupině: `groupId`, `userId`,
   `role` (`"member"` nebo `"owner"` = zakladatel) a `joinedAt`. Dvojice
   `groupId` + `userId` je unikátní.
