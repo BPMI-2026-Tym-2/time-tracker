@@ -30,6 +30,21 @@ const toMemberResponse = (
   };
 };
 
+const normalizeCategory = (category: string | null | undefined): string => {
+  if (!category || category === 'Vývoj') return 'Obecná';
+  return category;
+};
+
+const normalizeColor = (color: string | null | undefined): string => {
+  if (!color || color === 'blue') return 'blue-sky';
+  return color;
+};
+
+const normalizeLogo = (logo: string | null | undefined): string => {
+  if (!logo) return 'users';
+  return logo;
+};
+
 const toSettingsResponse = (
   group: GroupSettingsRecord,
   currentUserRole: GroupRole | null,
@@ -54,10 +69,10 @@ const toSettingsResponse = (
   return {
     id: group.id,
     name: group.name,
-    description: group.description ?? 'Bez popisku',
-    category: group.category ?? 'Vývoj',
-    color: group.color ?? 'blue',
-    logo: group.logo ?? 'rocket',
+    description: group.description ?? null,
+    category: normalizeCategory(group.category),
+    color: normalizeColor(group.color),
+    logo: normalizeLogo(group.logo),
     visibility: (group.visibility as 'public' | 'private') ?? 'private',
     createdAt: group.createdAt,
     updatedAt: group.updatedAt,

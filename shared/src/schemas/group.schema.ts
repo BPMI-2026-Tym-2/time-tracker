@@ -1,6 +1,25 @@
 import { z } from 'zod';
 
+export const GROUP_CATEGORIES = ['Obecná', 'Studium', 'Projekt', 'Volný čas', 'Ostatní'] as const;
+
+export const GROUP_THEMES = ['blue-sky', 'sunset', 'forest', 'navy', 'abstract'] as const;
+
+export const GROUP_LOGOS = [
+  'users',
+  'rocket',
+  'code',
+  'flame',
+  'zap',
+  'target',
+  'globe',
+  'star',
+  'folder',
+] as const;
+
 const role = z.enum(['member', 'admin', 'owner']);
+const categoryPreset = z.enum(GROUP_CATEGORIES);
+const themePreset = z.enum(GROUP_THEMES);
+const logoPreset = z.enum(GROUP_LOGOS);
 
 const listMembersParams = z.object({
   groupId: z.uuid(),
@@ -70,17 +89,20 @@ const groupSettingsResponse = z.object({
 });
 
 const updateSettingsBody = z.object({
-  name: z.string().min(1).max(100).optional(),
-  description: z.string().max(500).nullable().optional(),
-  category: z.string().max(50).nullable().optional(),
-  color: z.string().max(30).nullable().optional(),
-  logo: z.string().max(30).nullable().optional(),
+  name: z.string().trim().min(1, 'Název skupiny nesmí být prázdný').max(100).optional(),
+  description: z.string().trim().max(500).nullable().optional(),
+  category: categoryPreset.or(z.string().trim().max(50)).nullable().optional(),
+  color: themePreset.or(z.string().trim().max(30)).nullable().optional(),
+  logo: logoPreset.or(z.string().trim().max(30)).nullable().optional(),
   visibility: z.enum(['public', 'private']).optional(),
-  invitationCode: z.string().max(20).nullable().optional(),
+  invitationCode: z.string().trim().max(20).nullable().optional(),
 });
 
 export const groupSchema = {
   role,
+  categoryPreset,
+  themePreset,
+  logoPreset,
   listMembersParams,
   listMembersQuery,
   memberResponse,
@@ -91,6 +113,9 @@ export const groupSchema = {
 };
 
 export type GroupRole = z.infer<typeof role>;
+export type GroupCategory = z.infer<typeof categoryPreset>;
+export type GroupTheme = z.infer<typeof themePreset>;
+export type GroupLogo = z.infer<typeof logoPreset>;
 export type ListGroupMembersParams = z.infer<typeof listMembersParams>;
 export type ListGroupMembersQuery = z.infer<typeof listMembersQuery>;
 export type GroupMemberResponse = z.infer<typeof memberResponse>;

@@ -43,14 +43,14 @@ function GroupSettingsForm({
   // Stav formuláře
   const [baseline, setBaseline] = useState<GroupSettingsResponse>(settings);
   const [name, setName] = useState(settings.name);
-  const [description, setDescription] = useState(
-    settings.description && settings.description !== 'Bez popisku'
-      ? settings.description
-      : 'Sdílený prostor pro plánování aktivit, záznamy a spolupráci členů skupiny.',
-  );
+  const [description, setDescription] = useState(settings.description ?? '');
   const [selectedLogo, setSelectedLogo] = useState(settings.logo ?? 'users');
-  const [selectedCategory, setSelectedCategory] = useState(settings.category ?? 'Obecná');
-  const [selectedColor, setSelectedColor] = useState(settings.color ?? 'blue-sky');
+  const [selectedCategory, setSelectedCategory] = useState(
+    settings.category === 'Vývoj' ? 'Obecná' : (settings.category ?? 'Obecná'),
+  );
+  const [selectedColor, setSelectedColor] = useState(
+    settings.color === 'blue' ? 'blue-sky' : (settings.color ?? 'blue-sky'),
+  );
   const [invitationCode, setInvitationCode] = useState(
     settings.invitationCode ?? settings.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
   );
@@ -120,12 +120,16 @@ function GroupSettingsForm({
   }
 
   // Detekce změn (odesílá se pouze diff oproti baseline)
+  const baselineCategory =
+    baseline.category === 'Vývoj' ? 'Obecná' : (baseline.category ?? 'Obecná');
+  const baselineColor = baseline.color === 'blue' ? 'blue-sky' : (baseline.color ?? 'blue-sky');
+
   const diffPayload: UpdateGroupSettingsBody = {};
-  if (name !== baseline.name) diffPayload.name = name;
+  if (name.trim() !== baseline.name.trim()) diffPayload.name = name.trim();
   if (description !== (baseline.description ?? '')) diffPayload.description = description;
   if (selectedLogo !== (baseline.logo ?? 'users')) diffPayload.logo = selectedLogo;
-  if (selectedCategory !== (baseline.category ?? 'Obecná')) diffPayload.category = selectedCategory;
-  if (selectedColor !== (baseline.color ?? 'blue-sky')) diffPayload.color = selectedColor;
+  if (selectedCategory !== baselineCategory) diffPayload.category = selectedCategory;
+  if (selectedColor !== baselineColor) diffPayload.color = selectedColor;
   if (invitationCode !== (baseline.invitationCode ?? '')) {
     diffPayload.invitationCode = invitationCode;
   }
@@ -134,14 +138,10 @@ function GroupSettingsForm({
   // Alternativní tok A1 / A2: Zrušení provedených změn
   function handleResetChanges() {
     setName(baseline.name);
-    setDescription(
-      baseline.description && baseline.description !== 'Bez popisku'
-        ? baseline.description
-        : 'Sdílený prostor pro plánování aktivit, záznamy a spolupráci členů skupiny.',
-    );
+    setDescription(baseline.description ?? '');
     setSelectedLogo(baseline.logo ?? 'users');
-    setSelectedCategory(baseline.category ?? 'Obecná');
-    setSelectedColor(baseline.color ?? 'blue-sky');
+    setSelectedCategory(baselineCategory);
+    setSelectedColor(baselineColor);
     setInvitationCode(
       baseline.invitationCode ?? baseline.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
     );
@@ -166,14 +166,12 @@ function GroupSettingsForm({
       if (updated) {
         setBaseline(updated);
         setName(updated.name);
-        setDescription(
-          updated.description && updated.description !== 'Bez popisku'
-            ? updated.description
-            : 'Sdílený prostor pro plánování aktivit, záznamy a spolupráci členů skupiny.',
-        );
+        setDescription(updated.description ?? '');
         setSelectedLogo(updated.logo ?? 'users');
-        setSelectedCategory(updated.category ?? 'Obecná');
-        setSelectedColor(updated.color ?? 'blue-sky');
+        setSelectedCategory(
+          updated.category === 'Vývoj' ? 'Obecná' : (updated.category ?? 'Obecná'),
+        );
+        setSelectedColor(updated.color === 'blue' ? 'blue-sky' : (updated.color ?? 'blue-sky'));
         setInvitationCode(
           updated.invitationCode ?? updated.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
         );

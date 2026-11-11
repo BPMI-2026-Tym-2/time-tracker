@@ -362,4 +362,37 @@ describe('Nastavení skupiny – HTTP & Bezpečnost (s Mock DB)', () => {
     assert.equal(data.id, ownerlessGroupId);
     assert.equal(data.owner, null);
   });
+
+  test('P2 Validace: PATCH s názvem tvořeným pouze mezerami vrátí 400', async () => {
+    const res = await fetch(`${baseUrl}/groups/${groupId}/settings`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: terezaCookie,
+      },
+      body: JSON.stringify({
+        name: '    ',
+      }),
+    });
+
+    assert.equal(res.status, 400);
+  });
+
+  test('P2 Normalizace: Starší záznamy s Vývoj a blue jsou v mapperu normalizovány na Obecná a blue-sky', async () => {
+    mockGroup.category = 'Vývoj';
+    mockGroup.color = 'blue';
+    mockGroup.description = null;
+
+    const res = await fetch(`${baseUrl}/groups/${groupId}/settings`, {
+      headers: {
+        Cookie: terezaCookie,
+      },
+    });
+
+    assert.equal(res.status, 200);
+    const data = groupSchema.groupSettingsResponse.parse(await res.json());
+    assert.equal(data.category, 'Obecná');
+    assert.equal(data.color, 'blue-sky');
+    assert.equal(data.description, null);
+  });
 });

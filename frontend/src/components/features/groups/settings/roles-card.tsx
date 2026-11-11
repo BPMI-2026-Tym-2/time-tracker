@@ -8,7 +8,7 @@ type RolesCardProps = {
   setAdminCanAssign: (val: boolean) => void;
   adminCanRemove: boolean;
   setAdminCanRemove: (val: boolean) => void;
-  canEdit: boolean;
+  canEdit?: boolean;
 };
 
 export function RolesCard({
@@ -16,7 +16,6 @@ export function RolesCard({
   setAdminCanAssign,
   adminCanRemove,
   setAdminCanRemove,
-  canEdit,
 }: RolesCardProps) {
   return (
     <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs">
@@ -52,6 +51,7 @@ export function RolesCard({
                     type="checkbox"
                     checked
                     disabled
+                    readOnly
                     className="h-3.5 w-3.5 rounded accent-blue-600"
                   />
                 </td>
@@ -60,6 +60,7 @@ export function RolesCard({
                     type="checkbox"
                     checked
                     disabled
+                    readOnly
                     className="h-3.5 w-3.5 rounded accent-blue-600"
                   />
                 </td>
@@ -75,8 +76,9 @@ export function RolesCard({
                     type="checkbox"
                     checked={adminCanAssign}
                     onChange={(e) => setAdminCanAssign(e.target.checked)}
-                    disabled={!canEdit}
-                    className="h-3.5 w-3.5 rounded accent-blue-600 disabled:cursor-not-allowed"
+                    disabled
+                    title="Správa oprávnění rolí bude dostupná v navazujícím use casu"
+                    className="h-3.5 w-3.5 rounded accent-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 </td>
                 <td className="py-2 text-center">
@@ -84,8 +86,9 @@ export function RolesCard({
                     type="checkbox"
                     checked={adminCanRemove}
                     onChange={(e) => setAdminCanRemove(e.target.checked)}
-                    disabled={!canEdit}
-                    className="h-3.5 w-3.5 rounded accent-blue-600 disabled:cursor-not-allowed"
+                    disabled
+                    title="Správa oprávnění rolí bude dostupná v navazujícím use casu"
+                    className="h-3.5 w-3.5 rounded accent-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 </td>
               </tr>
