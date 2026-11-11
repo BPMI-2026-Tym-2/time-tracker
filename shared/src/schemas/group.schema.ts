@@ -10,10 +10,13 @@ export const GROUP_LOGOS = [
   'code',
   'flame',
   'zap',
+  'heart',
   'target',
   'globe',
   'star',
   'folder',
+  'sun',
+  'flower',
 ] as const;
 
 const role = z.enum(['member', 'admin', 'owner']);

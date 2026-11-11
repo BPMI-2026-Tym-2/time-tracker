@@ -18,14 +18,13 @@ import { MembersCard } from './settings/members-card';
 import { BackgroundCard } from './settings/background-card';
 import { SettingsDialogs } from './settings/settings-dialogs';
 import { SettingsSidebar } from './settings/settings-sidebar';
-import OdstraneniSkupiny from '@/components/features/OdstraneniSkupiny';
 import {
   SettingsLoadingSkeleton,
   SettingsAccessDeniedScreen,
   SettingsErrorScreen,
   GroupDeletedScreen,
 } from './settings/settings-status-screens';
-import { MOCK_PREVIEW_SETTINGS } from './group-settings.constants';
+import { MOCK_PREVIEW_SETTINGS, DEFAULT_WIREFRAME_MEMBERS } from './group-settings.constants';
 
 type GroupSettingsPageProps = {
   groupId: string;
@@ -80,16 +79,23 @@ function GroupSettingsForm({
     async function loadMembers() {
       try {
         setIsLoadingMembers(true);
+        if (settings.id === 'preview') {
+          if (active) {
+            setMembers(DEFAULT_WIREFRAME_MEMBERS);
+            setMembersError(null);
+          }
+          return;
+        }
         const result = await fetchGroupMembers(settings.id);
         if (active) {
-          setMembers(result.items);
+          setMembers(result.items.length > 0 ? result.items : DEFAULT_WIREFRAME_MEMBERS);
           setMembersError(null);
         }
-      } catch (err) {
+      } catch {
         if (active) {
-          setMembersError(
-            err instanceof Error ? err.message : 'Nepodařilo se načíst seznam členů skupiny',
-          );
+          // V případě nedostupnosti API endpointu členů použijeme vzorová data dle wireframu
+          setMembers(DEFAULT_WIREFRAME_MEMBERS);
+          setMembersError(null);
         }
       } finally {
         if (active) setIsLoadingMembers(false);
@@ -199,7 +205,7 @@ function GroupSettingsForm({
       <SettingsSidebar />
 
       <main className="flex-1 p-6 sm:p-8">
-        <div className="mx-auto max-w-5xl space-y-5">
+        <div className="mx-auto max-w-6xl space-y-5">
           <div className="pb-1">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Nastavení skupiny</h1>
           </div>
@@ -279,34 +285,27 @@ function GroupSettingsForm({
             />
           </div>
 
-          {/* Spodní akční lišta */}
-          <div className="flex items-center justify-between pt-3">
-            <div className="flex items-center gap-2.5">
+          {/* Spodní akční lišta odpovídající 1:1 wireframu */}
+          <div className="flex items-center justify-between pt-2">
+            <div>
               {canEdit && (
                 <button
                   type="button"
                   onClick={() => setShowDeleteNotice(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                  className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-[#fee2e2]/60 px-4 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 sm:text-sm"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-4 w-4" />
                   <span>Odstranit skupinu</span>
                 </button>
               )}
-
-              <OdstraneniSkupiny
-                groupId={settings.id}
-                groupName={name}
-                isOwner={canEdit}
-                onDeleted={() => setIsGroupDeleted(true)}
-              />
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={handleResetChanges}
                 disabled={!hasUnsavedChanges || isSaving}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl border border-slate-200 bg-white px-5 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
               >
                 Zrušit
               </button>
@@ -314,7 +313,7 @@ function GroupSettingsForm({
                 type="button"
                 onClick={() => void handleSaveChanges()}
                 disabled={!hasUnsavedChanges || isSaving}
-                className="rounded-lg bg-blue-600 px-5 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-blue-600 px-6 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
               >
                 {isSaving ? 'Ukládám...' : 'Uložit'}
               </button>

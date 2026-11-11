@@ -58,18 +58,17 @@ export const BACKGROUND_THEMES: readonly BackgroundTheme[] = [
   {
     id: 'blue-sky',
     name: 'Modrá obloha',
-    previewClass:
-      'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-300 via-sky-400 to-blue-600',
+    previewClass: 'bg-gradient-to-br from-sky-300 via-sky-400 to-blue-500',
   },
   {
     id: 'sunset',
     name: 'Západ slunce',
-    previewClass: 'bg-gradient-to-r from-amber-400 via-rose-400 to-pink-500',
+    previewClass: 'bg-gradient-to-b from-orange-300 via-rose-400 to-purple-600',
   },
   {
     id: 'forest',
     name: 'Mlžný les',
-    previewClass: 'bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900',
+    previewClass: 'bg-gradient-to-b from-emerald-800 via-teal-900 to-slate-900',
   },
   {
     id: 'navy',
@@ -83,6 +82,33 @@ export const BACKGROUND_THEMES: readonly BackgroundTheme[] = [
   },
 ] as const;
 
+export const DEFAULT_WIREFRAME_MEMBERS = [
+  {
+    id: 'member-georgii',
+    name: 'Georgii',
+    surname: 'Skvortcov',
+    email: 'georgii.skvortcov@example.com',
+    role: 'owner' as const,
+    joinedAt: new Date('2026-01-01'),
+  },
+  {
+    id: 'member-anna',
+    name: 'Anna',
+    surname: 'Nováková',
+    email: 'anna.novakova@example.com',
+    role: 'admin' as const,
+    joinedAt: new Date('2026-01-05'),
+  },
+  {
+    id: 'member-martin',
+    name: 'Martin',
+    surname: 'Kříž',
+    email: 'martin.kriz@example.com',
+    role: 'member' as const,
+    joinedAt: new Date('2026-01-10'),
+  },
+];
+
 export const MOCK_PREVIEW_SETTINGS: GroupSettingsResponse = {
   id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
   name: 'Skupina 1',
@@ -95,10 +121,10 @@ export const MOCK_PREVIEW_SETTINGS: GroupSettingsResponse = {
   createdAt: new Date('2026-01-01'),
   updatedAt: new Date('2026-01-01'),
   owner: {
-    id: 'user-jan-id',
-    name: 'Jan',
-    surname: 'Gergel',
-    email: 'jan.gergel@unicorn.cz',
+    id: 'user-georgii-id',
+    name: 'Georgii',
+    surname: 'Skvortcov',
+    email: 'georgii.skvortcov@example.com',
   },
   membersCount: 3,
   currentUserRole: 'owner',
