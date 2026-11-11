@@ -2,7 +2,6 @@ import express from 'express';
 import { errorHandler } from './shared/errors/error-handler.js';
 import { corsMiddleware } from './shared/http/cors.js';
 import organizationRouter from './modules/organizations/organization.routes.js';
-import { taskRouter } from './modules/tasks/task.routes.js';
 import { userRouter } from './modules/users/user.routes.js';
 import { requireAuth } from './shared/auth/require-auth.js';
 import { toNodeHandler } from 'better-auth/node';
@@ -22,7 +21,6 @@ apiRouter.use(express.json());
 // Od tohoto momentu endpointy vyžadují autentizaci (uživatel musí být přihlášen)
 apiRouter.use(requireAuth);
 apiRouter.use('/organizations', organizationRouter);
-apiRouter.use('/tasks', taskRouter);
 apiRouter.use('/users', userRouter);
 
 // Pro přístup k tomuto endpointu je vyžadována role 'admin'
