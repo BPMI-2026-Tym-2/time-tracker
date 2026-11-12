@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
+import { GENERIC_AUTH_ERROR } from '@/lib/errors/auth';
 import { registerSchema, type RegisterSchema } from '@time-tracker/shared';
 
 export function useRegister() {
@@ -24,22 +25,34 @@ export function useRegister() {
         password: parsed.data.password,
       };
 
-      const result = await authClient.signUp.email(registrationData);
+      let result;
 
-      if (result.error) {
-        throw new Error(result.error.message ?? 'Registrace se nepodařila.');
+      try {
+        result = await authClient.signUp.email(registrationData);
+      } catch {
+        throw new Error(GENERIC_AUTH_ERROR);
       }
 
-      const session = await authClient.getSession();
+      if (result.error) {
+        throw new Error(result.error.message ?? GENERIC_AUTH_ERROR);
+      }
+
+      let session;
+
+      try {
+        session = await authClient.getSession();
+      } catch {
+        throw new Error(GENERIC_AUTH_ERROR);
+      }
 
       if (session.error || !session.data) {
-        throw new Error('Registrace proběhla, ale session se nepodařilo načíst.');
+        throw new Error(GENERIC_AUTH_ERROR);
       }
 
       return result.data;
     },
     onSuccess: () => {
-      router.push('/');
+      router.replace('/');
     },
   });
 
@@ -47,6 +60,6 @@ export function useRegister() {
     register: mutation.mutate,
     isPending: mutation.isPending,
     error: mutation.error,
-    resetRegisterError: mutation.reset,
+    resetError: mutation.reset,
   };
 }
