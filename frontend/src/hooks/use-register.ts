@@ -39,7 +39,7 @@ export function useRegister() {
       return result.data;
     },
     onSuccess: () => {
-      router.push('/');
+      router.replace('/');
     },
   });
 
@@ -47,6 +47,6 @@ export function useRegister() {
     register: mutation.mutate,
     isPending: mutation.isPending,
     error: mutation.error,
-    resetRegisterError: mutation.reset,
+    resetError: mutation.reset,
   };
 }

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 export const registerSchema = z
   .object({
     name: z.string().min(1, { message: 'Jméno je povinné.' }),
@@ -8,9 +10,9 @@ export const registerSchema = z
     password: z
       .string()
       .min(8, { message: 'Heslo musí mít alespoň 8 znaků' })
-      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
+      .regex(passwordRegex, {
         message:
-          'Heslo musí obsahovat alespoň jedno velké písmeno, jedno malé písmeno, jedno číslo a jedno speciální znak',
+          'Heslo musí obsahovat alespoň jedno velké písmeno, jedno malé písmeno, jedno číslo a jeden speciální znak',
       }),
     confirmPassword: z.string().min(1, { message: 'Potvrzení hesla je povinné' }),
   })

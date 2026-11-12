@@ -1,41 +1,31 @@
 'use client';
 
-import { useEffect, useState, type ChangeEvent, type SyntheticEvent } from 'react';
+import { useEffect } from 'react';
 import { LoginForm } from '@/components/features/auth/login-form';
 import { useLogin } from '@/hooks/use-login';
 import { authClient } from '@/lib/auth-client';
-import { loginSchema } from '@time-tracker/shared';
+import { loginSchema, type LoginSchema } from '@time-tracker/shared';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { login, loginPending, googlePending, loginWithGoogle, isPending, error, resetLoginError } =
+  const form = useForm<LoginSchema>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+  });
+
+  const { login, loginPending, googlePending, loginWithGoogle, isPending, error, resetError } =
     useLogin();
 
-  function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const result = loginSchema.safeParse({
-      email,
-      password,
-    });
-
-    if (!result.success) {
-      return;
-    }
-
-    login({ email, password });
-  }
-
-  function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
-    setEmail(event.target.value);
-    resetLoginError();
-  }
-
-  function handlePasswordChange(event: ChangeEvent<HTMLInputElement>) {
-    setPassword(event.target.value);
-    resetLoginError();
-  }
+  const onSubmit: SubmitHandler<LoginSchema> = (data) => {
+    resetError();
+    login(data);
+  };
 
   useEffect(() => {
     async function initializeOneTap() {
@@ -47,15 +37,12 @@ export default function LoginPage() {
 
   return (
     <LoginForm
-      email={email}
-      password={password}
-      isPending={isPending}
+      form={form}
+      onSubmit={onSubmit}
       loginPending={loginPending}
       googlePending={googlePending}
+      isPending={isPending}
       errorMessage={error instanceof Error ? error.message : undefined}
-      onEmailChange={handleEmailChange}
-      onPasswordChange={handlePasswordChange}
-      onSubmit={handleSubmit}
       onGoogleLogin={loginWithGoogle}
     />
   );

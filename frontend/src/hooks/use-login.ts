@@ -21,7 +21,15 @@ export function useLogin() {
       const result = await authClient.signIn.email(parsed.data);
 
       if (result.error) {
-        throw new Error(result.error.message ?? 'Přihlášení se nepodařilo.');
+        const isInvalidCredentials =
+          result.error.code === 'INVALID_EMAIL_OR_PASSWORD' ||
+          result.error.message === 'Invalid email or password';
+
+        throw new Error(
+          isInvalidCredentials
+            ? 'Nesprávný e-mail nebo heslo.'
+            : (result.error.message ?? 'Přihlášení se nepodařilo.'),
+        );
       }
 
       const session = await authClient.getSession();
@@ -33,7 +41,7 @@ export function useLogin() {
       return result.data;
     },
     onSuccess: () => {
-      router.push('/');
+      router.replace('/');
     },
   });
 
@@ -54,11 +62,16 @@ export function useLogin() {
     },
   });
 
+  const resetError = () => {
+    loginMutation.reset();
+    googleMutation.reset();
+  };
+
   return {
     login: loginMutation.mutate,
     loginPending: loginMutation.isPending,
     loginError: loginMutation.error,
-    resetLoginError: loginMutation.reset,
+    resetError: resetError,
     loginWithGoogle: googleMutation.mutate,
     googlePending: googleMutation.isPending,
     googleError: googleMutation.error,
