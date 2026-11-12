@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
+import { GENERIC_AUTH_ERROR } from '@/lib/errors/auth';
 import { loginSchema, type LoginSchema } from '@time-tracker/shared';
 
 export function useLogin() {
@@ -18,24 +19,32 @@ export function useLogin() {
         throw new Error(`Chyba validace: ${errorMessages}`);
       }
 
-      const result = await authClient.signIn.email(parsed.data);
+      let result;
+
+      try {
+        result = await authClient.signIn.email(parsed.data);
+      } catch {
+        throw new Error(GENERIC_AUTH_ERROR);
+      }
 
       if (result.error) {
         const isInvalidCredentials =
           result.error.code === 'INVALID_EMAIL_OR_PASSWORD' ||
           result.error.message === 'Invalid email or password';
 
-        throw new Error(
-          isInvalidCredentials
-            ? 'Nesprávný e-mail nebo heslo.'
-            : (result.error.message ?? 'Přihlášení se nepodařilo.'),
-        );
+        throw new Error(isInvalidCredentials ? 'Nesprávný e-mail nebo heslo.' : GENERIC_AUTH_ERROR);
       }
 
-      const session = await authClient.getSession();
+      let session;
+
+      try {
+        session = await authClient.getSession();
+      } catch {
+        throw new Error(GENERIC_AUTH_ERROR);
+      }
 
       if (session.error || !session.data) {
-        throw new Error('Přihlášení proběhlo, ale session se nepodařilo načíst.');
+        throw new Error(GENERIC_AUTH_ERROR);
       }
 
       return result.data;
@@ -48,14 +57,20 @@ export function useLogin() {
   const googleMutation = useMutation({
     mutationFn: async () => {
       const frontendUrl = window.location.origin;
-      const result = await authClient.signIn.social({
-        provider: 'google',
-        callbackURL: `${frontendUrl}/`,
-        errorCallbackURL: `${frontendUrl}/login`,
-      });
+      let result;
+
+      try {
+        result = await authClient.signIn.social({
+          provider: 'google',
+          callbackURL: `${frontendUrl}/`,
+          errorCallbackURL: `${frontendUrl}/login`,
+        });
+      } catch {
+        throw new Error(GENERIC_AUTH_ERROR);
+      }
 
       if (result.error) {
-        throw new Error(result.error.message ?? 'Přihlášení přes Google se nepodařilo.');
+        throw new Error(GENERIC_AUTH_ERROR);
       }
 
       return result.data;
