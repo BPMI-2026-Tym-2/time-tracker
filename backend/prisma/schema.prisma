@@ -1,3 +1,8 @@
+// // // // // // // // // // // // //
+// !!! ↓↓↓ NESAHAT, NEMĚNIT ↓↓↓ !!! //
+// Vyžadované schémata pro zaručení chodu aplikace
+// // // // // // // // // // // // //
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,74 +18,96 @@ generator zod {
   createRelationValuesTypes = true
 }
 
+// // // // // // // // // // // // //
+// !!! ↑↑↑ NESAHAT, NEMĚNIT ↑↑↑ !!! //
+// // // // // // // // // // // // //
+
+// ↓↓↓ Námi definované schémata ↓↓↓
+
 model Task {
-  id          String   @id @default(uuid()) @map("_id")
+  id          String   @id @map("_id")
   title       String
   description String?
   createdAt   DateTime @default(now())
 }
 
-// Modely User, Session, Account a Verification vyžaduje Better Auth (Prisma adapter, provider mongodb).
-// Tvar odpovídá výstupu `npx auth generate` – názvy polí neměnit, jinak s nimi Better Auth nebude pracovat.
-// ID (UUID) generuje Better Auth (`advanced.database.generateId: "uuid"`), proto nemají @default.
-// Heslo je uložené zahashované v Account.password, nikdy ne na User.
-// Aplikační pole `role` ("user" | "superAdmin") musí být v Better Auth configu jako additionalField s `input: false`.
-
 model User {
-  id            String        @id @map("_id")
+  id            String       @id @map("_id")
   name          String
   surname       String
-  email         String        @unique
-  emailVerified Boolean       @default(false)
+  email         String       @unique
+  emailVerified Boolean      @default(false)
   image         String?
-  role          String        @default("user")
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  role          String       @default("user")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   sessions      Session[]
   accounts      Account[]
-  memberships   GroupMember[]
+  members       Member[]
+  invitations   Invitation[]
+  banned        Boolean?
+  banReason     String?
+  banExpires    DateTime?
 
   @@map("user")
 }
 
-model Group {
-  id          String        @id @default(uuid()) @map("_id")
+// Skupina
+model Organization {
+  id          String       @id @map("_id")
   name        String
-  description String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  members     GroupMember[]
+  slug        String       @unique
+  logo        String?
+  metadata    String?
+  createdAt   DateTime
+  members     Member[]
+  invitations Invitation[]
 
-  @@map("group")
+  @@map("organization")
 }
 
-// Členství uživatele ve skupině. `role`: "member" | "owner" (zakladatel skupiny).
-// `joinedAt` určuje výchozí pořadí v seznamu členů.
-// Při smazání skupiny nebo uživatele se členství smažou automaticky (onDelete: Cascade).
-model GroupMember {
-  id       String   @id @default(uuid()) @map("_id")
-  groupId  String
-  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role     String   @default("member")
-  joinedAt DateTime @default(now())
+// Člen skupiny
+model Member {
+  id             String       @id @map("_id")
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String      
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String      
+  role           String       @default("member")
+  createdAt      DateTime
 
-  @@unique([groupId, userId])
-  @@index([userId])
-  @@map("group_member")
+  @@map("member")
+}
+
+// Pozvánka do skupiny
+model Invitation {
+  id             String       @id @map("_id")
+  email          String
+  inviter        User         @relation(fields: [inviterId], references: [id])
+  inviterId      String      
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String      
+  role           String       @default("member")
+  status         String
+  createdAt      DateTime
+  expiresAt      DateTime
+
+  @@map("invitation")
 }
 
 model Session {
-  id        String   @id @map("_id")
-  expiresAt DateTime
-  token     String   @unique
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String   @id @map("_id")
+  expiresAt            DateTime
+  token                String   @unique
+  ipAddress            String?
+  userAgent            String?
+  userId               String  
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String? 
+  activeTeamId         String?
+  impersonatedBy       String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@index([userId])
   @@map("session")
@@ -88,9 +115,9 @@ model Session {
 
 model Account {
   id                    String    @id @map("_id")
-  accountId             String
+  accountId             String   
   providerId            String
-  userId                String
+  userId                String   
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?

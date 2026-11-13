@@ -1,7 +1,16 @@
-import { toNodeHandler } from 'better-auth/node';
 import { Router } from 'express';
-import { auth } from './auth.config.js';
+import { toNodeHandler } from 'better-auth/node';
+import { auth } from '../../config/auth.js';
 
-export const authRouter = Router();
+const authRouter = Router();
+const authHandler = toNodeHandler(auth);
 
-authRouter.all('/*splat', toNodeHandler(auth));
+authRouter.post('/sign-up/email', authHandler);
+authRouter.post('/sign-in/email', authHandler);
+authRouter.post('/sign-in/social', authHandler);
+authRouter.all('/callback/:id', authHandler);
+authRouter.post('/one-tap/callback', authHandler);
+authRouter.all('/get-session', authHandler);
+authRouter.post('/sign-out', authHandler);
+
+export default authRouter;
