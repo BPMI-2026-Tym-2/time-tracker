@@ -5,8 +5,6 @@ import {
   createPaginatedRowModel,
   createSortedRowModel,
   filterFn_equalsString,
-  filterFn_includesString,
-  globalFilteringFeature,
   rowPaginationFeature,
   rowSortingFeature,
   sortFn_alphanumeric,
@@ -16,7 +14,6 @@ import {
 export const userTableFeatures = tableFeatures({
   columnFilteringFeature,
   columnVisibilityFeature,
-  globalFilteringFeature,
   rowPaginationFeature,
   rowSortingFeature,
   filteredRowModel: createFilteredRowModel(),
@@ -24,7 +21,6 @@ export const userTableFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
   filterFns: {
     equalsString: filterFn_equalsString,
-    includesString: filterFn_includesString,
   },
   sortFns: { alphanumeric: sortFn_alphanumeric },
 });
