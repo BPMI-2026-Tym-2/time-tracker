@@ -5,6 +5,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { getPageMetadata } from '@/lib/page-metadata';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { Toaster } from '@/components/ui/toast';
 
 const roboto = Roboto({ subsets: ['latin'], variable: '--font-roboto-font' });
 const robotoSlab = Roboto_Slab({ subsets: ['latin'], variable: '--font-roboto-slab-font' });
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <body className="flex min-h-full flex-col">
         <QueryProvider>{children}</QueryProvider>
+        <Toaster />
       </body>
     </html>
   );
