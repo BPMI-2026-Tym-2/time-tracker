@@ -9,4 +9,19 @@ export const userResponseSchema = z.object({
   createdAt: z.coerce.date(),
 });
 
+const deleteParams = z.object({
+  userId: z.uuid(),
+});
+
+const deleteResponse = z.object({
+  message: z.literal('Účet byl odstraněn.'),
+});
+
+export const userSchema = {
+  deleteParams,
+  deleteResponse,
+};
+
 export type PublicUser = z.infer<typeof userResponseSchema>;
+export type DeleteUserParams = z.infer<typeof deleteParams>;
+export type DeleteUserResponse = z.infer<typeof deleteResponse>;
