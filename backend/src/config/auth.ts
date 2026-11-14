@@ -5,6 +5,7 @@ import { prisma } from '../db/prisma.js';
 import { admin, oneTap, organization } from 'better-auth/plugins';
 import { ac, admin as adminRole, owner, member, user } from '@time-tracker/shared';
 import type { AccessControl } from 'better-auth/plugins/access';
+import { registrationHooks } from '../modules/auth/auth.hooks.js';
 
 export const authCorsConfig = {
   origin: env.corsOrigin,
@@ -21,6 +22,7 @@ export const auth = betterAuth({
   basePath: '/api/auth',
   secret: requiredEnv('BETTER_AUTH_SECRET'),
   trustedOrigins: [env.corsOrigin],
+  hooks: registrationHooks,
   plugins: [
     admin({
       ac: ac as AccessControl,
