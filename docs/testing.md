@@ -38,6 +38,27 @@ npm run db:up
 node --import tsx --test tests/group-members.test.ts
 ```
 
+## Test odstranění organizace (skupiny)
+
+Integrační test prochází HTTP endpoint, skutečnou session a oprávnění Better
+Auth i Prisma transakci v MongoDB replica setu:
+
+```sh
+npm run db:up
+node --import tsx --test tests/organization-delete.test.ts
+```
+
+Používá samostatnou databázi `time_tracker_organization_delete_test` na lokálním
+MongoDB. Jinou testovací databázi lze zadat přes `TEST_DATABASE_URL`.
+Test vytvoří vlastní uživatele a session, organizace, členství, pozvánky a
+nesouvisející task; po dokončení svá data smaže.
+
+Ověřuje odstranění vlastníkem, zamítnutí nepřihlášeného uživatele, běžného
+člena, nečlena a globálního administrátora bez členství; dále neexistující
+organizaci, opakované odstranění, zachování nesouvisejících dat, odebrání
+přístupu původním členům a rollback při simulované chybě databáze s možností
+opakovat požadavek.
+
 ## Kam přidávat testy
 
 - databázové testy patří do `tests/`,

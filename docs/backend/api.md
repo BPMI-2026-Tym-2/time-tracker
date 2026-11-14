@@ -37,6 +37,39 @@ Načte task podle ID.
 
 Response `200` používá stejný tvar jako response z `POST /tasks`.
 
+## Organizace (skupiny)
+
+### `DELETE /api/organizations/:organizationId`
+
+Odstraní organizaci přihlášeného vlastníka. Request neobsahuje body.
+Při úspěchu vrací `204 No Content` bez response body.
+
+Controller validuje `organizationId` pomocí existujícího shared schématu.
+Service volá `auth.api.deleteOrganization` s hlavičkami původního requestu.
+Better Auth ověřuje session a oprávnění `organization:delete` podle členství
+v dané organizaci. Toto oprávnění má v konfiguraci organizací pouze role
+`owner`; globální aplikační role vlastníka nenahrazuje.
+
+Better Auth odstraní organizaci, její členství a pozvánky v transakci
+(`transaction: true` v Prisma adapteru). MongoDB musí běžet jako replica set.
+Pokud byla organizace aktivní v session volajícího, Better Auth tuto aktivní
+organizaci zruší. Zrušení aktivní organizace probíhá před mazací transakcí;
+při chybě může být nutné skupinu znovu vybrat, její data ale zůstanou zachována.
+
+Chyby používají tvar `{ "error": "..." }`:
+
+- `401` – uživatel není přihlášen,
+- `403` – člen organizace nemá oprávnění k odstranění,
+- `400` – uživatel není členem organizace nebo organizace neexistuje
+  (včetně opakovaného odstranění); zachováváme chování Better Auth,
+- `500` – technická chyba: `Odstranění skupiny se nezdařilo. Zkuste to prosím znovu`.
+
+Datový model zatím neobsahuje skupinové aktivity ani sdílení osobních aktivit.
+Mazání aktivit proto není součástí této implementace. Stávající tasky ani
+uživatelské účty se nemažou. Při zavedení aktivit je nutné doplnit mazání
+skupinových aktivit a vazeb sdílení se zachováním osobních aktivit jejich
+vlastníkům a zajistit atomické provedení společně s odstraněním organizace.
+
 ## Chyby
 
 Chyby jsou vracené ve tvaru:
