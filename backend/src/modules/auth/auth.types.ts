@@ -6,4 +6,4 @@ export type RegistrationInput = {
 };
 
 export type RegistrationResult =
-  { ok: true; data: RegistrationInput } | { ok: false; status: 400 | 409; message: string };
+  { ok: true; data: RegistrationInput } | { ok: false; status: 400; message: string };

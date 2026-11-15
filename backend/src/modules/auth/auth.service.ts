@@ -1,4 +1,3 @@
-import { findUserByEmail } from '../users/user.repository.js';
 import { registrationFieldLabels, registrationMessages } from './auth.messages.js';
 import { registrationEmailSchema } from './auth.schemas.js';
 import type { RegistrationResult } from './auth.types.js';
@@ -32,14 +31,4 @@ export function validateRegistration(body: unknown): RegistrationResult {
 
   //ukládá e-mail malými písmeny
   return { ok: true, data: { name, surname, email: email.toLowerCase(), password } };
-}
-
-export async function checkRegistration(body: unknown): Promise<RegistrationResult> {
-  const result = validateRegistration(body);
-
-  if (result.ok && (await findUserByEmail(result.data.email))) {
-    return { ok: false, status: 409, message: registrationMessages.emailTaken };
-  }
-
-  return result;
 }

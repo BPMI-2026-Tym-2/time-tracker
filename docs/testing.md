@@ -50,9 +50,10 @@ zřejmé. Kontroly lint, formátování, typecheck a build databázi nepotřebuj
 
 ## Test registrace
 
-Test kontrol registrace.
-Kontrola (e-mail už je registrovaný) vyžaduje běžící MongoDB replica set,
-databáze se bere z `DATABASE_URL` (jinak z `backend/.env`):
+Test kontrol registrace. HTTP testy volají přímo `POST /api/auth/sign-up/email`
+(existující e-mail vrátí 409, prázdné pole 400, obojí s českou hláškou).
+Vyžadují běžící MongoDB replica set a vyplněný `backend/.env` podle
+`backend/.env.example` (včetně `BETTER_AUTH_*` a `GOOGLE_*`):
 
 ```sh
 npm run db:up

@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { once } from 'node:events';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { after, before, describe, test } from 'node:test';
+import { app } from '../backend/src/app.js';
+import { env } from '../backend/src/config/env.js';
 import { prisma } from '../backend/src/db/prisma.js';
 import { registrationMessages } from '../backend/src/modules/auth/auth.messages.js';
-import {
-  checkRegistration,
-  validateRegistration,
-} from '../backend/src/modules/auth/auth.service.js';
+import { validateRegistration } from '../backend/src/modules/auth/auth.service.js';
 
 const tereza = {
   name: 'Tereza',
@@ -15,7 +17,7 @@ const tereza = {
   password: 'heslo12345',
 };
 
-const rejected = (status: 400 | 409, message: string) => ({ ok: false, status, message });
+const rejected = (status: 400, message: string) => ({ ok: false, status, message });
 
 describe('Validace registrace', () => {
   test('platný formulář projde, jména se oříznou a e-mail převede na malá písmena', () => {
@@ -67,7 +69,7 @@ describe('Validace registrace', () => {
 });
 
 // Vyžaduje běžící MongoDB replica set
-describe('A6: e-mail už je registrovaný (MongoDB)', () => {
+describe('POST /api/auth/sign-up/email (MongoDB)', () => {
   const runId = randomUUID().slice(0, 8);
   const adam = {
     id: randomUUID(),
@@ -75,38 +77,59 @@ describe('A6: e-mail už je registrovaný (MongoDB)', () => {
     surname: 'Dvořák',
     email: `adam.${runId}@unicorn.cz`,
   };
+  let server: Server;
+  let signUpUrl: string;
+
+  const signUp = (body: Record<string, unknown>) =>
+    fetch(signUpUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: env.corsOrigin },
+      body: JSON.stringify(body),
+    });
 
   before(async () => {
     await prisma.user.create({ data: adam });
+    server = app.listen(0);
+    await once(server, 'listening');
+    const { port } = server.address() as AddressInfo;
+    signUpUrl = `http://127.0.0.1:${port}/api/auth/sign-up/email`;
   });
 
   after(async () => {
+    server.close();
+    await once(server, 'close');
     await prisma.user.deleteMany({ where: { id: adam.id } });
     await prisma.$disconnect();
   });
 
-  test('existující e-mail vrátí A6 bez ohledu na velikost písmen', async () => {
-    assert.deepEqual(
-      await checkRegistration({ ...adam, email: adam.email.toUpperCase(), password: 'heslo12345' }),
-      rejected(409, registrationMessages.emailTaken),
-    );
-  });
-
-  test('nový e-mail projde', async () => {
-    const klara = {
-      name: 'Klára',
-      surname: 'Svobodová',
-      email: `klara.${runId}@unicorn.cz`,
+  test('A6: existující e-mail vrátí 409 a českou hlášku bez ohledu na velikost písmen', async () => {
+    const response = await signUp({
+      name: 'Adam',
+      surname: 'Dvořák',
+      email: adam.email.toUpperCase(),
       password: 'heslo12345',
-    };
+    });
 
-    assert.deepEqual(await checkRegistration(klara), { ok: true, data: klara });
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), {
+      code: 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL',
+      message: registrationMessages.emailTaken,
+    });
+    assert.equal(await prisma.user.count({ where: { email: adam.email } }), 1);
   });
 
-  test('A1 má přednost před A6', async () => {
-    assert.deepEqual(
-      await checkRegistration({ ...adam, name: '', password: 'heslo12345' }),
-      rejected(400, 'Pole Jméno nesmí být prázdné'),
-    );
+  test('A1: prázdné pole vrátí 400 a českou hlášku', async () => {
+    const response = await signUp({
+      name: '',
+      surname: 'Dvořák',
+      email: adam.email,
+      password: 'heslo12345',
+    });
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), {
+      code: 'INVALID_REGISTRATION',
+      message: 'Pole Jméno nesmí být prázdné',
+    });
   });
 });
