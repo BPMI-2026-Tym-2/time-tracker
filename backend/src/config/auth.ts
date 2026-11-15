@@ -45,8 +45,7 @@ export const auth = betterAuth({
       },
       creatorRole: 'owner',
       allowUserToCreateOrganization: true,
-      cancelPendingInvitationsOnReInvite: true,
-      requireEmailVerificationOnInvitation: true,
+      cancelPendingInvitationsOnReInvite: true
     }),
   ],
   user: {
