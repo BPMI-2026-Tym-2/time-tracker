@@ -1,4 +1,5 @@
 import { fromNodeHeaders } from 'better-auth/node';
+import { isAPIError } from 'better-auth/api';
 import type { Request } from 'express';
 import { auth } from '../../config/auth.js';
 import { AppError } from '../../shared/errors/app-error.js';
@@ -9,6 +10,22 @@ import type {
   ListOrganizationMembersResponse,
 } from '@time-tracker/shared';
 import organizationMapper from './organization.mapper.js';
+
+async function deleteOrganization(request: Request, organizationId: string): Promise<void> {
+  try {
+    await auth.api.deleteOrganization({
+      headers: fromNodeHeaders(request.headers),
+      body: { organizationId },
+    });
+  } catch (error) {
+    if (isAPIError(error) && error.statusCode < 500) {
+      throw new AppError(error.message, error.statusCode);
+    }
+
+    console.error(error);
+    throw new AppError('Odstranění skupiny se nezdařilo. Zkuste to prosím znovu', 500);
+  }
+}
 
 async function createOrganization(
   request: Request,
@@ -82,6 +99,7 @@ async function listMembers(
 const organizationService = {
   createOrganization,
   listMembers,
+  deleteOrganization,
 };
 
 export default organizationService;
