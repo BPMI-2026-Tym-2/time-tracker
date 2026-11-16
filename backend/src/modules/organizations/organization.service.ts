@@ -2,12 +2,15 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { isAPIError } from 'better-auth/api';
 import type { Request } from 'express';
 import { auth } from '../../config/auth.js';
+import { prisma } from '../../db/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import type {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
   ListOrganizationMembersQuery,
   ListOrganizationMembersResponse,
+  OrganizationSettingsResponse,
+  UpdateOrganizationSettingsRequest,
 } from '@time-tracker/shared';
 import organizationMapper from './organization.mapper.js';
 
@@ -96,9 +99,92 @@ async function listMembers(
   });
 }
 
+async function getSettings(
+  request: Request,
+  organizationId: string,
+): Promise<OrganizationSettingsResponse> {
+  const headers = fromNodeHeaders(request.headers);
+  let organization;
+  let memberRoleResult;
+
+  try {
+    [organization, memberRoleResult] = await Promise.all([
+      auth.api.getOrganization({
+        headers,
+        query: { organizationId },
+      }),
+      auth.api.getActiveMemberRole({
+        headers,
+        query: { organizationId },
+      }),
+    ]);
+  } catch (error) {
+    if (isAPIError(error) && error.statusCode < 500) {
+      throw new AppError(error.message, error.statusCode);
+    }
+    throw error;
+  }
+
+  if (!organization) {
+    throw new AppError('Organizace nebyla nalezena', 404);
+  }
+
+  if (memberRoleResult?.role !== 'owner') {
+    throw new AppError('K zobrazení a úpravě nastavení nemáte oprávnění', 403);
+  }
+
+  const ownerMember = await prisma.member.findFirst({
+    where: { organizationId, role: 'owner' },
+    include: { user: true },
+  });
+
+  const invitationCode = organization.id.replace(/-/g, '').slice(0, 6).toUpperCase();
+
+  return organizationMapper.toSettingsResponse({
+    organization,
+    owner: ownerMember?.user ?? null,
+    currentUserRole: memberRoleResult.role,
+    invitationCode,
+  });
+}
+
+async function updateSettings(
+  request: Request,
+  organizationId: string,
+  input: UpdateOrganizationSettingsRequest,
+): Promise<OrganizationSettingsResponse> {
+  const headers = fromNodeHeaders(request.headers);
+  let memberRoleResult;
+
+  try {
+    memberRoleResult = await auth.api.getActiveMemberRole({
+      headers,
+      query: { organizationId },
+    });
+  } catch (error) {
+    if (isAPIError(error) && error.statusCode < 500) {
+      throw new AppError(error.message, error.statusCode);
+    }
+    throw error;
+  }
+
+  if (memberRoleResult?.role !== 'owner') {
+    throw new AppError('K úpravě nastavení nemáte oprávnění', 403);
+  }
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: { name: input.name },
+  });
+
+  return getSettings(request, organizationId);
+}
+
 const organizationService = {
   createOrganization,
   listMembers,
+  getSettings,
+  updateSettings,
   deleteOrganization,
 };
 

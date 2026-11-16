@@ -13,5 +13,17 @@ organizationRouter.get(
   '/:organizationId/members',
   asyncHandler(organizationController.listMembers),
 );
+organizationRouter.get(
+  '/:organizationId/settings',
+  asyncHandler(organizationController.getSettings),
+);
+organizationRouter.patch(
+  '/:organizationId/settings',
+  asyncHandler(organizationController.updateSettings),
+);
+organizationRouter.delete(
+  '/:organizationId',
+  asyncHandler(organizationController.deleteOrganization),
+);
 
 export default organizationRouter;

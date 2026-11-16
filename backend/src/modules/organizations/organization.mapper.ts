@@ -2,6 +2,7 @@ import type {
   CreateOrganizationResponse,
   ListOrganizationMembersResponse,
   OrganizationMemberResponse,
+  OrganizationSettingsResponse,
 } from '@time-tracker/shared';
 
 type OrganizationRecord = {
@@ -79,10 +80,45 @@ function toMembersResponse({
   };
 }
 
+function toSettingsResponse({
+  organization,
+  owner,
+  currentUserRole,
+  invitationCode,
+}: {
+  organization: { id: string; name: string; slug: string };
+  owner: { id: string; name: string; surname?: string } | null;
+  currentUserRole: string | null;
+  invitationCode: string;
+}): OrganizationSettingsResponse {
+  const isOwner = currentUserRole === 'owner';
+
+  return {
+    id: organization.id,
+    name: organization.name,
+    slug: organization.slug,
+    invitationCode,
+    owner: owner
+      ? {
+          id: owner.id,
+          name: owner.name,
+          surname: owner.surname ?? '',
+        }
+      : null,
+    currentUserRole:
+      currentUserRole === 'owner' || currentUserRole === 'member' ? currentUserRole : null,
+    permissions: {
+      canEdit: isOwner,
+      canDelete: isOwner,
+    },
+  };
+}
+
 const organizationMapper = {
   toMemberResponse,
   toOrganizationResponse,
   toMembersResponse,
+  toSettingsResponse,
 };
 
 export default organizationMapper;

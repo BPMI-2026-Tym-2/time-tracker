@@ -18,6 +18,21 @@ async function createOrganization(request: Request, response: Response): Promise
   sendData(response, organizationSchema.createOrganizationResponse.parse(organization), 201);
 }
 
+async function getSettings(request: Request, response: Response): Promise<void> {
+  const { organizationId } = organizationSchema.organizationParams.parse(request.params);
+  const result = await organizationService.getSettings(request, organizationId);
+
+  sendData(response, organizationSchema.organizationSettingsResponse.parse(result));
+}
+
+async function updateSettings(request: Request, response: Response): Promise<void> {
+  const { organizationId } = organizationSchema.organizationParams.parse(request.params);
+  const input = organizationSchema.updateOrganizationSettingsRequest.parse(request.body);
+  const result = await organizationService.updateSettings(request, organizationId, input);
+
+  sendData(response, organizationSchema.organizationSettingsResponse.parse(result));
+}
+
 async function deleteOrganization(request: Request, response: Response): Promise<void> {
   const { organizationId } = organizationSchema.organizationParams.parse(request.params);
   await organizationService.deleteOrganization(request, organizationId);
@@ -28,6 +43,8 @@ async function deleteOrganization(request: Request, response: Response): Promise
 const organizationController = {
   listMembers,
   createOrganization,
+  getSettings,
+  updateSettings,
   deleteOrganization,
 };
 
