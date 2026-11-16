@@ -1,6 +1,7 @@
 import type {
   CreateOrganizationResponse,
   ListOrganizationMembersResponse,
+  ListOrganizationsResponse,
   OrganizationMemberResponse,
 } from '@time-tracker/shared';
 
@@ -79,10 +80,43 @@ function toMembersResponse({
   };
 }
 
+function toListOrganizationsResponse({
+  items,
+  page,
+  pageSize,
+  total,
+}: {
+  items: Array<{
+    organization: { id: string; name: string; slug: string; logo: string | null; createdAt: Date };
+    role: string;
+  }>;
+  page: number;
+  pageSize: number;
+  total: number;
+}): ListOrganizationsResponse {
+  return {
+    items: items.map((item) => ({
+      id: item.organization.id,
+      name: item.organization.name,
+      slug: item.organization.slug,
+      logo: item.organization.logo,
+      role: item.role === 'owner' ? 'owner' : 'member',
+      createdAt: item.organization.createdAt,
+    })),
+    pageInfo: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
+}
+
 const organizationMapper = {
   toMemberResponse,
   toOrganizationResponse,
   toMembersResponse,
+  toListOrganizationsResponse,
 };
 
 export default organizationMapper;
