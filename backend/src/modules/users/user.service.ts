@@ -30,7 +30,9 @@ async function deleteUser(
     throw new AppError('Odstranění účtu se nezdařilo. Zkuste to prosím znovu', 500);
   }
 
-  return { message: 'Účet byl odstraněn.' };
+  return {
+    message: requestingUser.id === userId ? 'Váš účet byl odstraněn' : 'Účet byl odstraněn.',
+  };
 }
 
 const userService: UserService = {

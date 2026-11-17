@@ -38,6 +38,12 @@ async function deleteUser(userId: string, authorize: UserDeletionAuthorization):
     });
     await tx.organization.deleteMany({ where: { id: { in: ownedOrganizationIds } } });
     await tx.session.deleteMany({ where: { userId } });
+    if (ownedOrganizationIds.length > 0) {
+      await tx.session.updateMany({
+        where: { activeOrganizationId: { in: ownedOrganizationIds } },
+        data: { activeOrganizationId: null },
+      });
+    }
     await tx.account.deleteMany({ where: { userId } });
     await tx.user.delete({ where: { id: userId } });
   });

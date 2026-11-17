@@ -25,7 +25,7 @@ function sessionCookie(response: Response): string {
 async function signUp(name: string): Promise<TestUser> {
   const email = `user-delete-${randomUUID()}@example.com`;
   const response = await auth.api.signUpEmail({
-    body: { name, surname: 'Test', email, password: `test-password-${randomUUID()}` },
+    body: { name, surname: 'Test', email, password: `Test1!${randomUUID()}` },
     asResponse: true,
   });
   assert.equal(response.status, 200);
@@ -90,6 +90,10 @@ describe('Odstranění uživatelského účtu (MongoDB + HTTP)', { concurrency: 
         { id: randomUUID(), organizationId: behId, userId: adam.id, role: 'owner', createdAt },
         { id: randomUUID(), organizationId: behId, userId: tereza.id, createdAt },
       ],
+    });
+    await auth.api.setActiveOrganization({
+      headers: new Headers({ cookie: adam.cookie }),
+      body: { organizationId: turistikaId },
     });
     await prisma.invitation.createMany({
       data: [
@@ -157,7 +161,7 @@ describe('Odstranění uživatelského účtu (MongoDB + HTTP)', { concurrency: 
   test('user deletes own account, owned organizations and personal data; others stay', async () => {
     const response = await me(tereza);
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { message: 'Váš účet byl odstraněn.' });
+    assert.deepEqual(await response.json(), { message: 'Váš účet byl odstraněn' });
 
     // The browser drops the session cookie, so the user is logged out on the client too.
     const { authCookies } = await auth.$context;
@@ -192,7 +196,11 @@ describe('Odstranění uživatelského účtu (MongoDB + HTTP)', { concurrency: 
       [{ id: adamInvitationId }],
     );
     assert.ok(await prisma.user.findUnique({ where: { id: adam.id } }));
-    assert.ok(await prisma.session.count({ where: { userId: adam.id } }));
+    const adamSession = await auth.api.getSession({
+      headers: new Headers({ cookie: adam.cookie }),
+    });
+    assert.ok(adamSession);
+    assert.equal(adamSession.session.activeOrganizationId, null);
 
     // The deleted user loses access: the old session cookie is rejected.
     assert.equal((await me(tereza)).status, 401);
@@ -201,7 +209,7 @@ describe('Odstranění uživatelského účtu (MongoDB + HTTP)', { concurrency: 
   test('admin deletes another account and its owned organizations', async () => {
     const result = await userService.deleteUser({ id: randomUUID(), roles: ['admin'] }, adam.id);
 
-    assert.deepEqual(result, { message: 'Váš účet byl odstraněn.' });
+    assert.deepEqual(result, { message: 'Účet byl odstraněn.' });
     assert.equal(await prisma.user.findUnique({ where: { id: adam.id } }), null);
     assert.equal(await prisma.organization.findUnique({ where: { id: behId } }), null);
     assert.equal(await prisma.member.count({ where: { organizationId: behId } }), 0);
@@ -221,7 +229,10 @@ describe('Odstranění uživatelského účtu (MongoDB + HTTP)', { concurrency: 
   test('a failure after deletion rolls everything back and allows retry', async (t) => {
     const snapshot = async () => ({
       user: await prisma.user.findUnique({ where: { id: tereza.id } }),
-      sessions: await prisma.session.findMany({ where: { userId: tereza.id } }),
+      sessions: await prisma.session.findMany({
+        where: { userId: { in: [tereza.id, adam.id] } },
+        orderBy: { id: 'asc' },
+      }),
       accounts: await prisma.account.findMany({ where: { userId: tereza.id } }),
       organizations: await prisma.organization.findMany({
         where: { id: { in: organizationIds() } },

@@ -14,7 +14,7 @@ const deleteParams = z.object({
 });
 
 const deleteResponse = z.object({
-  message: z.literal('Účet byl odstraněn.'),
+  message: z.enum(['Váš účet byl odstraněn', 'Účet byl odstraněn.']),
 });
 
 export const userSchema = {
