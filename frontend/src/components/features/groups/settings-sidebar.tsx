@@ -1,32 +1,54 @@
 import Link from 'next/link';
 import { Home, Users, LayoutGrid, Tag } from 'lucide-react';
 
-export function SettingsSidebar() {
+interface SettingsSidebarProps {
+  activeTab?: 'overview' | 'groups' | 'categories' | 'tags';
+}
+
+export function SettingsSidebar({ activeTab = 'groups' }: SettingsSidebarProps) {
   return (
     <aside className="border-border bg-card hidden w-64 shrink-0 border-r py-6 pr-4 pl-0 md:block">
-      <nav className="space-y-1">
+      <nav className="space-y-1.5 px-4">
         <Link
           href="/"
-          className="text-muted-foreground hover:text-foreground flex items-center gap-3.5 px-6 py-2.5 text-sm font-medium transition-colors"
+          className={`flex items-center gap-3.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+            activeTab === 'overview'
+              ? 'bg-[#18392b] font-semibold text-white'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
         >
           <Home className="size-5" />
           <span>Přehled</span>
         </Link>
 
-        <Link href="/groups" className="relative flex items-center">
-          <div className="bg-primary absolute top-0 bottom-0 left-0 w-1 rounded-r-md" />
-          <div className="bg-primary/10 text-primary ml-3 flex w-full items-center gap-3.5 rounded-xl px-4 py-2.5 text-sm font-semibold">
-            <Users className="size-5" />
-            <span>Skupiny</span>
-          </div>
+        <Link
+          href="/groups"
+          className={`flex items-center gap-3.5 rounded-xl px-4 py-2.5 text-sm transition-colors ${
+            activeTab === 'groups'
+              ? 'bg-[#18392b] font-semibold text-white'
+              : 'text-muted-foreground hover:text-foreground font-medium'
+          }`}
+        >
+          <Users className="size-5" />
+          <span>Skupiny</span>
         </Link>
 
-        <div className="text-muted-foreground flex items-center gap-3.5 px-6 py-2.5 text-sm font-medium">
+        <div
+          className={`flex items-center gap-3.5 rounded-xl px-4 py-2.5 text-sm font-medium ${
+            activeTab === 'categories'
+              ? 'bg-[#18392b] font-semibold text-white'
+              : 'text-muted-foreground'
+          }`}
+        >
           <LayoutGrid className="size-5" />
           <span>Kategorie</span>
         </div>
 
-        <div className="text-muted-foreground flex items-center gap-3.5 px-6 py-2.5 text-sm font-medium">
+        <div
+          className={`flex items-center gap-3.5 rounded-xl px-4 py-2.5 text-sm font-medium ${
+            activeTab === 'tags' ? 'bg-[#18392b] font-semibold text-white' : 'text-muted-foreground'
+          }`}
+        >
           <Tag className="size-5" />
           <span>Tagy</span>
         </div>

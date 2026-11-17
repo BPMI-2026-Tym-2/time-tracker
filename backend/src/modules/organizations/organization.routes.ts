@@ -4,6 +4,7 @@ import organizationController from './organization.controller.js';
 
 const organizationRouter = Router();
 
+organizationRouter.get('/', asyncHandler(organizationController.listOrganizations));
 organizationRouter.post('/', asyncHandler(organizationController.createOrganization));
 organizationRouter.post(
   '/:organizationId/invitations',

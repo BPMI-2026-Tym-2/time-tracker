@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { NotebookPen, ChevronDown } from 'lucide-react';
 import { NotificationInbox } from '@/components/features/notifications/notification-inbox';
 import { authClient } from '@/lib/auth-client';
 
@@ -23,12 +24,21 @@ export function AppHeader({ userName, userInitials }: AppHeaderProps) {
   return (
     <header className="border-border bg-card sticky top-0 z-30 w-full border-b transition-colors">
       <div className="flex h-14 items-center justify-between px-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="font-heading text-foreground text-base font-bold tracking-tight hover:opacity-90"
+            className="font-heading text-foreground flex items-center gap-2 text-base font-bold tracking-tight hover:opacity-90"
           >
-            Time Tracker
+            <NotebookPen className="size-5" />
+            <span>Záznamník</span>
+          </Link>
+
+          <Link
+            href="/groups"
+            className="text-foreground flex items-center gap-1.5 text-base font-bold transition-opacity hover:opacity-80"
+          >
+            <span>Skupiny</span>
+            <ChevronDown className="size-4" />
           </Link>
         </div>
 

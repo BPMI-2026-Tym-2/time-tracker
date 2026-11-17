@@ -2,6 +2,7 @@ import type {
   CreateOrganizationResponse,
   InvitationResponse,
   ListOrganizationMembersResponse,
+  ListOrganizationsResponse,
   OrganizationMemberResponse,
   OrganizationSettingsResponse,
 } from '@time-tracker/shared';
@@ -37,14 +38,14 @@ type OrganizationRecord = {
 };
 
 type OrganizationMemberRecord = {
-  userId: string;
+  id: string;
   role: string;
   createdAt: Date;
   user: {
     id: string;
     name: string;
-    surname?: string;
-    email: string;
+    surname: string;
+    email?: string;
   };
 };
 
@@ -55,16 +56,12 @@ function toMemberResponse({
   member: OrganizationMemberRecord;
   includeEmail: boolean;
 }): OrganizationMemberResponse {
-  if (member.role !== 'member' && member.role !== 'owner') {
-    throw new Error(`Unknown organization role: ${member.role}`);
-  }
-
   return {
-    id: member.user.id,
+    id: member.id,
     name: member.user.name,
-    surname: member.user.surname ?? '',
-    ...(includeEmail && { email: member.user.email }),
-    role: member.role,
+    surname: member.user.surname,
+    ...(includeEmail && member.user.email ? { email: member.user.email } : {}),
+    role: member.role === 'owner' ? 'owner' : 'member',
     joinedAt: member.createdAt,
   };
 }
@@ -138,12 +135,45 @@ function toSettingsResponse({
   };
 }
 
+function toListOrganizationsResponse({
+  items,
+  page,
+  pageSize,
+  total,
+}: {
+  items: Array<{
+    organization: { id: string; name: string; slug: string; logo: string | null; createdAt: Date };
+    role: string;
+  }>;
+  page: number;
+  pageSize: number;
+  total: number;
+}): ListOrganizationsResponse {
+  return {
+    items: items.map((item) => ({
+      id: item.organization.id,
+      name: item.organization.name,
+      slug: item.organization.slug,
+      logo: item.organization.logo,
+      role: item.role === 'owner' ? 'owner' : 'member',
+      createdAt: item.organization.createdAt,
+    })),
+    pageInfo: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
+}
+
 const organizationMapper = {
   toInvitationResponse,
   toMemberResponse,
   toOrganizationResponse,
   toMembersResponse,
   toSettingsResponse,
+  toListOrganizationsResponse,
 };
 
 export default organizationMapper;
