@@ -22,18 +22,20 @@ export default function RegisterPage() {
   });
 
   const { register: registerUser, isPending, error, resetError } = useRegister();
-  const { googlePending, loginWithGoogle } = useLogin();
+  const { googlePending, googleError, loginWithGoogle } = useLogin();
 
   const onSubmit: SubmitHandler<RegisterSchema> = (values) => {
     resetError();
     registerUser(values);
   };
 
+  const displayedError = error ?? googleError;
+
   return (
     <RegisterForm
       isPending={isPending}
       googlePending={googlePending}
-      errorMessage={error instanceof Error ? error.message : undefined}
+      errorMessage={displayedError instanceof Error ? displayedError?.message : undefined}
       form={form}
       onSubmit={onSubmit}
       onGoogleLogin={loginWithGoogle}

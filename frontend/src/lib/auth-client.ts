@@ -6,10 +6,10 @@ import {
   organizationClient,
 } from 'better-auth/client/plugins';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+import { publicEnv } from '@/lib/env';
 
 export const authClient = createAuthClient({
-  baseURL: `${apiUrl}/api/auth`,
+  baseURL: `${publicEnv.apiUrl}/api/auth`,
   plugins: [
     adminClient(),
     inferAdditionalFields({
@@ -22,7 +22,7 @@ export const authClient = createAuthClient({
       },
     }),
     oneTapClient({
-      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID as string,
+      clientId: publicEnv.googleClientId,
       // Optional client configuration:
       autoSelect: false,
       cancelOnTapOutside: true,

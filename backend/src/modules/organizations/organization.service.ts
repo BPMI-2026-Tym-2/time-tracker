@@ -32,7 +32,7 @@ async function listMembers(
   query: ListOrganizationMembersQuery,
 ): Promise<ListOrganizationMembersResponse> {
   const headers = fromNodeHeaders(request.headers);
-  const [organization, membersResult, memberRoleResult] = await Promise.all([
+  const [organization, membersResult] = await Promise.all([
     auth.api.getOrganization({
       headers,
       query: { organizationId },
@@ -55,10 +55,6 @@ async function listMembers(
         }),
       },
     }),
-    auth.api.getActiveMemberRole({
-      headers,
-      query: { organizationId },
-    }),
   ]);
 
   if (!organization) {
@@ -75,7 +71,7 @@ async function listMembers(
     page: query.page,
     pageSize: query.pageSize,
     total: membersResult.total,
-    includeEmail: memberRoleResult.role === 'owner',
+    includeEmail: request.organization?.role === 'owner',
   });
 }
 

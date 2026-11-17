@@ -2,8 +2,16 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { env, requiredEnv } from './env.js';
 import { prisma } from '../db/prisma.js';
+import { createAuthMiddleware, APIError } from 'better-auth/api';
 import { admin, oneTap, organization } from 'better-auth/plugins';
-import { ac, admin as adminRole, owner, member, user } from '@time-tracker/shared';
+import {
+  ac,
+  admin as adminRole,
+  owner,
+  member,
+  user,
+  registerFieldsSchema,
+} from '@time-tracker/shared';
 import type { AccessControl } from 'better-auth/plugins/access';
 
 export const authCorsConfig = {
@@ -21,13 +29,26 @@ export const auth = betterAuth({
   basePath: '/api/auth',
   secret: requiredEnv('BETTER_AUTH_SECRET'),
   trustedOrigins: [env.corsOrigin],
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/sign-up/email') {
+        return;
+      }
+
+      const parsed = registerFieldsSchema.safeParse(ctx.body);
+
+      if (!parsed.success) {
+        const message = parsed.error.issues.map((issue) => issue.message).join(', ');
+
+        throw new APIError('BAD_REQUEST', { message });
+      }
+    }),
+  },
   plugins: [
     admin({
       ac: ac as AccessControl,
       roles: {
         admin: adminRole,
-        owner,
-        member,
         user,
       },
     }),
@@ -56,6 +77,8 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
   },
   socialProviders: {
     google: {
@@ -75,6 +98,17 @@ export const auth = betterAuth({
 
         return { name, surname };
       },
+    },
+  },
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 100,
+    // Stricter limits for credential endpoints. Storage is in-memory by default,
+    // so limits are per process until secondary storage is configured.
+    customRules: {
+      '/sign-in/email': { window: 60, max: 5 },
+      '/sign-up/email': { window: 60, max: 3 },
     },
   },
   advanced: {
