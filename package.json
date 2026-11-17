@@ -18,7 +18,7 @@
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f mongodb",
     "test:db": "node --test tests/database.test.mjs",
-    "test:registration": "node --import tsx --test tests/registration.test.ts",
+    "test:registration": "node --env-file-if-exists=backend/.env --import tsx --test tests/registration.test.ts",
     "generate": "npm run prisma:generate --workspace backend && npm run build:shared",
     "build:shared": "npm run build --workspace shared",
     "build": "npm run generate && npm run build --workspace backend && npm run build --workspace frontend",
@@ -30,13 +30,13 @@
     "format:check": "prettier --check .",
     "typecheck": "npm run generate && npm run typecheck --workspaces --if-present",
     "verify": "npm run lint && npm run format:check && npm run typecheck && npm run build",
-    "test:registration": "node --env-file-if-exists=backend/.env --import tsx --test tests/registration.test.ts",
     "prepare": "husky",
     "postinstall": "npm run generate"
   },
   "devDependencies": {
     "@eslint/js": "^9",
     "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
     "concurrently": "^9",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
