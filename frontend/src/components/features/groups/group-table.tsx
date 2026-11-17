@@ -64,6 +64,14 @@ export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
     return null;
   }
 
+  function handleOpen(groupId: string) {
+    if (onOpenGroup) {
+      onOpenGroup(groupId);
+    } else {
+      router.push(`/groups/${groupId}`);
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-[#EBE6DE] bg-white shadow-2xs">
       <div className="grid grid-cols-[1fr_130px_70px] items-center bg-[#F3EFE9] px-6 py-3.5 text-sm font-bold text-[#163820]">
@@ -88,7 +96,13 @@ export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
                 >
                   <GroupIcon className="size-5 stroke-[2.5]" />
                 </div>
-                <span className="text-base font-bold text-[#163820]">{group.name}</span>
+                <button
+                  type="button"
+                  onClick={() => handleOpen(group.id)}
+                  className="cursor-pointer text-left text-base font-bold text-[#163820] hover:underline"
+                >
+                  {group.name}
+                </button>
               </div>
 
               <div className="text-center">
@@ -116,15 +130,7 @@ export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
                     }
                   />
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        if (onOpenGroup) {
-                          onOpenGroup(group.id);
-                        } else {
-                          router.push(`/groups/${group.id}`);
-                        }
-                      }}
-                    >
+                    <DropdownMenuItem onClick={() => handleOpen(group.id)}>
                       <ExternalLink className="size-4" />
                       <span>Otevřít přehled</span>
                     </DropdownMenuItem>

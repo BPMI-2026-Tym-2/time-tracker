@@ -90,8 +90,8 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
                   K zobrazení a úpravě nastavení této skupiny nemáte dostatečná oprávnění. Tuto akci
                   může provádět pouze vlastník skupiny.
                 </p>
-                <Button variant="outline" onClick={() => router.push('/')}>
-                  Zpět na přehled
+                <Button variant="outline" onClick={() => router.push('/groups')}>
+                  Zpět na seznam skupin
                 </Button>
               </div>
             </div>
@@ -100,13 +100,18 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
           {!isLoading && !isForbidden && (error || !settings) && (
             <div className="flex flex-1 items-center justify-center p-8">
               <div className="border-border bg-card w-full max-w-md space-y-4 rounded-3xl border p-8 text-center shadow-sm">
-                <h2 className="text-xl font-bold">Chyba při načítání</h2>
+                <h2 className="text-xl font-bold">Skupina není dostupná</h2>
                 <p className="text-muted-foreground text-sm">
-                  {error?.message ?? 'Nastavení skupiny se nepodařilo načíst.'}
+                  {error?.message ?? 'Vybraná skupina již není dostupná nebo k ní nemáte přístup.'}
                 </p>
-                <Button variant="outline" onClick={() => void refetch()}>
-                  Zkusit znovu
-                </Button>
+                <div className="flex justify-center gap-3">
+                  <Button variant="outline" onClick={() => router.push('/groups')}>
+                    Zpět na seznam skupin
+                  </Button>
+                  <Button variant="default" onClick={() => void refetch()}>
+                    Zkusit znovu
+                  </Button>
+                </div>
               </div>
             </div>
           )}
