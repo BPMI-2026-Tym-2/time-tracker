@@ -43,7 +43,7 @@ export function GroupListPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="bg-background flex min-h-screen flex-col">
       <AppHeader />
 
       <div className="flex flex-1">
@@ -68,14 +68,14 @@ export function GroupListPage() {
             />
 
             {isLoading && (
-              <div className="border-border/60 bg-card flex h-64 items-center justify-center rounded-2xl border shadow-xs">
+              <div className="border-border bg-card flex h-64 items-center justify-center rounded-2xl border shadow-xs">
                 <Spinner className="text-primary size-8" />
               </div>
             )}
 
             {!isLoading && isError && (
-              <div className="border-border/60 bg-card space-y-4 rounded-2xl border p-8 text-center shadow-xs">
-                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <div className="border-border bg-card space-y-4 rounded-2xl border p-8 text-center shadow-xs">
+                <div className="bg-destructive/10 text-destructive mx-auto flex size-12 items-center justify-center rounded-full">
                   <AlertCircle className="size-6" />
                 </div>
                 <h2 className="text-foreground text-lg font-bold">Chyba při načítání seznamu</h2>
@@ -90,7 +90,7 @@ export function GroupListPage() {
             )}
 
             {!isLoading && !isError && organizations.length === 0 && (
-              <div className="border-border/60 bg-card space-y-4 rounded-2xl border p-12 text-center shadow-xs">
+              <div className="border-border bg-card space-y-4 rounded-2xl border p-12 text-center shadow-xs">
                 <div className="bg-muted text-muted-foreground mx-auto flex size-12 items-center justify-center rounded-full">
                   <FolderX className="size-6" />
                 </div>
@@ -132,11 +132,7 @@ export function GroupListPage() {
                         variant={pageNumber === page ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setPage(pageNumber)}
-                        className={`size-8 rounded-lg p-0 text-xs font-semibold ${
-                          pageNumber === page
-                            ? 'bg-[#18392b] text-white hover:bg-[#18392b]/90'
-                            : 'border-border text-foreground hover:bg-muted'
-                        }`}
+                        className="size-8 rounded-lg p-0 text-xs font-semibold"
                       >
                         {pageNumber}
                       </Button>

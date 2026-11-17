@@ -1,16 +1,8 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import {
-  Code,
-  Dumbbell,
-  Plane,
-  Gamepad2,
-  Users,
-  MoreVertical,
-  Settings,
-  ExternalLink,
-} from 'lucide-react';
+import { Users, MoreVertical, Settings, ExternalLink } from 'lucide-react';
 import type { OrganizationItemResponse } from '@time-tracker/shared';
 import {
   Table,
@@ -33,38 +25,6 @@ type GroupTableProps = {
   onOpenGroup?: (groupId: string) => void;
 };
 
-function getGroupIcon(name: string) {
-  const lower = name.toLowerCase();
-  if (lower.includes('prog') || lower.includes('kód') || lower.includes('dev')) {
-    return {
-      icon: Code,
-      className: 'bg-[#EAF3E7] text-[#2D5A34]',
-    };
-  }
-  if (lower.includes('fit') || lower.includes('zdrav') || lower.includes('sport')) {
-    return {
-      icon: Dumbbell,
-      className: 'bg-[#EAF3E7] text-[#2D5A34]',
-    };
-  }
-  if (lower.includes('cest') || lower.includes('trip') || lower.includes('dovolen')) {
-    return {
-      icon: Plane,
-      className: 'bg-[#FDF4E7] text-[#A66E28]',
-    };
-  }
-  if (lower.includes('gam') || lower.includes('hr')) {
-    return {
-      icon: Gamepad2,
-      className: 'bg-[#EAF3E7] text-[#2D5A34]',
-    };
-  }
-  return {
-    icon: Users,
-    className: 'bg-[#EAF3E7] text-[#2D5A34]',
-  };
-}
-
 export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
   const router = useRouter();
 
@@ -73,9 +33,9 @@ export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
   }
 
   return (
-    <div className="border-border/60 bg-card overflow-hidden rounded-2xl border shadow-xs">
+    <div className="border-border bg-card overflow-hidden rounded-2xl border shadow-xs">
       <Table>
-        <TableHeader className="dark:bg-muted/40 bg-[#F4EFEB]">
+        <TableHeader className="bg-muted/40">
           <TableRow className="border-b-0 hover:bg-transparent">
             <TableHead className="text-foreground w-1/2 py-3.5 pl-6 text-xs font-semibold">
               Název skupiny
@@ -90,32 +50,40 @@ export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
         </TableHeader>
         <TableBody className="divide-border/40 divide-y">
           {groups.map((group) => {
-            const { icon: GroupIcon, className: iconStyle } = getGroupIcon(group.name);
             const isOwner = group.role === 'owner';
 
             return (
               <TableRow key={group.id} className="hover:bg-muted/20 transition-colors">
                 <TableCell className="py-3 pl-6">
                   <div className="flex items-center gap-3.5">
-                    <div
-                      className={`flex size-10 items-center justify-center rounded-xl ${iconStyle}`}
-                    >
-                      <GroupIcon className="size-5" />
+                    <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl font-semibold">
+                      {group.logo ? (
+                        <Image
+                          src={group.logo}
+                          alt={group.name}
+                          width={40}
+                          height={40}
+                          className="size-10 rounded-xl object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <Users className="size-5" />
+                      )}
                     </div>
                     <span className="text-foreground text-sm font-semibold">{group.name}</span>
                   </div>
                 </TableCell>
 
                 <TableCell className="py-3 text-center">
-                  {isOwner ? (
-                    <span className="inline-flex items-center rounded-full bg-[#DDECDA] px-4 py-1 text-xs font-semibold text-[#22572A]">
-                      Vlastník
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full bg-[#F1ECE6] px-4 py-1 text-xs font-medium text-[#4A433B]">
-                      Člen
-                    </span>
-                  )}
+                  <span
+                    className={`inline-flex items-center rounded-full px-4 py-1 text-xs ${
+                      isOwner
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'bg-muted text-muted-foreground font-medium'
+                    }`}
+                  >
+                    {isOwner ? 'Vlastník' : 'Člen'}
+                  </span>
                 </TableCell>
 
                 <TableCell className="py-3 pr-6 text-right">
