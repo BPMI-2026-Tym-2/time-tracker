@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       NEXT_PUBLIC_API_URL: http://localhost:3001
-      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: 117243450334-6e5520sju3fuu8lv6ig20c4jn579t0rv.apps.googleusercontent.com
 
     steps:
       - name: Checkout
