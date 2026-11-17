@@ -42,8 +42,8 @@ export function classifyInvitationError(
   ) {
     return {
       code: 'INVALID_OR_NOT_FOUND',
-      title: 'Pozvánku nelze přijmout.',
-      description: 'Pozvánka již není platná nebo skupina do které byl uživatel pozván neexistuje.',
+      title: 'Pozvánku nelze přijmout',
+      description: 'Pozvánka již vypršela nebo skupina neexistuje.',
     };
   }
 
@@ -56,16 +56,15 @@ export function classifyInvitationError(
   ) {
     return {
       code: 'ALREADY_MEMBER',
-      title: 'Jste již členem této skupiny.',
-      description:
-        'Aplikace informuje uživatele, že je již členem dané skupiny. Nové členství se nevytváří.',
+      title: 'Již jste členem skupiny',
+      description: 'V této skupině jste již zařazeni.',
     };
   }
 
   return {
     code: 'CONNECTION_FAILED',
-    title: 'Nepodařilo se připojit ke skupině.',
-    description: 'Aplikace upozorňuje na neúspěšné připojení ke skupině. Akci lze opakovat.',
+    title: 'Připojení se nezdařilo',
+    description: 'Pozvánku se nepodařilo zpracovat. Zkuste to prosím znovu.',
   };
 }
 

@@ -5,23 +5,14 @@ import { Bell, X, CheckCircle2, AlertCircle, Info, RefreshCw } from 'lucide-reac
 import { useNotifications, useRespondInvitation } from '@/hooks/use-invitations';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
-import type { InvitationErrorCode } from '@/lib/api/invitations';
 
 interface NotificationInboxProps {
-  /**
-   * Volitelná simulace chybových stavů pro otestování alternativních toků BUC (A3, A4, A5)
-   */
-  simulatedScenario?: InvitationErrorCode;
   onAcceptSuccess?: (organizationName?: string) => void;
   onRejectSuccess?: (organizationName?: string) => void;
-  /**
-   * Režim pouze popup - nezpracovává skutečné připojení do skupiny na backendu
-   */
   onlyPopup?: boolean;
 }
 
 export function NotificationInbox({
-  simulatedScenario,
   onAcceptSuccess,
   onRejectSuccess,
   onlyPopup = true,
@@ -32,7 +23,6 @@ export function NotificationInbox({
     useRespondInvitation();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Krok 2 & Krok 5: Přijetí pozvánky (Happy Day)
   async function handleAccept(id: string, organizationName?: string) {
     if (onlyPopup) {
       setIsOpen(false);
@@ -44,18 +34,16 @@ export function NotificationInbox({
       await acceptInvitation({
         invitationId: id,
         organizationName,
-        simulatedScenario,
       });
       void refetch();
       onAcceptSuccess?.(organizationName);
     } catch {
-      // Chyba je zpracována a uložena do feedback stavu v hooku
+      // Handled via hook feedback
     } finally {
       setProcessingId(null);
     }
   }
 
-  // A1: Odmítnutí pozvánky
   async function handleReject(id: string, organizationName?: string) {
     if (onlyPopup) {
       setIsOpen(false);
@@ -71,15 +59,10 @@ export function NotificationInbox({
       void refetch();
       onRejectSuccess?.(organizationName);
     } catch {
-      // Chyba je zpracována a uložena do feedback stavu v hooku
+      // Handled via hook feedback
     } finally {
       setProcessingId(null);
     }
-  }
-
-  // A2: Uživatel uzavře panel oznámení pomocí ikony "✕"
-  function handleClosePanel() {
-    setIsOpen(false);
   }
 
   return (
@@ -91,10 +74,8 @@ export function NotificationInbox({
             className="relative flex size-10 items-center justify-center rounded-full transition-transform hover:scale-105 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#1E3426] active:scale-95"
             aria-label={`Oznámení: ${count} nových pozvánek`}
           >
-            {/* Zvonek ve stylu mockupu - tmavě zelená/olivová barva */}
             <Bell className="size-6 text-[#243327]" />
 
-            {/* Červené kolečko s počtem nových oznámení */}
             {count > 0 && (
               <span
                 className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D13438] px-1 text-[10px] font-bold text-white shadow-xs"
@@ -112,19 +93,16 @@ export function NotificationInbox({
         sideOffset={12}
         className="w-[360px] overflow-hidden rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-0 text-[#1C261F] shadow-2xl focus:outline-hidden sm:w-[400px]"
       >
-        {/* Šipka bubliny směřující nahoru ke zvonku jako v mockupu */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-2 right-6 size-4 rotate-45 border-t border-l border-[#DFD8CC] bg-[#FAF7F2]"
         />
 
-        {/* Hlavička panelu Oznámení */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h2 className="text-xl font-bold tracking-tight text-[#1C261F]">Oznámení</h2>
-          {/* A2: Tlačítko Zavřít (x) */}
           <button
             type="button"
-            onClick={handleClosePanel}
+            onClick={() => setIsOpen(false)}
             className="flex size-8 items-center justify-center rounded-full text-[#1C261F] transition-colors hover:bg-[#EAE2D5] active:scale-95"
             aria-label="Zavřít"
           >
@@ -132,10 +110,8 @@ export function NotificationInbox({
           </button>
         </div>
 
-        {/* Dělící linka */}
         <div className="mx-6 border-b border-[#E7E0D3]" />
 
-        {/* Zpětná vazba pro uživatele (Happy day, A1, A3, A4, A5) */}
         {feedback && (
           <div className="px-6 pt-4">
             <div
@@ -170,7 +146,6 @@ export function NotificationInbox({
                   <p className="text-sm leading-tight font-bold">{feedback.title}</p>
                   <p className="leading-relaxed opacity-90">{feedback.message}</p>
 
-                  {/* A5: Umožnit uživateli akci znovu opakovat */}
                   {feedback.code === 'CONNECTION_FAILED' && feedback.invitationId && (
                     <button
                       type="button"
@@ -189,7 +164,6 @@ export function NotificationInbox({
           </div>
         )}
 
-        {/* Tělo panelu / Seznam pozvánek */}
         <div className="p-6">
           {isLoading ? (
             <div className="flex h-32 items-center justify-center">
@@ -216,17 +190,13 @@ export function NotificationInbox({
                     key={notification.id}
                     className="rounded-2xl border border-[#E3DDD1] bg-white/80 p-5 shadow-xs transition-shadow hover:shadow-sm"
                   >
-                    {/* Nadpis pozvánky */}
                     <h3 className="text-base font-bold text-[#1C261F]">Pozvánka do skupiny</h3>
 
-                    {/* Text pozvánky dle mockupu: Byli jste pozváni do skupiny "Skupina 1" */}
                     <p className="mt-1 text-sm text-[#3E4540]">
                       Byli jste pozváni do skupiny &quot;{notification.organization.name}&quot;
                     </p>
 
-                    {/* Tlačítka Odmítnout a Přijmout přesně podle mockupu */}
                     <div className="mt-4 flex items-center gap-3">
-                      {/* Tlačítko Odmítnout (světle béžové) */}
                       <button
                         type="button"
                         disabled={isButtonsDisabled}
@@ -245,7 +215,6 @@ export function NotificationInbox({
                         )}
                       </button>
 
-                      {/* Tlačítko Přijmout (tmavě zelené) */}
                       <button
                         type="button"
                         disabled={isButtonsDisabled}

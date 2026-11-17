@@ -32,7 +32,6 @@ export function UserListControls({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-xl font-bold tracking-tight text-slate-900">Seznam uživatelů</h2>
-          {/* Tlačítko pro vytvoření pozvánky do vybrané skupiny přesně dle BUC */}
           <InviteMemberDialog
             organizationId={`org-${groupName.toLowerCase().replace(/\s+/g, '-')}`}
             organizationName={groupName}

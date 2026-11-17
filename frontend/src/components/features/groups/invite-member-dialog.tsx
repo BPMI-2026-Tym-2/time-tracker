@@ -13,7 +13,6 @@ type InviteMemberDialogProps = {
   organizationId: string;
   organizationName?: string;
   trigger?: React.ReactNode;
-  simulateError?: boolean;
   onSuccess?: (email: string) => void;
 };
 
@@ -21,7 +20,6 @@ export function InviteMemberDialog({
   organizationId,
   organizationName = 'Skupina 1',
   trigger,
-  simulateError = false,
   onSuccess,
 }: InviteMemberDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +30,7 @@ export function InviteMemberDialog({
     isPending,
     error: apiError,
     reset: resetMutation,
-  } = useCreateInvitation(organizationId, { simulateError });
+  } = useCreateInvitation(organizationId);
 
   const {
     register,
@@ -55,7 +53,7 @@ export function InviteMemberDialog({
       resetForm();
       onSuccess?.(data.email);
     } catch {
-      // Chyba A2 je zpracována přes mutation state
+      // Error handled via mutation state
     }
   }
 
@@ -86,30 +84,26 @@ export function InviteMemberDialog({
         }
       />
 
-      {/* Dialogové okno dle dodaného mockupu: Bílá karta, zaoblené rohy, vycentrovaný obsah */}
       <DialogContent
         showCloseButton={false}
         className="w-full max-w-[480px] rounded-3xl border border-[#DFD8CC] bg-white p-8 text-[#1C261F] shadow-2xl focus:outline-hidden"
       >
-        {/* Zavřít (×) - Ikona v pravém horním rohu */}
         <DialogClose
           render={
             <button
               type="button"
               className="absolute top-5 right-5 flex size-8 items-center justify-center rounded-full text-[#1C261F] transition-colors hover:bg-[#F3F4F6] active:scale-95"
-              aria-label="Zavřít dialog"
+              aria-label="Zavřít"
             >
               <X className="size-5" />
             </button>
           }
         />
 
-        {/* Nadpis: Pozvat člena */}
         <h2 className="text-center text-2xl font-bold tracking-tight text-[#1C261F]">
           Pozvat člena
         </h2>
 
-        {/* Popis pozvánky dle mockupu: Pozvěte nového člena do skupiny "Skupina 1"! */}
         <p className="mt-2 text-center text-sm text-[#4A4742]">
           Pozvěte nového člena do skupiny <strong>&quot;{organizationName}&quot;</strong>!
         </p>
@@ -138,7 +132,6 @@ export function InviteMemberDialog({
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5" noValidate>
             <div>
-              {/* Popisek pole dle mockupu: Vložte E-mail uživatele: */}
               <label
                 htmlFor="invitation-email-input"
                 className="block text-center text-sm font-medium text-[#1C261F]"
@@ -146,7 +139,6 @@ export function InviteMemberDialog({
                 Vložte E-mail uživatele:
               </label>
 
-              {/* Krátké textové pole dle mockupu: světle šedé pozadí, vycentrovaný placeholder */}
               <div className="mt-2">
                 <input
                   id="invitation-email-input"
@@ -161,7 +153,6 @@ export function InviteMemberDialog({
                 />
               </div>
 
-              {/* Alternativní tok A1: Error Message - Zadejte platnou e-mailovou adresu. */}
               {errors.email && (
                 <p className="mt-2 text-center text-xs font-semibold text-rose-600" role="alert">
                   {errors.email.message || 'Zadejte platnou e-mailovou adresu.'}
@@ -169,12 +160,11 @@ export function InviteMemberDialog({
               )}
             </div>
 
-            {/* Alternativní tok A2: Error Message - Pozvánku se nepodařilo odeslat */}
             {apiError && (
               <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-3.5 text-center">
                 <p className="text-xs font-bold text-rose-700">Pozvánku se nepodařilo odeslat</p>
                 <p className="text-[11px] text-rose-600">
-                  Aplikace upozorňuje na neúspěšné odeslání. Můžete akci znova opakovat.
+                  Při odesílání došlo k chybě. Zkontrolujte spojení a zkuste to prosím znovu.
                 </p>
                 <button
                   type="button"
@@ -187,9 +177,7 @@ export function InviteMemberDialog({
               </div>
             )}
 
-            {/* Tlačítka: Zavřít a Pozvat přesně dle mockupu */}
             <div className="flex items-center justify-center gap-4 pt-2">
-              {/* Tlačítko Zavřít (světlé/béžové) */}
               <DialogClose
                 render={
                   <button
@@ -202,7 +190,6 @@ export function InviteMemberDialog({
                 }
               />
 
-              {/* Tlačítko Pozvat (tmavě zelené) */}
               <button
                 type="submit"
                 disabled={isPending}

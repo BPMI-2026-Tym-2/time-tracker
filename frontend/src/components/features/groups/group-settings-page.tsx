@@ -67,8 +67,7 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
-      {/* Horní lišta s notifikacemi (zvonek s popupem pro přijetí pozvánky) */}
-      <AppHeader userName="Emil" userInitials="EM" />
+      <AppHeader />
 
       <div className="flex flex-1">
         <SettingsSidebar />
@@ -123,7 +122,6 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
                     Správa základních informací o skupině {settings.name}
                   </p>
                 </div>
-                {/* Tlačítko pro odeslání pozvánky do skupiny */}
                 <InviteMemberDialog organizationId={settings.id} organizationName={settings.name} />
               </div>
 

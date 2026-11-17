@@ -50,10 +50,10 @@ export default function Home() {
 
           <div className="flex w-full flex-col gap-3">
             <Link
-              href="/invitations"
+              href="/groups/skupina-1/settings"
               className="inline-flex w-full items-center justify-center rounded-xl bg-[#1E3426] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#16271D]"
             >
-              Přejít na správu pozvánek a oznámení
+              Nastavení skupiny
             </Link>
 
             <Button

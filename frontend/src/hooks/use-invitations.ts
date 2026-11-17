@@ -77,15 +77,11 @@ export function useNotifications() {
   };
 }
 
-export function useCreateInvitation(organizationId: string, options?: { simulateError?: boolean }) {
+export function useCreateInvitation(organizationId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<InvitationResponse, Error, CreateInvitationRequest>({
     mutationFn: async (body) => {
-      if (options?.simulateError) {
-        throw new ApiError('Pozvánku se nepodařilo odeslat', 500, 'CONNECTION_FAILED');
-      }
-
       try {
         return await createInvitation(organizationId, body);
       } catch (err) {
@@ -103,7 +99,6 @@ export function useCreateInvitation(organizationId: string, options?: { simulate
             expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
           };
 
-          // Also add to mock notifications for recipient
           mockNotificationsCache.push({
             id: newInvitation.id,
             type: 'organization-invitation',
@@ -138,23 +133,9 @@ export function useRespondInvitation() {
   const acceptMutation = useMutation<
     void,
     Error,
-    { invitationId: string; organizationName?: string; simulatedScenario?: InvitationErrorCode }
+    { invitationId: string; organizationName?: string }
   >({
-    mutationFn: async ({ invitationId, simulatedScenario }) => {
-      if (simulatedScenario === 'INVALID_OR_NOT_FOUND') {
-        throw new ApiError(
-          'Pozvánka již není platná nebo skupina neexistuje.',
-          404,
-          'INVALID_OR_NOT_FOUND',
-        );
-      }
-      if (simulatedScenario === 'ALREADY_MEMBER') {
-        throw new ApiError('Jste již členem této skupiny.', 400, 'ALREADY_MEMBER');
-      }
-      if (simulatedScenario === 'CONNECTION_FAILED') {
-        throw new ApiError('Nepodařilo se připojit ke skupině.', 500, 'CONNECTION_FAILED');
-      }
-
+    mutationFn: async ({ invitationId }) => {
       try {
         await acceptInvitation(invitationId);
       } catch (err) {
@@ -162,7 +143,6 @@ export function useRespondInvitation() {
           if (err instanceof ApiError && err.code !== 'UNKNOWN') {
             throw err;
           }
-          // In dev mode when backend is unreachable, simulate successful accept
           mockNotificationsCache = mockNotificationsCache.filter((n) => n.id !== invitationId);
           return;
         }
