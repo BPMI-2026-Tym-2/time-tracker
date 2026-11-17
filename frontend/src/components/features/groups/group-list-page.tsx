@@ -13,11 +13,13 @@ import {
   Tag,
   User,
   FolderX,
+  AlertCircle,
 } from 'lucide-react';
 import { GroupListControls } from './group-list-controls';
 import { GroupTable } from './group-table';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
 
 export function GroupListPage() {
   const [search, setSearch] = useState('');
@@ -25,13 +27,15 @@ export function GroupListPage() {
   const [sort, setSort] = useState<'default' | 'name_asc' | 'name_desc'>('default');
   const [page, setPage] = useState(1);
 
-  const { organizations, isLoading } = useOrganizations({
+  const { data, isLoading, isError, error, refetch } = useOrganizations({
     search: search.trim() || undefined,
     role,
     sort,
     page,
     pageSize: 10,
   });
+
+  const organizations = data?.items ?? [];
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -136,7 +140,28 @@ export function GroupListPage() {
               </div>
             )}
 
-            {!isLoading && organizations.length === 0 && (
+            {!isLoading && isError && (
+              <div className="space-y-4 rounded-2xl border border-[#E0DDD6] bg-white p-12 text-center shadow-2xs">
+                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+                  <AlertCircle className="size-6" />
+                </div>
+                <h2 className="text-lg font-bold text-[#163820]">Chyba při načítání seznamu</h2>
+                <p className="text-sm text-[#5A685D]">
+                  {error?.message ?? 'Dostupné skupiny se nepodařilo načíst.'}
+                </p>
+                <div>
+                  <Button
+                    variant="outline"
+                    onClick={() => void refetch()}
+                    className="border-[#163820] text-[#163820] hover:bg-slate-50"
+                  >
+                    Zkusit znovu
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!isLoading && !isError && organizations.length === 0 && (
               <div className="space-y-3 rounded-2xl border border-[#E0DDD6] bg-white p-12 text-center shadow-2xs">
                 <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-[#163820]">
                   <FolderX className="size-6" />
@@ -150,7 +175,7 @@ export function GroupListPage() {
               </div>
             )}
 
-            {!isLoading && organizations.length > 0 && (
+            {!isLoading && !isError && organizations.length > 0 && (
               <div className="space-y-5">
                 <GroupTable groups={organizations} />
 

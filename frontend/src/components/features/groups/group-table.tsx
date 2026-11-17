@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import type { LucideIcon } from 'lucide-react';
 import {
   Code,
   Dumbbell,
@@ -25,36 +26,15 @@ type GroupTableProps = {
   onOpenGroup?: (groupId: string) => void;
 };
 
-function getGroupVisual(name: string) {
-  const lower = name.toLowerCase();
-  if (lower.includes('prog') || lower.includes('dev') || lower.includes('kód')) {
-    return {
-      icon: Code,
-      boxClass: 'bg-[#E5F1E2] text-[#29562E]',
-    };
-  }
-  if (lower.includes('fit') || lower.includes('sport') || lower.includes('zdrav')) {
-    return {
-      icon: Dumbbell,
-      boxClass: 'bg-[#E5F1E2] text-[#29562E]',
-    };
-  }
-  if (lower.includes('cest') || lower.includes('trip') || lower.includes('dovolen')) {
-    return {
-      icon: Plane,
-      boxClass: 'bg-[#FCF2DF] text-[#9D6824]',
-    };
-  }
-  if (lower.includes('gam') || lower.includes('hr')) {
-    return {
-      icon: Gamepad2,
-      boxClass: 'bg-[#E5F1E2] text-[#29562E]',
-    };
-  }
-  return {
-    icon: Users,
-    boxClass: 'bg-[#E5F1E2] text-[#29562E]',
-  };
+const VISUAL_BY_SLUG: Record<string, { icon: LucideIcon; boxClass: string }> = {
+  programovani: { icon: Code, boxClass: 'bg-[#E5F1E2] text-[#29562E]' },
+  'fitness-a-zdravi': { icon: Dumbbell, boxClass: 'bg-[#E5F1E2] text-[#29562E]' },
+  cestovani: { icon: Plane, boxClass: 'bg-[#FCF2DF] text-[#9D6824]' },
+  gaming: { icon: Gamepad2, boxClass: 'bg-[#E5F1E2] text-[#29562E]' },
+};
+
+function getGroupVisual(slug: string) {
+  return VISUAL_BY_SLUG[slug] ?? { icon: Users, boxClass: 'bg-[#E5F1E2] text-[#29562E]' };
 }
 
 export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
@@ -82,7 +62,7 @@ export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
 
       <div className="divide-y divide-[#ECE8E1]/70">
         {groups.map((group) => {
-          const { icon: GroupIcon, boxClass } = getGroupVisual(group.name);
+          const { icon: GroupIcon, boxClass } = getGroupVisual(group.slug);
           const isOwner = group.role === 'owner';
 
           return (

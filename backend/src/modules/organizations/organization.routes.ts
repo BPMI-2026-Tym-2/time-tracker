@@ -26,9 +26,5 @@ organizationRouter.patch(
   '/:organizationId/settings',
   asyncHandler(organizationController.updateSettings),
 );
-organizationRouter.delete(
-  '/:organizationId',
-  asyncHandler(organizationController.deleteOrganization),
-);
 
 export default organizationRouter;

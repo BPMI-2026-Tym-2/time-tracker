@@ -5,7 +5,7 @@ type PageProps = {
   params: Promise<{ groupId: string }>;
 };
 
-async function OverviewRedirect({ params }: PageProps) {
+async function RedirectToSettings({ params }: PageProps) {
   const { groupId } = await params;
   redirect(`/groups/${groupId}/settings`);
   return null;
@@ -14,7 +14,7 @@ async function OverviewRedirect({ params }: PageProps) {
 export default function GroupOverviewPage({ params }: PageProps) {
   return (
     <Suspense fallback={null}>
-      <OverviewRedirect params={params} />
+      <RedirectToSettings params={params} />
     </Suspense>
   );
 }
