@@ -64,6 +64,29 @@ const invitationResponse = z.object({
   expiresAt: z.coerce.date(),
 });
 
+const organizationSettingsResponse = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  slug: z.string(),
+  invitationCode: z.string(),
+  owner: z
+    .object({
+      id: z.string().min(1),
+      name: z.string(),
+      surname: z.string(),
+    })
+    .nullable(),
+  currentUserRole: role.nullable(),
+  permissions: z.object({
+    canEdit: z.boolean(),
+    canDelete: z.boolean(),
+  }),
+});
+
+const updateOrganizationSettingsRequest = z.object({
+  name: z.string().trim().min(1, 'Název skupiny je povinný').max(100),
+});
+
 export const organizationSchema = {
   role,
   organizationParams,
@@ -74,6 +97,8 @@ export const organizationSchema = {
   createOrganizationResponse,
   createInvitationRequest,
   invitationResponse,
+  organizationSettingsResponse,
+  updateOrganizationSettingsRequest,
 };
 
 export type OrganizationRole = z.infer<typeof role>;
@@ -84,3 +109,5 @@ export type CreateOrganizationRequest = z.infer<typeof createOrganizationRequest
 export type CreateOrganizationResponse = z.infer<typeof createOrganizationResponse>;
 export type CreateInvitationRequest = z.infer<typeof createInvitationRequest>;
 export type InvitationResponse = z.infer<typeof invitationResponse>;
+export type OrganizationSettingsResponse = z.infer<typeof organizationSettingsResponse>;
+export type UpdateOrganizationSettingsRequest = z.infer<typeof updateOrganizationSettingsRequest>;
