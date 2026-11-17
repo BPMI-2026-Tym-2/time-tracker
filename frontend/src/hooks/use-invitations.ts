@@ -77,11 +77,15 @@ export function useNotifications() {
   };
 }
 
-export function useCreateInvitation(organizationId: string) {
+export function useCreateInvitation(organizationId: string, options?: { simulateError?: boolean }) {
   const queryClient = useQueryClient();
 
   return useMutation<InvitationResponse, Error, CreateInvitationRequest>({
     mutationFn: async (body) => {
+      if (options?.simulateError) {
+        throw new ApiError('Pozvánku se nepodařilo odeslat', 500, 'CONNECTION_FAILED');
+      }
+
       try {
         return await createInvitation(organizationId, body);
       } catch (err) {
@@ -105,7 +109,7 @@ export function useCreateInvitation(organizationId: string) {
             type: 'organization-invitation',
             organization: {
               id: organizationId,
-              name: 'Nová skupina',
+              name: 'Skupina 1',
             },
             createdAt: newInvitation.createdAt,
             expiresAt: newInvitation.expiresAt,

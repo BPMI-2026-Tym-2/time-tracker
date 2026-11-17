@@ -2,29 +2,26 @@
 
 import { Suspense, useState } from 'react';
 import {
-  Bell,
+  Users,
+  Settings,
+  ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  Info,
-  RefreshCw,
+  Mail,
   Sparkles,
-  Users,
-  ShieldAlert,
 } from 'lucide-react';
 import { AppHeader } from '@/components/layout/app-header';
 import { InviteMemberDialog } from '@/components/features/groups/invite-member-dialog';
 import { Spinner } from '@/components/ui/spinner';
-import { useRespondInvitation, resetMockNotifications } from '@/hooks/use-invitations';
-import type { InvitationErrorCode } from '@/lib/api/invitations';
 
-export default function InvitationsPage() {
-  const [activeScenario, setActiveScenario] = useState<InvitationErrorCode | undefined>(undefined);
-  const { resetAllMockData } = useRespondInvitation();
+export default function GroupSettingsInvitationsPage() {
+  const [simulateServerError, setSimulateServerError] = useState(false);
+  const [invitedEmails, setInvitedEmails] = useState<string[]>(['daniel@seznam.cz']);
 
-  function handleReset() {
-    resetMockNotifications();
-    resetAllMockData();
-    setActiveScenario(undefined);
+  function handleInviteSuccess(email: string) {
+    if (!invitedEmails.includes(email)) {
+      setInvitedEmails((prev) => [email, ...prev]);
+    }
   }
 
   return (
@@ -36,11 +33,11 @@ export default function InvitationsPage() {
       }
     >
       <div className="min-h-screen bg-[#F6F3ED] text-[#1C261F]">
-        {/* Horní navigační lišta přesně dle screenshotu "Jak to vypadá v aplikaci:" */}
-        <AppHeader userName="Emil" userInitials="EM" simulatedScenario={activeScenario} />
+        {/* Horní aplikační lišta */}
+        <AppHeader userName="Emil" userInitials="EM" />
 
-        <main className="mx-auto max-w-5xl space-y-8 p-6 md:p-10">
-          {/* Úvodní hlavička stránky */}
+        <main className="mx-auto max-w-4xl space-y-8 p-6 md:p-10">
+          {/* Hlavička BUC */}
           <div className="rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-8 shadow-xs">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -49,168 +46,170 @@ export default function InvitationsPage() {
                   Business Use Case (BUC)
                 </span>
                 <h1 className="mt-2 text-2xl font-black tracking-tight text-[#1C261F] sm:text-3xl">
-                  Připojení se ke skupině pomocí pozvánky
+                  Vytvoření pozvánky do skupiny
                 </h1>
                 <p className="mt-1 text-sm leading-relaxed text-[#5E5A54]">
-                  Implementace frontendového rozhraní panelu <strong>Oznámení</strong> pro přijímání
-                  a odmítání pozvánek do skupin dle specifikace a dodaného mockupu.
+                  Vlastník skupiny v nastavení vybrané skupiny zvolí možnost{' '}
+                  <strong>„Pozvat člena“</strong> za účelem pozvání dalšího uživatele do skupiny.
                 </p>
               </div>
+            </div>
+          </div>
 
+          {/* Přepínač scénářů pro testování A2 */}
+          <div className="space-y-3 rounded-3xl border border-[#DFD8CC] bg-white/70 p-6 shadow-xs">
+            <h2 className="text-sm font-bold text-[#1C261F]">Režim testování odeslání pozvánky:</h2>
+            <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={handleReset}
-                className="inline-flex items-center gap-2 self-start rounded-xl border border-[#D9CDBF] bg-[#E8DCCF] px-4 py-2.5 text-xs font-semibold text-[#1C261F] transition-colors hover:bg-[#DDD0BF] active:scale-95 sm:self-center"
+                onClick={() => setSimulateServerError(false)}
+                className={`rounded-xl border px-4 py-2 text-xs font-semibold transition-all ${
+                  !simulateServerError
+                    ? 'border-[#1E3426] bg-[#1E3426] text-white'
+                    : 'border-[#DFD8CC] bg-[#FAF7F2] text-[#1C261F] hover:bg-[#EBE5DA]'
+                }`}
               >
-                <RefreshCw className="size-3.5" />
-                <span>Obnovit výchozí stav</span>
+                Standardní režim (Happy Day / A1)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSimulateServerError(true)}
+                className={`rounded-xl border px-4 py-2 text-xs font-semibold transition-all ${
+                  simulateServerError
+                    ? 'border-rose-600 bg-rose-600 text-white'
+                    : 'border-[#DFD8CC] bg-[#FAF7F2] text-[#1C261F] hover:bg-rose-50'
+                }`}
+              >
+                Simulace chyby serveru (Tok A2)
               </button>
             </div>
           </div>
 
-          {/* Interaktivní ovládací panel pro testování všech scénářů BUC */}
-          <div className="space-y-4 rounded-3xl border border-[#DFD8CC] bg-white/70 p-6 shadow-xs">
-            <div>
-              <h2 className="text-lg font-bold text-[#1C261F]">
-                Testování scénářů BUC v panelu Oznámení
-              </h2>
-              <p className="mt-0.5 text-xs text-[#5E5A54]">
-                Vyberte scénář a klikněte na ikonu <strong>zvonku v horní liště</strong> pro
-                vyzkoušení chování.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Happy Day */}
-              <button
-                type="button"
-                onClick={() => setActiveScenario(undefined)}
-                className={`rounded-2xl border p-4 text-left transition-all ${
-                  activeScenario === undefined
-                    ? 'border-[#1E3426] bg-[#1E3426]/10 ring-2 ring-[#1E3426]'
-                    : 'border-[#DFD8CC] bg-[#FAF7F2] hover:border-[#1E3426]/50'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-sm font-bold text-[#1E3426]">
-                  <CheckCircle2 className="size-4" />
-                  <span>Happy Day</span>
-                </div>
-                <p className="mt-1 text-xs text-[#5E5A54]">
-                  Ověření platnosti, přidání do skupiny s rolí member a potvrzení úspěchu.
-                </p>
-              </button>
-
-              {/* Scénář A3 */}
-              <button
-                type="button"
-                onClick={() => setActiveScenario('INVALID_OR_NOT_FOUND')}
-                className={`rounded-2xl border p-4 text-left transition-all ${
-                  activeScenario === 'INVALID_OR_NOT_FOUND'
-                    ? 'border-rose-600 bg-rose-50 ring-2 ring-rose-600'
-                    : 'border-[#DFD8CC] bg-[#FAF7F2] hover:border-rose-400'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-sm font-bold text-rose-700">
-                  <ShieldAlert className="size-4" />
-                  <span>Tok A3: Neplatná</span>
-                </div>
-                <p className="mt-1 text-xs text-[#5E5A54]">
-                  Error Message: Pozvánku nelze přijmout. (vypršela nebo skupina neexistuje).
-                </p>
-              </button>
-
-              {/* Scénář A4 */}
-              <button
-                type="button"
-                onClick={() => setActiveScenario('ALREADY_MEMBER')}
-                className={`rounded-2xl border p-4 text-left transition-all ${
-                  activeScenario === 'ALREADY_MEMBER'
-                    ? 'border-amber-600 bg-amber-50 ring-2 ring-amber-600'
-                    : 'border-[#DFD8CC] bg-[#FAF7F2] hover:border-amber-400'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-sm font-bold text-amber-700">
-                  <Info className="size-4" />
-                  <span>Tok A4: Již členem</span>
-                </div>
-                <p className="mt-1 text-xs text-[#5E5A54]">
-                  Information Message: Jste již členem této skupiny.
-                </p>
-              </button>
-
-              {/* Scénář A5 */}
-              <button
-                type="button"
-                onClick={() => setActiveScenario('CONNECTION_FAILED')}
-                className={`rounded-2xl border p-4 text-left transition-all ${
-                  activeScenario === 'CONNECTION_FAILED'
-                    ? 'border-red-600 bg-red-50 ring-2 ring-red-600'
-                    : 'border-[#DFD8CC] bg-[#FAF7F2] hover:border-red-400'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-sm font-bold text-red-700">
-                  <AlertCircle className="size-4" />
-                  <span>Tok A5: Selhání</span>
-                </div>
-                <p className="mt-1 text-xs text-[#5E5A54]">
-                  Error Message: Nepodařilo se připojit ke skupině + tlačítko pro opakování.
-                </p>
-              </button>
-            </div>
-          </div>
-
-          {/* Sekce s dialogem pro pozvání nového člena (propojení s odesíláním pozvánek) */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-4 rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-6 shadow-xs">
+          {/* Sekce: Nastavení skupiny (HDS 1: Uživatel se nachází v nastavení vybrané skupiny) */}
+          <div className="space-y-6 rounded-3xl border border-[#DFD8CC] bg-white p-8 shadow-xs">
+            <div className="flex flex-col gap-4 border-b border-[#EAE3D6] pb-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-2xl bg-[#1E3426] text-white">
-                  <Users className="size-5" />
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-[#EAE2D5] text-[#1E3426]">
+                  <Settings className="size-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#1C261F]">Vytvořit pozvánku do skupiny</h3>
-                  <p className="text-xs text-[#5E5A54]">Odeslání pozvánky na e-mail</p>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-[#1C261F]">Nastavení: Skupina 1</h2>
+                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                      <ShieldCheck className="size-3" />
+                      Vlastník (Owner)
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-[#5E5A54]">
+                    ID: <code>org-skupina-1</code> • Spravujte členy a pozvánky do skupiny
+                  </p>
                 </div>
               </div>
 
-              <p className="text-xs leading-relaxed text-[#5E5A54]">
-                Vlastník skupiny může pozvat dalšího člena. Po odeslání se pozvánka ihned objeví ve
-                schránce oznámení pozvaného uživatele (červený odznak na zvonku).
-              </p>
-
-              <div className="pt-2">
-                <InviteMemberDialog organizationId="org-skupina-1" organizationName="Skupina 1" />
+              {/* HDS Krok 1 & 2: Tlačítko "Pozvat člena" otevírá dialog z mockupu */}
+              <div>
+                <InviteMemberDialog
+                  organizationId="org-skupina-1"
+                  organizationName="Skupina 1"
+                  simulateError={simulateServerError}
+                  onSuccess={handleInviteSuccess}
+                />
               </div>
             </div>
 
-            {/* Specifikace toků */}
-            <div className="space-y-3 rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-6 shadow-xs">
-              <h3 className="flex items-center gap-2 font-bold text-[#1C261F]">
-                <Bell className="size-4 text-[#1E3426]" />
-                <span>Souhrn prvků z Mockupu & Wireframu</span>
+            {/* Členové a pozvánky */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-[#1C261F]">
+                <Users className="size-4 text-[#1E3426]" />
+                <span>Aktivní členové skupiny</span>
               </h3>
-              <ul className="space-y-2 text-xs text-[#5E5A54]">
-                <li className="flex items-start gap-2">
-                  <span className="shrink-0 font-bold text-[#1C261F]">• Zvonek:</span>
-                  <span>Tlačítko s ikonou zvonku a červeným kolečkem (unreadCount).</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="shrink-0 font-bold text-[#1C261F]">• Oznámení:</span>
-                  <span>Nadpis otevřeného panelu s tlačítkem pro zavření (x).</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="shrink-0 font-bold text-[#1C261F]">• Pozvánka:</span>
-                  <span>
-                    Karta s textem <code>Byli jste pozváni do skupiny &quot;Skupina 1&quot;</code>.
+
+              <div className="divide-y divide-[#EAE3D6] rounded-2xl border border-[#EAE3D6] bg-[#FAF7F2]">
+                <div className="flex items-center justify-between p-4 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-[#1E3426] text-xs font-bold text-white">
+                      EM
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#1C261F]">Emil (Vy)</p>
+                      <p className="text-[#5E5A54]">emil@example.com</p>
+                    </div>
+                  </div>
+                  <span className="rounded-md bg-[#1E3426]/10 px-2.5 py-1 font-semibold text-[#1E3426]">
+                    Vlastník
                   </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="shrink-0 font-bold text-[#1C261F]">• Tlačítka:</span>
-                  <span>
-                    Béžové <strong>Odmítnout</strong> a tmavě zelené <strong>Přijmout</strong>.
-                  </span>
-                </li>
-              </ul>
+                </div>
+              </div>
             </div>
+
+            {/* Seznam čekajících pozvánek */}
+            <div className="space-y-3 pt-2">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-[#1C261F]">
+                <Mail className="size-4 text-[#1E3426]" />
+                <span>Odeslané pozvánky do skupiny</span>
+              </h3>
+
+              {invitedEmails.length === 0 ? (
+                <p className="text-xs text-[#5E5A54] italic">
+                  Zatím jste do této skupiny neodeslali žádnou pozvánku.
+                </p>
+              ) : (
+                <div className="divide-y divide-[#EAE3D6] rounded-2xl border border-[#EAE3D6] bg-[#FAF7F2]">
+                  {invitedEmails.map((email) => (
+                    <div key={email} className="flex items-center justify-between p-3.5 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <Mail className="size-4 text-[#5E5A54]" />
+                        <span className="font-medium text-[#1C261F]">{email}</span>
+                      </div>
+                      <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-amber-800">
+                        Čeká na přijetí (pending)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Wireframe specifikace a mapování na BUC */}
+          <div className="space-y-3 rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-6 text-xs text-[#5E5A54] shadow-xs">
+            <h3 className="text-sm font-bold text-[#1C261F]">
+              Specifikace komponenty z Wireframu:
+            </h3>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              <li className="flex items-start gap-2 rounded-xl border border-[#EAE3D6] bg-white/70 p-3">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                <div>
+                  <strong className="text-[#1C261F]">Pozvat člena (Nadpis):</strong>
+                  <p className="mt-0.5">Nadpis dialogového okna pro vytvoření pozvánky.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2 rounded-xl border border-[#EAE3D6] bg-white/70 p-3">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                <div>
+                  <strong className="text-[#1C261F]">Popis pozvánky:</strong>
+                  <p className="mt-0.5">
+                    <code>Pozvěte nového člena do skupiny &quot;Skupina 1&quot;!</code>
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2 rounded-xl border border-[#EAE3D6] bg-white/70 p-3">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                <div>
+                  <strong className="text-[#1C261F]">E-mail uživatele:</strong>
+                  <p className="mt-0.5">Krátké textové pole s validací e-mailu dle schématu.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2 rounded-xl border border-[#EAE3D6] bg-white/70 p-3">
+                <AlertCircle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+                <div>
+                  <strong className="text-[#1C261F]">Tok A1 & A2:</strong>
+                  <p className="mt-0.5">
+                    Ověření formátu a možnost opakovat akci při chybě odeslání.
+                  </p>
+                </div>
+              </li>
+            </ul>
           </div>
         </main>
       </div>

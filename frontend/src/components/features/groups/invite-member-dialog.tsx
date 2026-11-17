@@ -3,43 +3,25 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UserPlus, Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, CheckCircle2, RotateCcw, UserPlus } from 'lucide-react';
 import { organizationSchema, type CreateInvitationRequest } from '@time-tracker/shared';
 import { useCreateInvitation } from '@/hooks/use-invitations';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-} from '@/components/ui/field';
-import { getFieldStyle, RequiredMark } from '@/lib/form-styles';
+import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 
 type InviteMemberDialogProps = {
   organizationId: string;
   organizationName?: string;
   trigger?: React.ReactNode;
-  onSuccess?: () => void;
+  simulateError?: boolean;
+  onSuccess?: (email: string) => void;
 };
 
 export function InviteMemberDialog({
   organizationId,
-  organizationName,
+  organizationName = 'Skupina 1',
   trigger,
+  simulateError = false,
   onSuccess,
 }: InviteMemberDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,35 +32,30 @@ export function InviteMemberDialog({
     isPending,
     error: apiError,
     reset: resetMutation,
-  } = useCreateInvitation(organizationId);
+  } = useCreateInvitation(organizationId, { simulateError });
 
   const {
     register,
     handleSubmit,
     reset: resetForm,
-    formState: { errors, dirtyFields },
+    formState: { errors },
   } = useForm<CreateInvitationRequest>({
     resolver: zodResolver(organizationSchema.createInvitationRequest),
     defaultValues: {
       email: '',
     },
-    mode: 'onTouched',
+    mode: 'onSubmit',
   });
-
-  const isEmailValid = Boolean(dirtyFields.email && !errors.email);
-  const hasEmailValue = Boolean(dirtyFields.email);
 
   async function onSubmit(data: CreateInvitationRequest) {
     setSuccessMessage(null);
     try {
       await sendInvite(data);
-      setSuccessMessage(`Pozvánka byla úspěšně odeslána na ${data.email}.`);
+      setSuccessMessage(`Pozvánka byla úspěšně odeslána na e-mail ${data.email}.`);
       resetForm();
-      if (onSuccess) {
-        onSuccess();
-      }
+      onSuccess?.(data.email);
     } catch {
-      // API error je zachycen přes mutation hook
+      // Chyba A2 je zpracována přes mutation state
     }
   }
 
@@ -98,88 +75,149 @@ export function InviteMemberDialog({
           trigger ? (
             (trigger as React.ReactElement)
           ) : (
-            <Button size="sm" className="gap-2">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#13251B] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[#1E3426] active:scale-95"
+            >
               <UserPlus className="size-4" />
               <span>Pozvat člena</span>
-            </Button>
+            </button>
           )
         }
       />
 
-      <DialogContent className="max-w-md p-6">
-        <DialogHeader className="space-y-1.5">
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-            <UserPlus className="text-primary size-5" />
-            <span>Pozvat uživatele do skupiny</span>
-          </DialogTitle>
-          <DialogDescription className="text-muted-foreground text-sm">
-            {organizationName
-              ? `Pozvánka pro nového člena do skupiny ${organizationName}.`
-              : 'Zadejte e-mail uživatele, kterému chcete zaslat pozvánku.'}
-          </DialogDescription>
-        </DialogHeader>
+      {/* Dialogové okno dle dodaného mockupu: Bílá karta, zaoblené rohy, vycentrovaný obsah */}
+      <DialogContent
+        showCloseButton={false}
+        className="w-full max-w-[480px] rounded-3xl border border-[#DFD8CC] bg-white p-8 text-[#1C261F] shadow-2xl focus:outline-hidden"
+      >
+        {/* Zavřít (×) - Ikona v pravém horním rohu */}
+        <DialogClose
+          render={
+            <button
+              type="button"
+              className="absolute top-5 right-5 flex size-8 items-center justify-center rounded-full text-[#1C261F] transition-colors hover:bg-[#F3F4F6] active:scale-95"
+              aria-label="Zavřít dialog"
+            >
+              <X className="size-5" />
+            </button>
+          }
+        />
+
+        {/* Nadpis: Pozvat člena */}
+        <h2 className="text-center text-2xl font-bold tracking-tight text-[#1C261F]">
+          Pozvat člena
+        </h2>
+
+        {/* Popis pozvánky dle mockupu: Pozvěte nového člena do skupiny "Skupina 1"! */}
+        <p className="mt-2 text-center text-sm text-[#4A4742]">
+          Pozvěte nového člena do skupiny <strong>&quot;{organizationName}&quot;</strong>!
+        </p>
 
         {successMessage ? (
-          <div className="space-y-4 py-4">
-            <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
-              <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
-              <p className="text-sm font-medium">{successMessage}</p>
+          <div className="my-6 space-y-4">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5 text-center">
+              <CheckCircle2 className="size-8 text-emerald-600" />
+              <p className="text-base font-bold text-emerald-950">Pozvánka odeslána</p>
+              <p className="text-xs text-emerald-800">{successMessage}</p>
             </div>
-            <DialogFooter>
-              <DialogClose render={<Button className="w-full">Rozumím</Button>} />
-            </DialogFooter>
+
+            <div className="flex justify-center">
+              <DialogClose
+                render={
+                  <button
+                    type="button"
+                    className="rounded-xl bg-[#13251B] px-8 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1E3426]"
+                  >
+                    Rozumím
+                  </button>
+                }
+              />
+            </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-            <FieldSet>
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="invite-email" className="text-xs font-semibold">
-                    E-mailová adresa <RequiredMark />
-                  </FieldLabel>
-                  <FieldContent>
-                    <div className="relative">
-                      <Mail
-                        aria-hidden="true"
-                        className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-                      />
-                      <Input
-                        id="invite-email"
-                        type="email"
-                        placeholder="uzivatel@example.com"
-                        className={`h-11 pl-10 text-sm ${getFieldStyle(isEmailValid, hasEmailValue)}`}
-                        disabled={isPending}
-                        {...register('email')}
-                      />
-                    </div>
-                  </FieldContent>
-                  <FieldError errors={[errors.email]} />
-                </Field>
-              </FieldGroup>
-            </FieldSet>
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5" noValidate>
+            <div>
+              {/* Popisek pole dle mockupu: Vložte E-mail uživatele: */}
+              <label
+                htmlFor="invitation-email-input"
+                className="block text-center text-sm font-medium text-[#1C261F]"
+              >
+                Vložte E-mail uživatele:
+              </label>
 
+              {/* Krátké textové pole dle mockupu: světle šedé pozadí, vycentrovaný placeholder */}
+              <div className="mt-2">
+                <input
+                  id="invitation-email-input"
+                  type="email"
+                  placeholder="daniel@seznam.cz"
+                  disabled={isPending}
+                  aria-invalid={Boolean(errors.email)}
+                  className={`h-11 w-full rounded-xl border bg-[#F1F4F9] px-4 text-center text-sm font-normal text-[#1C261F] outline-hidden transition-all placeholder:text-[#94A3B8] focus:border-[#1E3426] focus:bg-white focus:ring-2 focus:ring-[#1E3426]/20 disabled:opacity-50 ${
+                    errors.email ? 'border-rose-500 ring-2 ring-rose-200' : 'border-[#E2E8F0]'
+                  }`}
+                  {...register('email')}
+                />
+              </div>
+
+              {/* Alternativní tok A1: Error Message - Zadejte platnou e-mailovou adresu. */}
+              {errors.email && (
+                <p className="mt-2 text-center text-xs font-semibold text-rose-600" role="alert">
+                  {errors.email.message || 'Zadejte platnou e-mailovou adresu.'}
+                </p>
+              )}
+            </div>
+
+            {/* Alternativní tok A2: Error Message - Pozvánku se nepodařilo odeslat */}
             {apiError && (
-              <div className="flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                <AlertCircle className="size-4 shrink-0 text-red-600" />
-                <span>
-                  {apiError.message || 'Pozvánku se nepodařilo odeslat. Zkuste to prosím znovu.'}
-                </span>
+              <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-3.5 text-center">
+                <p className="text-xs font-bold text-rose-700">Pozvánku se nepodařilo odeslat</p>
+                <p className="text-[11px] text-rose-600">
+                  Aplikace upozorňuje na neúspěšné odeslání. Můžete akci znova opakovat.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSubmit(onSubmit)}
+                  className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-rose-800 underline hover:no-underline"
+                >
+                  <RotateCcw className="size-3" />
+                  <span>Zkusit znovu</span>
+                </button>
               </div>
             )}
 
-            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+            {/* Tlačítka: Zavřít a Pozvat přesně dle mockupu */}
+            <div className="flex items-center justify-center gap-4 pt-2">
+              {/* Tlačítko Zavřít (světlé/béžové) */}
               <DialogClose
                 render={
-                  <Button type="button" variant="outline" disabled={isPending}>
-                    Zrušit
-                  </Button>
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    className="min-w-[110px] rounded-xl border border-[#DFD8CC] bg-[#F5F2EB] px-6 py-2.5 text-center text-sm font-semibold text-[#1C261F] transition-colors hover:bg-[#EBE5DA] active:scale-95 disabled:opacity-50"
+                  >
+                    Zavřít
+                  </button>
                 }
               />
-              <Button type="submit" disabled={isPending} className="gap-2">
-                {isPending && <Spinner className="size-4" />}
-                <span>{isPending ? 'Odesílání…' : 'Odeslat pozvánku'}</span>
-              </Button>
-            </DialogFooter>
+
+              {/* Tlačítko Pozvat (tmavě zelené) */}
+              <button
+                type="submit"
+                disabled={isPending}
+                className="min-w-[120px] rounded-xl bg-[#13251B] px-8 py-2.5 text-center text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[#1E3426] active:scale-95 disabled:opacity-50"
+              >
+                {isPending ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <Spinner className="size-3.5 text-white" />
+                    <span>Odesílám...</span>
+                  </span>
+                ) : (
+                  'Pozvat'
+                )}
+              </button>
+            </div>
           </form>
         )}
       </DialogContent>
