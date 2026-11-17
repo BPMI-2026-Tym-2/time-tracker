@@ -1,12 +1,20 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
-
-export const dynamic = 'force-dynamic';
 
 type PageProps = {
   params: Promise<{ groupId: string }>;
 };
 
-export default async function GroupOverviewPage({ params }: PageProps) {
+async function OverviewRedirect({ params }: PageProps) {
   const { groupId } = await params;
   redirect(`/groups/${groupId}/settings`);
+  return null;
+}
+
+export default function GroupOverviewPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={null}>
+      <OverviewRedirect params={params} />
+    </Suspense>
+  );
 }
