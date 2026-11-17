@@ -71,7 +71,7 @@ async function listMembers(
   query: ListOrganizationMembersQuery,
 ): Promise<ListOrganizationMembersResponse> {
   const headers = fromNodeHeaders(request.headers);
-  const [organization, membersResult, memberRoleResult] = await Promise.all([
+  const [organization, membersResult] = await Promise.all([
     auth.api.getOrganization({
       headers,
       query: { organizationId },
@@ -94,10 +94,6 @@ async function listMembers(
         }),
       },
     }),
-    auth.api.getActiveMemberRole({
-      headers,
-      query: { organizationId },
-    }),
   ]);
 
   if (!organization) {
@@ -114,8 +110,24 @@ async function listMembers(
     page: query.page,
     pageSize: query.pageSize,
     total: membersResult.total,
-    includeEmail: memberRoleResult.role === 'owner',
+    includeEmail: request.organization?.role === 'owner',
   });
+}
+
+async function deleteOrganization(request: Request, organizationId: string): Promise<void> {
+  try {
+    await auth.api.deleteOrganization({
+      headers: fromNodeHeaders(request.headers),
+      body: { organizationId },
+    });
+  } catch (error) {
+    if (isAPIError(error) && error.statusCode < 500) {
+      throw new AppError(error.message, error.statusCode);
+    }
+
+    console.error(error);
+    throw new AppError('Odstranění skupiny se nezdařilo. Zkuste to prosím znovu', 500);
+  }
 }
 
 const organizationService = {
