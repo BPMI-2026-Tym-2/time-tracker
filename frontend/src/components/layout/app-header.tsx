@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { NotificationInbox } from '@/components/features/notifications/notification-inbox';
 import { authClient } from '@/lib/auth-client';
 
@@ -20,23 +21,32 @@ export function AppHeader({ userName, userInitials }: AppHeaderProps) {
       : 'EM');
 
   return (
-    <header className="w-full border-b border-[#DFD8CC] bg-[#EFE9DF] px-6 py-3 transition-colors">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-lg font-bold tracking-tight text-[#1C261F]">Time Tracker</span>
+    <header className="border-border bg-card sticky top-0 z-30 w-full border-b transition-colors">
+      <div className="flex h-14 items-center justify-between px-6">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/"
+            className="font-heading text-foreground text-base font-bold tracking-tight hover:opacity-90"
+          >
+            Time Tracker
+          </Link>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <span className="block text-xs font-medium text-[#5E5A54]">Jméno</span>
-            <span className="block text-sm font-bold text-[#1C261F]">{displayName}</span>
+            <span className="text-muted-foreground block text-[11px] leading-none font-medium">
+              Jméno
+            </span>
+            <span className="text-foreground mt-0.5 block text-sm leading-tight font-semibold">
+              {displayName}
+            </span>
           </div>
 
           <NotificationInbox />
 
           <div
             aria-label={`Uživatelský profil: ${displayName}`}
-            className="flex size-10 items-center justify-center rounded-full border border-[#4B5563] bg-[#D4D4D8] text-sm font-bold text-[#1C261F] shadow-xs"
+            className="border-border bg-muted text-foreground flex size-9 items-center justify-center rounded-full border text-xs font-bold shadow-xs select-none"
           >
             {displayInitials}
           </div>

@@ -2,13 +2,12 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { authClient } from '@/lib/auth-client';
 import { Spinner } from '@/components/ui/spinner';
 import { useLogout } from '@/hooks/use-logout';
 import { Button } from '@/components/ui/button';
-
 import { AppHeader } from '@/components/layout/app-header';
-import Link from 'next/link';
 
 export default function Home() {
   const router = useRouter();
@@ -30,38 +29,35 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F6F3ED]">
+    <div className="bg-background flex min-h-screen flex-col">
       <AppHeader
         userName={session.data.user.name}
         userInitials={`${session.data.user.name?.charAt(0) ?? 'E'}${session.data.user.surname?.charAt(0) ?? 'M'}`}
       />
 
       <main className="flex flex-1 flex-col items-center justify-center p-8 sm:p-24">
-        <div className="flex max-w-md flex-col items-center gap-6 rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-8 text-center shadow-xs">
-          <h1 className="text-2xl font-bold text-[#1C261F] sm:text-3xl">
+        <div className="border-border bg-card flex max-w-md flex-col items-center gap-6 rounded-3xl border p-8 text-center shadow-xs">
+          <h1 className="font-heading text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
             Vítejte v aplikaci Time Tracker
           </h1>
-          <div className="text-sm text-[#5E5A54]">
-            <p className="font-semibold text-[#1C261F]">
+          <div className="text-muted-foreground text-sm">
+            <p className="text-foreground font-semibold">
               {session.data.user.name} {session.data.user.surname}
             </p>
             <p>{session.data.user.email}</p>
           </div>
 
           <div className="flex w-full flex-col gap-3">
-            <Link
-              href="/groups/skupina-1/settings"
-              className="inline-flex w-full items-center justify-center rounded-xl bg-[#1E3426] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#16271D]"
-            >
+            <Button render={<Link href="/groups/skupina-1/settings" />} className="w-full">
               Nastavení skupiny
-            </Link>
+            </Button>
 
             <Button
               type="button"
               variant="outline"
               onClick={() => logout()}
               disabled={isLogoutPending}
-              className="w-full rounded-xl border-[#DFD8CC]"
+              className="w-full"
             >
               {isLogoutPending ? 'Odhlášení...' : 'Odhlásit se'}
             </Button>

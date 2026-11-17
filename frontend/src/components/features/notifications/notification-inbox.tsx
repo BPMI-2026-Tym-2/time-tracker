@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, X, CheckCircle2, AlertCircle, Info, RefreshCw } from 'lucide-react';
+import { Bell, CheckCircle2, AlertCircle, Info, RefreshCw } from 'lucide-react';
 import { useNotifications, useRespondInvitation } from '@/hooks/use-invitations';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
 interface NotificationInboxProps {
@@ -19,7 +20,7 @@ export function NotificationInbox({
 }: NotificationInboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, count, isLoading, refetch } = useNotifications();
-  const { acceptInvitation, isAccepting, rejectInvitation, isRejecting, feedback, clearFeedback } =
+  const { acceptInvitation, isAccepting, rejectInvitation, isRejecting, feedback } =
     useRespondInvitation();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -31,10 +32,7 @@ export function NotificationInbox({
     }
     setProcessingId(id);
     try {
-      await acceptInvitation({
-        invitationId: id,
-        organizationName,
-      });
+      await acceptInvitation({ invitationId: id, organizationName });
       void refetch();
       onAcceptSuccess?.(organizationName);
     } catch {
@@ -52,10 +50,7 @@ export function NotificationInbox({
     }
     setProcessingId(id);
     try {
-      await rejectInvitation({
-        invitationId: id,
-        organizationName,
-      });
+      await rejectInvitation({ invitationId: id, organizationName });
       void refetch();
       onRejectSuccess?.(organizationName);
     } catch {
@@ -69,94 +64,70 @@ export function NotificationInbox({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
         render={
-          <button
-            type="button"
-            className="relative flex size-10 items-center justify-center rounded-full transition-transform hover:scale-105 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#1E3426] active:scale-95"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative size-9 rounded-full"
             aria-label={`Oznámení: ${count} nových pozvánek`}
-          >
-            <Bell className="size-6 text-[#243327]" />
-
-            {count > 0 && (
-              <span
-                className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D13438] px-1 text-[10px] font-bold text-white shadow-xs"
-                data-testid="notifications-badge"
-              >
-                {count > 9 ? '9+' : count}
-              </span>
-            )}
-          </button>
+          />
         }
-      />
+      >
+        <Bell className="size-5" />
+        {count > 0 && (
+          <span
+            className="bg-destructive text-destructive-foreground absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-none font-bold shadow-xs"
+            data-testid="notifications-badge"
+          >
+            {count > 9 ? '9+' : count}
+          </span>
+        )}
+      </PopoverTrigger>
 
       <PopoverContent
         align="end"
-        sideOffset={12}
-        className="w-[360px] overflow-hidden rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-0 text-[#1C261F] shadow-2xl focus:outline-hidden sm:w-[400px]"
+        sideOffset={8}
+        className="border-border bg-popover text-popover-foreground w-80 rounded-2xl p-0 shadow-lg sm:w-96"
       >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-2 right-6 size-4 rotate-45 border-t border-l border-[#DFD8CC] bg-[#FAF7F2]"
-        />
-
-        <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h2 className="text-xl font-bold tracking-tight text-[#1C261F]">Oznámení</h2>
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            className="flex size-8 items-center justify-center rounded-full text-[#1C261F] transition-colors hover:bg-[#EAE2D5] active:scale-95"
-            aria-label="Zavřít"
-          >
-            <X className="size-5" />
-          </button>
+        <div className="border-border flex items-center justify-between border-b px-4 py-3">
+          <h2 className="text-sm font-semibold tracking-tight">Oznámení</h2>
+          <span className="text-muted-foreground text-xs">{count} nevyřízených</span>
         </div>
 
-        <div className="mx-6 border-b border-[#E7E0D3]" />
-
         {feedback && (
-          <div className="px-6 pt-4">
+          <div className="p-3">
             <div
-              className={`relative rounded-2xl border p-4 text-xs ${
+              className={`relative rounded-xl border p-3 text-xs ${
                 feedback.type === 'success'
-                  ? 'border-emerald-200 bg-emerald-50/90 text-emerald-950'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200'
                   : feedback.type === 'info'
-                    ? 'border-amber-200 bg-amber-50/90 text-amber-950'
-                    : 'border-rose-200 bg-rose-50/90 text-rose-950'
+                    ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200'
+                    : 'border-destructive/30 bg-destructive/10 text-destructive'
               }`}
             >
-              <button
-                type="button"
-                onClick={clearFeedback}
-                className="absolute top-2.5 right-2.5 text-current opacity-60 hover:opacity-100"
-                aria-label="Zavřít upozornění"
-              >
-                <X className="size-3.5" />
-              </button>
-
-              <div className="flex items-start gap-2.5">
+              <div className="flex items-start gap-2">
                 {feedback.type === 'success' && (
                   <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
                 )}
                 {feedback.type === 'info' && (
                   <Info className="mt-0.5 size-4 shrink-0 text-amber-600" />
                 )}
-                {feedback.type === 'error' && (
-                  <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />
-                )}
-                <div className="space-y-1 pr-4">
-                  <p className="text-sm leading-tight font-bold">{feedback.title}</p>
-                  <p className="leading-relaxed opacity-90">{feedback.message}</p>
-
+                {feedback.type === 'error' && <AlertCircle className="mt-0.5 size-4 shrink-0" />}
+                <div className="space-y-1">
+                  <p className="leading-tight font-semibold">{feedback.title}</p>
+                  <p className="text-[11px] opacity-90">{feedback.message}</p>
                   {feedback.code === 'CONNECTION_FAILED' && feedback.invitationId && (
-                    <button
+                    <Button
                       type="button"
+                      size="xs"
+                      variant="destructive"
                       onClick={() =>
                         handleAccept(feedback.invitationId!, feedback.organizationName)
                       }
-                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-rose-700 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-rose-800"
+                      className="mt-1 gap-1"
                     >
                       <RefreshCw className="size-3" />
                       <span>Zkusit znovu</span>
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -164,23 +135,21 @@ export function NotificationInbox({
           </div>
         )}
 
-        <div className="p-6">
+        <div className="max-h-80 overflow-y-auto p-3">
           {isLoading ? (
-            <div className="flex h-32 items-center justify-center">
-              <Spinner className="size-6 text-[#1E3426]" />
+            <div className="flex h-24 items-center justify-center">
+              <Spinner className="text-primary size-5" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#DFD8CC] bg-white/40 p-8 text-center">
-              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#EAE2D5] text-[#243327]">
-                <Bell className="size-6 opacity-70" />
-              </div>
-              <p className="mt-3 text-base font-semibold text-[#1C261F]">Žádná nová oznámení</p>
-              <p className="mt-1 text-xs text-[#5E5A54]">
-                Nemáte žádné nevyřízené pozvánky do skupin.
+            <div className="border-border rounded-xl border border-dashed p-6 text-center">
+              <Bell className="text-muted-foreground mx-auto size-5 opacity-50" />
+              <p className="text-foreground mt-2 text-xs font-medium">Žádná nová oznámení</p>
+              <p className="text-muted-foreground mt-0.5 text-[11px]">
+                Nemáte žádné nevyřízené pozvánky.
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               {notifications.map((notification) => {
                 const isItemProcessing = processingId === notification.id;
                 const isButtonsDisabled = isItemProcessing || isAccepting || isRejecting;
@@ -188,50 +157,40 @@ export function NotificationInbox({
                 return (
                   <div
                     key={notification.id}
-                    className="rounded-2xl border border-[#E3DDD1] bg-white/80 p-5 shadow-xs transition-shadow hover:shadow-sm"
+                    className="border-border bg-muted/40 hover:bg-muted/60 rounded-xl border p-3.5 transition-colors"
                   >
-                    <h3 className="text-base font-bold text-[#1C261F]">Pozvánka do skupiny</h3>
+                    <div className="space-y-0.5">
+                      <h3 className="text-foreground text-xs font-bold">Pozvánka do skupiny</h3>
+                      <p className="text-muted-foreground text-xs">
+                        Byli jste pozváni do skupiny &quot;{notification.organization.name}&quot;
+                      </p>
+                    </div>
 
-                    <p className="mt-1 text-sm text-[#3E4540]">
-                      Byli jste pozváni do skupiny &quot;{notification.organization.name}&quot;
-                    </p>
-
-                    <div className="mt-4 flex items-center gap-3">
-                      <button
+                    <div className="flex items-center gap-2 pt-3">
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
                         disabled={isButtonsDisabled}
                         onClick={() =>
                           handleReject(notification.id, notification.organization.name)
                         }
-                        className="flex-1 rounded-xl border border-[#D9CDBF] bg-[#E8DCCF] px-4 py-2.5 text-center text-sm font-semibold text-[#1C261F] transition-all hover:bg-[#DDD0BF] active:scale-98 disabled:opacity-50"
+                        className="flex-1"
                       >
-                        {isItemProcessing && isRejecting ? (
-                          <span className="inline-flex items-center justify-center gap-1.5">
-                            <Spinner className="size-3.5 text-[#1C261F]" />
-                            <span>Odmítání...</span>
-                          </span>
-                        ) : (
-                          'Odmítnout'
-                        )}
-                      </button>
+                        {isItemProcessing && isRejecting ? 'Odmítání...' : 'Odmítnout'}
+                      </Button>
 
-                      <button
+                      <Button
                         type="button"
+                        size="sm"
                         disabled={isButtonsDisabled}
                         onClick={() =>
                           handleAccept(notification.id, notification.organization.name)
                         }
-                        className="flex-1 rounded-xl bg-[#1E3426] px-4 py-2.5 text-center text-sm font-semibold text-white shadow-xs transition-all hover:bg-[#16271D] active:scale-98 disabled:opacity-50"
+                        className="flex-1"
                       >
-                        {isItemProcessing && isAccepting ? (
-                          <span className="inline-flex items-center justify-center gap-1.5">
-                            <Spinner className="size-3.5 text-white" />
-                            <span>Přijímání...</span>
-                          </span>
-                        ) : (
-                          'Přijmout'
-                        )}
-                      </button>
+                        {isItemProcessing && isAccepting ? 'Přijímání...' : 'Přijmout'}
+                      </Button>
                     </div>
                   </div>
                 );

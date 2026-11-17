@@ -60,7 +60,7 @@ export function UserListPage({ viewerRole, apiState = 'success' }: UserListPageP
           <NotificationInbox />
           <div
             aria-label="Profil uživatele"
-            className="flex size-9 items-center justify-center rounded-full border border-[#4B5563] bg-[#D4D4D8] text-xs font-bold text-[#1C261F]"
+            className="border-border bg-muted text-foreground flex size-9 items-center justify-center rounded-full border text-xs font-bold shadow-xs select-none"
           >
             EM
           </div>
