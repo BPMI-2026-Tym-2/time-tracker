@@ -18,6 +18,7 @@ export const authCorsConfig = {
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'mongodb',
+    transaction: true,
   }),
   baseURL: requiredEnv('BETTER_AUTH_URL'),
   basePath: '/api/auth',
