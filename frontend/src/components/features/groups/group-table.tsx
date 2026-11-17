@@ -1,17 +1,17 @@
 'use client';
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Users, MoreVertical, Settings, ExternalLink } from 'lucide-react';
-import type { OrganizationItemResponse } from '@time-tracker/shared';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Code,
+  Dumbbell,
+  Plane,
+  Gamepad2,
+  Users,
+  MoreVertical,
+  Settings,
+  ExternalLink,
+} from 'lucide-react';
+import type { OrganizationItemResponse } from '@time-tracker/shared';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,6 +25,38 @@ type GroupTableProps = {
   onOpenGroup?: (groupId: string) => void;
 };
 
+function getGroupVisual(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.includes('prog') || lower.includes('dev') || lower.includes('kód')) {
+    return {
+      icon: Code,
+      boxClass: 'bg-[#E5F1E2] text-[#29562E]',
+    };
+  }
+  if (lower.includes('fit') || lower.includes('sport') || lower.includes('zdrav')) {
+    return {
+      icon: Dumbbell,
+      boxClass: 'bg-[#E5F1E2] text-[#29562E]',
+    };
+  }
+  if (lower.includes('cest') || lower.includes('trip') || lower.includes('dovolen')) {
+    return {
+      icon: Plane,
+      boxClass: 'bg-[#FCF2DF] text-[#9D6824]',
+    };
+  }
+  if (lower.includes('gam') || lower.includes('hr')) {
+    return {
+      icon: Gamepad2,
+      boxClass: 'bg-[#E5F1E2] text-[#29562E]',
+    };
+  }
+  return {
+    icon: Users,
+    boxClass: 'bg-[#E5F1E2] text-[#29562E]',
+  };
+}
+
 export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
   const router = useRouter();
 
@@ -33,98 +65,80 @@ export function GroupTable({ groups, onOpenGroup }: GroupTableProps) {
   }
 
   return (
-    <div className="border-border bg-card overflow-hidden rounded-2xl border shadow-xs">
-      <Table>
-        <TableHeader className="bg-muted/40">
-          <TableRow className="border-b-0 hover:bg-transparent">
-            <TableHead className="text-foreground w-1/2 py-3.5 pl-6 text-xs font-semibold">
-              Název skupiny
-            </TableHead>
-            <TableHead className="text-foreground py-3.5 text-center text-xs font-semibold">
-              Role
-            </TableHead>
-            <TableHead className="text-foreground py-3.5 pr-6 text-right text-xs font-semibold">
-              Akce
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody className="divide-border/40 divide-y">
-          {groups.map((group) => {
-            const isOwner = group.role === 'owner';
+    <div className="overflow-hidden rounded-2xl border border-[#EBE6DE] bg-white shadow-2xs">
+      <div className="grid grid-cols-[1fr_130px_70px] items-center bg-[#F3EFE9] px-6 py-3.5 text-sm font-bold text-[#163820]">
+        <div>Název skupiny</div>
+        <div className="text-center">Role</div>
+        <div className="text-right">Akce</div>
+      </div>
 
-            return (
-              <TableRow key={group.id} className="hover:bg-muted/20 transition-colors">
-                <TableCell className="py-3 pl-6">
-                  <div className="flex items-center gap-3.5">
-                    <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl font-semibold">
-                      {group.logo ? (
-                        <Image
-                          src={group.logo}
-                          alt={group.name}
-                          width={40}
-                          height={40}
-                          className="size-10 rounded-xl object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <Users className="size-5" />
-                      )}
-                    </div>
-                    <span className="text-foreground text-sm font-semibold">{group.name}</span>
-                  </div>
-                </TableCell>
+      <div className="divide-y divide-[#ECE8E1]/70">
+        {groups.map((group) => {
+          const { icon: GroupIcon, boxClass } = getGroupVisual(group.name);
+          const isOwner = group.role === 'owner';
 
-                <TableCell className="py-3 text-center">
-                  <span
-                    className={`inline-flex items-center rounded-full px-4 py-1 text-xs ${
-                      isOwner
-                        ? 'bg-primary/10 text-primary font-semibold'
-                        : 'bg-muted text-muted-foreground font-medium'
-                    }`}
-                  >
-                    {isOwner ? 'Vlastník' : 'Člen'}
-                  </span>
-                </TableCell>
+          return (
+            <div
+              key={group.id}
+              className="grid grid-cols-[1fr_130px_70px] items-center px-6 py-3 transition-colors hover:bg-slate-50/60"
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className={`flex size-11 items-center justify-center rounded-xl font-bold ${boxClass}`}
+                >
+                  <GroupIcon className="size-5 stroke-[2.5]" />
+                </div>
+                <span className="text-base font-bold text-[#163820]">{group.name}</span>
+              </div>
 
-                <TableCell className="py-3 pr-6 text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          aria-label={`Možnosti pro skupinu ${group.name}`}
-                          className="text-foreground hover:bg-muted"
-                        >
-                          <MoreVertical className="size-4" />
-                        </Button>
-                      }
-                    />
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          if (onOpenGroup) {
-                            onOpenGroup(group.id);
-                          } else {
-                            router.push(`/groups/${group.id}`);
-                          }
-                        }}
+              <div className="text-center">
+                <span
+                  className={`inline-flex items-center justify-center rounded-full px-5 py-1 text-xs font-bold ${
+                    isOwner ? 'bg-[#DCEDD9] text-[#245228]' : 'bg-[#F1ECE5] text-[#52493F]'
+                  }`}
+                >
+                  {isOwner ? 'Vlastník' : 'Člen'}
+                </span>
+              </div>
+
+              <div className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={`Možnosti pro skupinu ${group.name}`}
+                        className="text-[#163820] hover:bg-slate-100"
                       >
-                        <ExternalLink className="size-4" />
-                        <span>Otevřít přehled</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(`/groups/${group.id}/settings`)}>
-                        <Settings className="size-4" />
-                        <span>Zobrazit nastavení</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                        <MoreVertical className="size-5" />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (onOpenGroup) {
+                          onOpenGroup(group.id);
+                        } else {
+                          router.push(`/groups/${group.id}`);
+                        }
+                      }}
+                    >
+                      <ExternalLink className="size-4" />
+                      <span>Otevřít přehled</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push(`/groups/${group.id}/settings`)}>
+                      <Settings className="size-4" />
+                      <span>Zobrazit nastavení</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

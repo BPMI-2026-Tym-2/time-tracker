@@ -1,7 +1,6 @@
 'use client';
 
 import { Search, ChevronDown } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 
 type GroupListControlsProps = {
   search: string;
@@ -28,21 +27,21 @@ export function GroupListControls({
         </label>
         <Search
           aria-hidden="true"
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-[#7A867C]"
         />
-        <Input
+        <input
           id="group-search"
           type="search"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Hledat podle názvu skupiny..."
-          className="h-12 w-full rounded-xl pr-3 pl-10 text-sm"
+          className="h-12 w-full rounded-xl border border-[#E0DDD6] bg-white pr-4 pl-11 text-sm font-medium text-[#163820] outline-none placeholder:text-[#7A867C] focus:border-[#163820]"
         />
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="border-border bg-card relative min-w-36 rounded-xl border px-3 py-1.5 shadow-xs">
-          <label htmlFor="role-filter" className="text-muted-foreground block text-xs">
+        <div className="relative min-w-[130px] rounded-xl border border-[#E0DDD6] bg-white px-3.5 py-1.5 shadow-2xs">
+          <label htmlFor="role-filter" className="block text-[11px] font-medium text-[#7A867C]">
             Role
           </label>
           <div className="relative flex items-center">
@@ -50,7 +49,7 @@ export function GroupListControls({
               id="role-filter"
               value={role}
               onChange={(e) => onRoleChange(e.target.value as 'all' | 'owner' | 'member')}
-              className="text-foreground w-full appearance-none bg-transparent pr-6 text-sm font-semibold outline-none"
+              className="w-full appearance-none bg-transparent pr-6 text-sm font-bold text-[#163820] outline-none"
             >
               <option value="all">Všechny</option>
               <option value="owner">Vlastník</option>
@@ -58,13 +57,13 @@ export function GroupListControls({
             </select>
             <ChevronDown
               aria-hidden="true"
-              className="text-muted-foreground pointer-events-none absolute right-0 size-4"
+              className="pointer-events-none absolute right-0 size-4 text-[#163820]"
             />
           </div>
         </div>
 
-        <div className="border-border bg-card relative min-w-36 rounded-xl border px-3 py-1.5 shadow-xs">
-          <label htmlFor="sort-filter" className="text-muted-foreground block text-xs">
+        <div className="relative min-w-[130px] rounded-xl border border-[#E0DDD6] bg-white px-3.5 py-1.5 shadow-2xs">
+          <label htmlFor="sort-filter" className="block text-[11px] font-medium text-[#7A867C]">
             Řazení
           </label>
           <div className="relative flex items-center">
@@ -72,7 +71,7 @@ export function GroupListControls({
               id="sort-filter"
               value={sort}
               onChange={(e) => onSortChange(e.target.value as 'default' | 'name_asc' | 'name_desc')}
-              className="text-foreground w-full appearance-none bg-transparent pr-6 text-sm font-semibold outline-none"
+              className="w-full appearance-none bg-transparent pr-6 text-sm font-bold text-[#163820] outline-none"
             >
               <option value="default">Výchozí</option>
               <option value="name_asc">A–Z</option>
@@ -80,7 +79,7 @@ export function GroupListControls({
             </select>
             <ChevronDown
               aria-hidden="true"
-              className="text-muted-foreground pointer-events-none absolute right-0 size-4"
+              className="pointer-events-none absolute right-0 size-4 text-[#163820]"
             />
           </div>
         </div>
