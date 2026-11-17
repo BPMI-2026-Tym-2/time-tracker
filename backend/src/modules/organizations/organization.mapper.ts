@@ -35,7 +35,7 @@ function toMemberResponse({
   const parsedRole = organizationSchema.role.safeParse(member.role);
 
   if (!parsedRole.success) {
-    throw new AppError(`Neznámá role: ${member.role}`, 500);
+    throw new AppError(`Neznámá organizační role: ${member.role}`, 500);
   }
 
   return {

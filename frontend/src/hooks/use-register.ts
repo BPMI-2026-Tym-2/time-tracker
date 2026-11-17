@@ -34,7 +34,7 @@ export function useRegister() {
       }
 
       if (result.error) {
-        throw new Error(result.error.message ?? GENERIC_AUTH_ERROR);
+        throw new Error(GENERIC_AUTH_ERROR);
       }
 
       let session;

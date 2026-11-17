@@ -18,9 +18,17 @@ async function createOrganization(request: Request, response: Response): Promise
   sendData(response, organizationSchema.createOrganizationResponse.parse(organization), 201);
 }
 
+async function deleteOrganization(request: Request, response: Response): Promise<void> {
+  const { organizationId } = organizationSchema.organizationParams.parse(request.params);
+  await organizationService.deleteOrganization(request, organizationId);
+
+  response.status(204).end();
+}
+
 const organizationController = {
   listMembers,
   createOrganization,
+  deleteOrganization,
 };
 
 export default organizationController;

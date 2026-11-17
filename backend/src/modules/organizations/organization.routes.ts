@@ -6,6 +6,11 @@ import organizationController from './organization.controller.js';
 const organizationRouter = Router();
 
 organizationRouter.post('/', asyncHandler(organizationController.createOrganization));
+organizationRouter.delete(
+  '/:organizationId',
+  requireOrganizationRole('owner'),
+  asyncHandler(organizationController.deleteOrganization),
+);
 organizationRouter.get(
   '/:organizationId/members',
   requireOrganizationRole('owner', 'member'),

@@ -14,7 +14,7 @@ Mapování chyb na HTTP odpovědi je jen v
 
 - `requireAuth` (`shared/auth/require-auth.ts`): chybí session → 401, neplatná globální role → 500.
 - `requireOrganizationRole(...roles)` (`shared/auth/require-organization-role.ts`):
-  chybí chybí `organizationId` → 400, uživatel není člen nebo nemá povolenou roli → 403.
+  chybí `organizationId` → 400, uživatel není člen nebo nemá povolenou roli → 403.
 - `requireRole(...roles)` (`shared/auth/require-role.ts`): globální role, zatím nepoužitá.
 
 ## Pravidla

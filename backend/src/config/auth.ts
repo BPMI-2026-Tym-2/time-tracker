@@ -4,14 +4,8 @@ import { env, requiredEnv } from './env.js';
 import { prisma } from '../db/prisma.js';
 import { createAuthMiddleware, APIError } from 'better-auth/api';
 import { admin, oneTap, organization } from 'better-auth/plugins';
-import {
-  ac,
-  admin as adminRole,
-  owner,
-  member,
-  user,
-  registerFieldsSchema,
-} from '@time-tracker/shared';
+import { ac, admin as adminRole, owner, member, user } from '@time-tracker/shared';
+import authService from '../modules/auth/auth.service.js';
 import type { AccessControl } from 'better-auth/plugins/access';
 
 export const authCorsConfig = {
@@ -35,18 +29,16 @@ export const auth = betterAuth({
         return;
       }
 
-      const parsed = registerFieldsSchema.safeParse(ctx.body);
+      const input = authService.parseRegistrationInput(ctx.body);
 
-      if (!parsed.success) {
-        const message = parsed.error.issues.map((issue) => issue.message).join(', ');
-
-        throw new APIError('BAD_REQUEST', { message });
-      }
+      // Better Auth použije vrácené body, takže se uloží ořezané a normalizované hodnoty
+      return { context: { ...ctx, body: { ...ctx.body, ...input } } };
     }),
   },
   plugins: [
     admin({
       ac: ac as AccessControl,
+      defaultRole: 'user',
       roles: {
         admin: adminRole,
         user,
@@ -89,26 +81,21 @@ export const auth = betterAuth({
         const surname = profile.family_name?.trim();
 
         if (!name) {
-          throw new Error('Google account must include a given name');
+          throw new APIError('BAD_REQUEST', {
+            code: 'GOOGLE_PROFILE_INCOMPLETE',
+            message: 'Účet Google musí obsahovat jméno',
+          });
         }
 
         if (!surname) {
-          throw new Error('Google account must include a family name');
+          throw new APIError('BAD_REQUEST', {
+            code: 'GOOGLE_PROFILE_INCOMPLETE',
+            message: 'Účet Google musí obsahovat příjmení',
+          });
         }
 
         return { name, surname };
       },
-    },
-  },
-  rateLimit: {
-    enabled: true,
-    window: 60,
-    max: 100,
-    // Stricter limits for credential endpoints. Storage is in-memory by default,
-    // so limits are per process until secondary storage is configured.
-    customRules: {
-      '/sign-in/email': { window: 60, max: 5 },
-      '/sign-up/email': { window: 60, max: 3 },
     },
   },
   advanced: {
