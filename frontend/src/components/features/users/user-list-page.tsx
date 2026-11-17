@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { UserTable } from './components/user-table';
 import { mockUserGroups, mockUsers, type MockUserGroup } from './data/mock-users';
+import { NotificationInbox } from '@/components/features/notifications/notification-inbox';
 import type { UserListApiState, UserListViewerRole } from './types';
 
 type UserListPageProps = {
@@ -55,13 +56,21 @@ export function UserListPage({ viewerRole, apiState = 'success' }: UserListPageP
             className="pointer-events-none absolute right-1 size-4 text-slate-500"
           />
         </h1>
-        <div aria-label="Profil uživatele" className="size-9 rounded-full bg-slate-900" />
+        <div className="flex items-center gap-3">
+          <NotificationInbox />
+          <div
+            aria-label="Profil uživatele"
+            className="flex size-9 items-center justify-center rounded-full border border-[#4B5563] bg-[#D4D4D8] text-xs font-bold text-[#1C261F]"
+          >
+            EM
+          </div>
+        </div>
       </header>
 
       <section aria-label="Seznam uživatelů" className="p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl rounded-xl bg-white p-4 shadow-sm sm:p-6">
           {apiState === 'success' ? (
-            <UserTable users={groupUsers} canViewEmail={canViewEmail} />
+            <UserTable users={groupUsers} canViewEmail={canViewEmail} groupName={selectedGroup} />
           ) : (
             <div className="rounded-md border border-slate-200 p-4">
               <p

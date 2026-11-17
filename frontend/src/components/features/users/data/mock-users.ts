@@ -1,10 +1,31 @@
 import type { User } from '../types';
 
-export const mockUserGroups = ['sport', 'volný čas', 'hry'] as const;
+export const mockUserGroups = ['Skupina 1', 'sport', 'volný čas', 'hry'] as const;
 export type MockUserGroup = (typeof mockUserGroups)[number];
 export type MockUser = User & { group: MockUserGroup };
 
 export const mockUsers: MockUser[] = [
+  {
+    name: 'Emil',
+    email: 'emil@unicorn.cz',
+    group: 'Skupina 1',
+    role: 'admin',
+    joinedAt: '2024-01-10',
+  },
+  {
+    name: 'Daniel',
+    email: 'daniel@seznam.cz',
+    group: 'Skupina 1',
+    role: 'Člen',
+    joinedAt: '2024-05-18',
+  },
+  {
+    name: 'Tereza',
+    email: 'tereza@unicorn.cz',
+    group: 'Skupina 1',
+    role: 'Člen',
+    joinedAt: '2025-08-03',
+  },
   {
     name: 'Tereza',
     email: 'tereza@unicorn.cz',

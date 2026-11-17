@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react';
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { InviteMemberDialog } from '@/components/features/groups/invite-member-dialog';
 import type { UserRole } from '../types';
 
 type UserListControlsProps = {
@@ -8,6 +9,7 @@ type UserListControlsProps = {
   searchInput: string;
   selectedRole: UserRole | '';
   isNewestFirst: boolean;
+  groupName?: string;
   onSearchInputChange: (value: string) => void;
   onSearch: (event: FormEvent<HTMLFormElement>) => void;
   onRoleChange: (role: UserRole | '') => void;
@@ -19,6 +21,7 @@ export function UserListControls({
   searchInput,
   selectedRole,
   isNewestFirst,
+  groupName = 'Skupina 1',
   onSearchInputChange,
   onSearch,
   onRoleChange,
@@ -27,7 +30,14 @@ export function UserListControls({
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900">Seznam uživatelů</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900">Seznam uživatelů</h2>
+          {/* Tlačítko pro vytvoření pozvánky do vybrané skupiny přesně dle BUC */}
+          <InviteMemberDialog
+            organizationId={`org-${groupName.toLowerCase().replace(/\s+/g, '-')}`}
+            organizationName={groupName}
+          />
+        </div>
         <Button
           type="button"
           aria-label={
