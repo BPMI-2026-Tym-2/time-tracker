@@ -6,6 +6,10 @@ const organizationRouter = Router();
 
 organizationRouter.get('/', asyncHandler(organizationController.listOrganizations));
 organizationRouter.post('/', asyncHandler(organizationController.createOrganization));
+organizationRouter.post(
+  '/:organizationId/invitations',
+  asyncHandler(organizationController.createInvitation),
+);
 organizationRouter.delete(
   '/:organizationId',
   asyncHandler(organizationController.deleteOrganization),
@@ -13,6 +17,14 @@ organizationRouter.delete(
 organizationRouter.get(
   '/:organizationId/members',
   asyncHandler(organizationController.listMembers),
+);
+organizationRouter.get(
+  '/:organizationId/settings',
+  asyncHandler(organizationController.getSettings),
+);
+organizationRouter.patch(
+  '/:organizationId/settings',
+  asyncHandler(organizationController.updateSettings),
 );
 
 export default organizationRouter;

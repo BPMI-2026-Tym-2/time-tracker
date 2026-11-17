@@ -1,9 +1,34 @@
 import type {
   CreateOrganizationResponse,
+  InvitationResponse,
   ListOrganizationMembersResponse,
   ListOrganizationsResponse,
   OrganizationMemberResponse,
+  OrganizationSettingsResponse,
 } from '@time-tracker/shared';
+
+function toInvitationResponse(invitation: {
+  id: string;
+  organizationId: string;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: Date;
+  expiresAt: Date;
+}): InvitationResponse {
+  if (invitation.role !== 'member' || invitation.status !== 'pending') {
+    throw new Error('Unexpected invitation role or status');
+  }
+  return {
+    id: invitation.id,
+    organizationId: invitation.organizationId,
+    email: invitation.email,
+    role: invitation.role,
+    status: invitation.status,
+    createdAt: invitation.createdAt,
+    expiresAt: invitation.expiresAt,
+  };
+}
 
 type OrganizationRecord = {
   id: string;
@@ -13,14 +38,14 @@ type OrganizationRecord = {
 };
 
 type OrganizationMemberRecord = {
-  userId: string;
+  id: string;
   role: string;
   createdAt: Date;
   user: {
     id: string;
     name: string;
-    surname?: string;
-    email: string;
+    surname: string;
+    email?: string;
   };
 };
 
@@ -31,16 +56,12 @@ function toMemberResponse({
   member: OrganizationMemberRecord;
   includeEmail: boolean;
 }): OrganizationMemberResponse {
-  if (member.role !== 'member' && member.role !== 'owner') {
-    throw new Error(`Unknown organization role: ${member.role}`);
-  }
-
   return {
-    id: member.user.id,
+    id: member.id,
     name: member.user.name,
-    surname: member.user.surname ?? '',
-    ...(includeEmail && { email: member.user.email }),
-    role: member.role,
+    surname: member.user.surname,
+    ...(includeEmail && member.user.email ? { email: member.user.email } : {}),
+    role: member.role === 'owner' ? 'owner' : 'member',
     joinedAt: member.createdAt,
   };
 }
@@ -80,6 +101,40 @@ function toMembersResponse({
   };
 }
 
+function toSettingsResponse({
+  organization,
+  owner,
+  currentUserRole,
+  invitationCode,
+}: {
+  organization: { id: string; name: string; slug: string };
+  owner: { id: string; name: string; surname?: string } | null;
+  currentUserRole: string | null;
+  invitationCode: string;
+}): OrganizationSettingsResponse {
+  const isOwner = currentUserRole === 'owner';
+
+  return {
+    id: organization.id,
+    name: organization.name,
+    slug: organization.slug,
+    invitationCode,
+    owner: owner
+      ? {
+          id: owner.id,
+          name: owner.name,
+          surname: owner.surname ?? '',
+        }
+      : null,
+    currentUserRole:
+      currentUserRole === 'owner' || currentUserRole === 'member' ? currentUserRole : null,
+    permissions: {
+      canEdit: isOwner,
+      canDelete: isOwner,
+    },
+  };
+}
+
 function toListOrganizationsResponse({
   items,
   page,
@@ -113,9 +168,11 @@ function toListOrganizationsResponse({
 }
 
 const organizationMapper = {
+  toInvitationResponse,
   toMemberResponse,
   toOrganizationResponse,
   toMembersResponse,
+  toSettingsResponse,
   toListOrganizationsResponse,
 };
 

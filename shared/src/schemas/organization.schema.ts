@@ -48,6 +48,45 @@ const createOrganizationResponse = z.object({
   createdAt: z.coerce.date(),
 });
 
+const createInvitationRequest = z
+  .object({
+    email: z.string().trim().toLowerCase().pipe(z.email('Zadejte platnou e-mailovou adresu.')),
+  })
+  .strict();
+
+const invitationResponse = z.object({
+  id: z.string().min(1),
+  organizationId: z.string().min(1),
+  email: z.email(),
+  role: z.literal('member'),
+  status: z.literal('pending'),
+  createdAt: z.coerce.date(),
+  expiresAt: z.coerce.date(),
+});
+
+const organizationSettingsResponse = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  slug: z.string(),
+  invitationCode: z.string(),
+  owner: z
+    .object({
+      id: z.string().min(1),
+      name: z.string(),
+      surname: z.string(),
+    })
+    .nullable(),
+  currentUserRole: role.nullable(),
+  permissions: z.object({
+    canEdit: z.boolean(),
+    canDelete: z.boolean(),
+  }),
+});
+
+const updateOrganizationSettingsRequest = z.object({
+  name: z.string().trim().min(1, 'Název skupiny je povinný').max(100),
+});
+
 const listOrganizationsQuery = z.object({
   search: z.string().trim().optional(),
   role: z.enum(['all', 'owner', 'member']).default('all'),
@@ -83,6 +122,10 @@ export const organizationSchema = {
   memberResponse,
   createOrganizationRequest,
   createOrganizationResponse,
+  createInvitationRequest,
+  invitationResponse,
+  organizationSettingsResponse,
+  updateOrganizationSettingsRequest,
   listOrganizationsQuery,
   organizationItemResponse,
   listOrganizationsResponse,
@@ -94,6 +137,10 @@ export type ListOrganizationMembersQuery = z.infer<typeof listMembersQuery>;
 export type ListOrganizationMembersResponse = z.infer<typeof listMembersResponse>;
 export type CreateOrganizationRequest = z.infer<typeof createOrganizationRequest>;
 export type CreateOrganizationResponse = z.infer<typeof createOrganizationResponse>;
+export type CreateInvitationRequest = z.infer<typeof createInvitationRequest>;
+export type InvitationResponse = z.infer<typeof invitationResponse>;
+export type OrganizationSettingsResponse = z.infer<typeof organizationSettingsResponse>;
+export type UpdateOrganizationSettingsRequest = z.infer<typeof updateOrganizationSettingsRequest>;
 export type ListOrganizationsQuery = z.infer<typeof listOrganizationsQuery>;
 export type OrganizationItemResponse = z.infer<typeof organizationItemResponse>;
 export type ListOrganizationsResponse = z.infer<typeof listOrganizationsResponse>;
