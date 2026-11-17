@@ -2,10 +2,11 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { env, requiredEnv } from './env.js';
 import { prisma } from '../db/prisma.js';
+import { createAuthMiddleware, APIError } from 'better-auth/api';
 import { admin, oneTap, organization } from 'better-auth/plugins';
 import { ac, admin as adminRole, owner, member, user } from '@time-tracker/shared';
+import authService from '../modules/auth/auth.service.js';
 import type { AccessControl } from 'better-auth/plugins/access';
-import { registrationHooks } from '../modules/auth/auth.hooks.js';
 
 export const authCorsConfig = {
   origin: env.corsOrigin,
@@ -23,14 +24,24 @@ export const auth = betterAuth({
   basePath: '/api/auth',
   secret: requiredEnv('BETTER_AUTH_SECRET'),
   trustedOrigins: [env.corsOrigin],
-  hooks: registrationHooks,
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/sign-up/email') {
+        return;
+      }
+
+      const input = authService.parseRegistrationInput(ctx.body);
+
+      // Better Auth použije vrácené body, takže se uloží ořezané a normalizované hodnoty
+      return { context: { ...ctx, body: { ...ctx.body, ...input } } };
+    }),
+  },
   plugins: [
     admin({
       ac: ac as AccessControl,
+      defaultRole: 'user',
       roles: {
         admin: adminRole,
-        owner,
-        member,
         user,
       },
     }),
@@ -59,6 +70,8 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
   },
   socialProviders: {
     google: {
@@ -69,11 +82,17 @@ export const auth = betterAuth({
         const surname = profile.family_name?.trim();
 
         if (!name) {
-          throw new Error('Google account must include a given name');
+          throw new APIError('BAD_REQUEST', {
+            code: 'GOOGLE_PROFILE_INCOMPLETE',
+            message: 'Účet Google musí obsahovat jméno',
+          });
         }
 
         if (!surname) {
-          throw new Error('Google account must include a family name');
+          throw new APIError('BAD_REQUEST', {
+            code: 'GOOGLE_PROFILE_INCOMPLETE',
+            message: 'Účet Google musí obsahovat příjmení',
+          });
         }
 
         return { name, surname };

@@ -1,8 +1,10 @@
-import type {
-  CreateOrganizationResponse,
-  ListOrganizationMembersResponse,
-  OrganizationMemberResponse,
+import {
+  organizationSchema,
+  type CreateOrganizationResponse,
+  type ListOrganizationMembersResponse,
+  type OrganizationMemberResponse,
 } from '@time-tracker/shared';
+import { AppError } from '../../shared/errors/app-error.js';
 
 type OrganizationRecord = {
   id: string;
@@ -30,8 +32,10 @@ function toMemberResponse({
   member: OrganizationMemberRecord;
   includeEmail: boolean;
 }): OrganizationMemberResponse {
-  if (member.role !== 'member' && member.role !== 'owner') {
-    throw new Error(`Unknown organization role: ${member.role}`);
+  const parsedRole = organizationSchema.role.safeParse(member.role);
+
+  if (!parsedRole.success) {
+    throw new AppError(`Neznámá organizační role: ${member.role}`, 500);
   }
 
   return {
@@ -39,7 +43,7 @@ function toMemberResponse({
     name: member.user.name,
     surname: member.user.surname ?? '',
     ...(includeEmail && { email: member.user.email }),
-    role: member.role,
+    role: parsedRole.data,
     joinedAt: member.createdAt,
   };
 }

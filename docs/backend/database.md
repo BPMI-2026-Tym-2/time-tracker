@@ -46,7 +46,8 @@ API response není přímo Prisma model. Převod zajišťuje
 - `GroupMember` – členství uživatele ve skupině: `groupId`, `userId`,
   `role` (`"member"` nebo `"owner"` = zakladatel) a `joinedAt`. Dvojice
   `groupId` + `userId` je unikátní.
-- `User.role` – aplikační role `"user"` (výchozí) nebo `"superAdmin"`.
+- `User.role` – globální role `"user"` (výchozí) nebo `"admin"`. Zdroj pravdy je
+  `GlobalRole` v `shared/src/permissions.ts`.
 
 Při smazání skupiny nebo uživatele se příslušná členství smažou automaticky
 (`onDelete: Cascade`).
