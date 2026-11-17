@@ -33,22 +33,6 @@ async function createInvitation(
   }
 }
 
-async function deleteOrganization(request: Request, organizationId: string): Promise<void> {
-  try {
-    await auth.api.deleteOrganization({
-      headers: fromNodeHeaders(request.headers),
-      body: { organizationId },
-    });
-  } catch (error) {
-    if (isAPIError(error) && error.statusCode < 500) {
-      throw new AppError(error.message, error.statusCode);
-    }
-
-    console.error(error);
-    throw new AppError('Odstranění skupiny se nezdařilo. Zkuste to prosím znovu', 500);
-  }
-}
-
 async function createOrganization(
   request: Request,
   input: CreateOrganizationRequest,
