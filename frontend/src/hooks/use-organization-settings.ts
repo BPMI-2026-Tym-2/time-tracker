@@ -15,12 +15,12 @@ import type {
 function getDummySettings(organizationId: string): OrganizationSettingsResponse {
   return {
     id: organizationId,
-    name: 'Programování',
-    slug: 'programovani',
-    invitationCode: 'PRG123',
+    name: 'Skupina 1',
+    slug: 'skupina-1',
+    invitationCode: 'SKUPINA1',
     owner: {
       id: 'owner-1',
-      name: 'Jan',
+      name: 'Emil',
       surname: 'Novák',
     },
     currentUserRole: 'owner',

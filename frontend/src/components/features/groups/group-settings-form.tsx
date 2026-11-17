@@ -6,10 +6,20 @@ import type {
   OrganizationSettingsResponse,
   UpdateOrganizationSettingsRequest,
 } from '@time-tracker/shared';
-import { Pencil, Users, Link as LinkIcon, Copy, Check, Trash2, LoaderCircle } from 'lucide-react';
+import {
+  Pencil,
+  Users,
+  Link as LinkIcon,
+  Copy,
+  Check,
+  Trash2,
+  LoaderCircle,
+  UserPlus,
+} from 'lucide-react';
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { InviteMemberDialog } from './invite-member-dialog';
 import { getFieldStyle, RequiredMark } from '@/lib/form-styles';
 import { cn } from '@/lib/utils';
 
@@ -108,6 +118,16 @@ export function GroupSettingsForm({
                   <Copy className="size-3.5" />
                 )}
               </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[160px_1fr]">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <UserPlus className="size-4" />
+              <span>Pozvat nového člena</span>
+            </div>
+            <div>
+              <InviteMemberDialog organizationId={settings.id} organizationName={settings.name} />
             </div>
           </div>
         </FieldGroup>

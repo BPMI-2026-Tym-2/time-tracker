@@ -14,12 +14,17 @@ interface NotificationInboxProps {
   simulatedScenario?: InvitationErrorCode;
   onAcceptSuccess?: (organizationName?: string) => void;
   onRejectSuccess?: (organizationName?: string) => void;
+  /**
+   * Režim pouze popup - nezpracovává skutečné připojení do skupiny na backendu
+   */
+  onlyPopup?: boolean;
 }
 
 export function NotificationInbox({
   simulatedScenario,
   onAcceptSuccess,
   onRejectSuccess,
+  onlyPopup = true,
 }: NotificationInboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, count, isLoading, refetch } = useNotifications();
@@ -29,6 +34,11 @@ export function NotificationInbox({
 
   // Krok 2 & Krok 5: Přijetí pozvánky (Happy Day)
   async function handleAccept(id: string, organizationName?: string) {
+    if (onlyPopup) {
+      setIsOpen(false);
+      onAcceptSuccess?.(organizationName);
+      return;
+    }
     setProcessingId(id);
     try {
       await acceptInvitation({
@@ -47,6 +57,11 @@ export function NotificationInbox({
 
   // A1: Odmítnutí pozvánky
   async function handleReject(id: string, organizationName?: string) {
+    if (onlyPopup) {
+      setIsOpen(false);
+      onRejectSuccess?.(organizationName);
+      return;
+    }
     setProcessingId(id);
     try {
       await rejectInvitation({
