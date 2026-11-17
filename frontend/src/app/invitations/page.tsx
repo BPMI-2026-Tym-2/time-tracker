@@ -1,110 +1,219 @@
-import { Suspense } from 'react';
-import { Mail, UserPlus, Sparkles } from 'lucide-react';
+'use client';
+
+import { Suspense, useState } from 'react';
+import {
+  Bell,
+  CheckCircle2,
+  AlertCircle,
+  Info,
+  RefreshCw,
+  Sparkles,
+  Users,
+  ShieldAlert,
+} from 'lucide-react';
+import { AppHeader } from '@/components/layout/app-header';
 import { InviteMemberDialog } from '@/components/features/groups/invite-member-dialog';
-import { NotificationInbox } from '@/components/features/notifications/notification-inbox';
 import { Spinner } from '@/components/ui/spinner';
+import { useRespondInvitation, resetMockNotifications } from '@/hooks/use-invitations';
+import type { InvitationErrorCode } from '@/lib/api/invitations';
 
 export default function InvitationsPage() {
+  const [activeScenario, setActiveScenario] = useState<InvitationErrorCode | undefined>(undefined);
+  const { resetAllMockData } = useRespondInvitation();
+
+  function handleReset() {
+    resetMockNotifications();
+    resetAllMockData();
+    setActiveScenario(undefined);
+  }
+
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-50">
-          <Spinner className="text-primary size-8" />
+        <div className="flex min-h-screen items-center justify-center bg-[#FAF7F2]">
+          <Spinner className="size-8 text-[#1E3426]" />
         </div>
       }
     >
-      <main className="min-h-screen bg-slate-50 p-6 md:p-12">
-        <div className="mx-auto max-w-4xl space-y-8">
-          {/* Header */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Pozvánky do skupin</h1>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Správa odesílání a přijímání pozvánek do skupin
-              </p>
-            </div>
+      <div className="min-h-screen bg-[#F6F3ED] text-[#1C261F]">
+        {/* Horní navigační lišta přesně dle screenshotu "Jak to vypadá v aplikaci:" */}
+        <AppHeader userName="Emil" userInitials="EM" simulatedScenario={activeScenario} />
 
-            {/* Notification Bell in Header */}
-            <div className="border-border bg-card flex items-center gap-3 rounded-2xl border px-4 py-2 shadow-xs">
-              <span className="text-muted-foreground text-xs font-semibold">
-                Oznámení a pozvánky:
-              </span>
-              <NotificationInbox />
+        <main className="mx-auto max-w-5xl space-y-8 p-6 md:p-10">
+          {/* Úvodní hlavička stránky */}
+          <div className="rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-8 shadow-xs">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1E3426]/10 px-3 py-1 text-xs font-semibold text-[#1E3426]">
+                  <Sparkles className="size-3.5" />
+                  Business Use Case (BUC)
+                </span>
+                <h1 className="mt-2 text-2xl font-black tracking-tight text-[#1C261F] sm:text-3xl">
+                  Připojení se ke skupině pomocí pozvánky
+                </h1>
+                <p className="mt-1 text-sm leading-relaxed text-[#5E5A54]">
+                  Implementace frontendového rozhraní panelu <strong>Oznámení</strong> pro přijímání
+                  a odmítání pozvánek do skupin dle specifikace a dodaného mockupu.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleReset}
+                className="inline-flex items-center gap-2 self-start rounded-xl border border-[#D9CDBF] bg-[#E8DCCF] px-4 py-2.5 text-xs font-semibold text-[#1C261F] transition-colors hover:bg-[#DDD0BF] active:scale-95 sm:self-center"
+              >
+                <RefreshCw className="size-3.5" />
+                <span>Obnovit výchozí stav</span>
+              </button>
             </div>
           </div>
 
+          {/* Interaktivní ovládací panel pro testování všech scénářů BUC */}
+          <div className="space-y-4 rounded-3xl border border-[#DFD8CC] bg-white/70 p-6 shadow-xs">
+            <div>
+              <h2 className="text-lg font-bold text-[#1C261F]">
+                Testování scénářů BUC v panelu Oznámení
+              </h2>
+              <p className="mt-0.5 text-xs text-[#5E5A54]">
+                Vyberte scénář a klikněte na ikonu <strong>zvonku v horní liště</strong> pro
+                vyzkoušení chování.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Happy Day */}
+              <button
+                type="button"
+                onClick={() => setActiveScenario(undefined)}
+                className={`rounded-2xl border p-4 text-left transition-all ${
+                  activeScenario === undefined
+                    ? 'border-[#1E3426] bg-[#1E3426]/10 ring-2 ring-[#1E3426]'
+                    : 'border-[#DFD8CC] bg-[#FAF7F2] hover:border-[#1E3426]/50'
+                }`}
+              >
+                <div className="flex items-center gap-2 text-sm font-bold text-[#1E3426]">
+                  <CheckCircle2 className="size-4" />
+                  <span>Happy Day</span>
+                </div>
+                <p className="mt-1 text-xs text-[#5E5A54]">
+                  Ověření platnosti, přidání do skupiny s rolí member a potvrzení úspěchu.
+                </p>
+              </button>
+
+              {/* Scénář A3 */}
+              <button
+                type="button"
+                onClick={() => setActiveScenario('INVALID_OR_NOT_FOUND')}
+                className={`rounded-2xl border p-4 text-left transition-all ${
+                  activeScenario === 'INVALID_OR_NOT_FOUND'
+                    ? 'border-rose-600 bg-rose-50 ring-2 ring-rose-600'
+                    : 'border-[#DFD8CC] bg-[#FAF7F2] hover:border-rose-400'
+                }`}
+              >
+                <div className="flex items-center gap-2 text-sm font-bold text-rose-700">
+                  <ShieldAlert className="size-4" />
+                  <span>Tok A3: Neplatná</span>
+                </div>
+                <p className="mt-1 text-xs text-[#5E5A54]">
+                  Error Message: Pozvánku nelze přijmout. (vypršela nebo skupina neexistuje).
+                </p>
+              </button>
+
+              {/* Scénář A4 */}
+              <button
+                type="button"
+                onClick={() => setActiveScenario('ALREADY_MEMBER')}
+                className={`rounded-2xl border p-4 text-left transition-all ${
+                  activeScenario === 'ALREADY_MEMBER'
+                    ? 'border-amber-600 bg-amber-50 ring-2 ring-amber-600'
+                    : 'border-[#DFD8CC] bg-[#FAF7F2] hover:border-amber-400'
+                }`}
+              >
+                <div className="flex items-center gap-2 text-sm font-bold text-amber-700">
+                  <Info className="size-4" />
+                  <span>Tok A4: Již členem</span>
+                </div>
+                <p className="mt-1 text-xs text-[#5E5A54]">
+                  Information Message: Jste již členem této skupiny.
+                </p>
+              </button>
+
+              {/* Scénář A5 */}
+              <button
+                type="button"
+                onClick={() => setActiveScenario('CONNECTION_FAILED')}
+                className={`rounded-2xl border p-4 text-left transition-all ${
+                  activeScenario === 'CONNECTION_FAILED'
+                    ? 'border-red-600 bg-red-50 ring-2 ring-red-600'
+                    : 'border-[#DFD8CC] bg-[#FAF7F2] hover:border-red-400'
+                }`}
+              >
+                <div className="flex items-center gap-2 text-sm font-bold text-red-700">
+                  <AlertCircle className="size-4" />
+                  <span>Tok A5: Selhání</span>
+                </div>
+                <p className="mt-1 text-xs text-[#5E5A54]">
+                  Error Message: Nepodařilo se připojit ke skupině + tlačítko pro opakování.
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* Sekce s dialogem pro pozvání nového člena (propojení s odesíláním pozvánek) */}
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Box 1: Odeslání pozvánky (Vlastník skupiny) */}
-            <div className="border-border bg-card space-y-5 rounded-2xl border p-6 shadow-xs">
+            <div className="space-y-4 rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-6 shadow-xs">
               <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-                  <UserPlus className="size-5" />
+                <div className="flex size-10 items-center justify-center rounded-2xl bg-[#1E3426] text-white">
+                  <Users className="size-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold">Odeslání pozvánky do skupiny</h2>
-                  <p className="text-muted-foreground text-xs">Akce pro vlastníka skupiny</p>
+                  <h3 className="font-bold text-[#1C261F]">Vytvořit pozvánku do skupiny</h3>
+                  <p className="text-xs text-[#5E5A54]">Odeslání pozvánky na e-mail</p>
                 </div>
               </div>
 
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Jako vlastník můžete do své skupiny pozvat nové členy zadáním jejich e-mailové
-                adresy. Pozvánka bude doručena do jejich schránky oznámení.
+              <p className="text-xs leading-relaxed text-[#5E5A54]">
+                Vlastník skupiny může pozvat dalšího člena. Po odeslání se pozvánka ihned objeví ve
+                schránce oznámení pozvaného uživatele (červený odznak na zvonku).
               </p>
 
               <div className="pt-2">
-                <InviteMemberDialog
-                  organizationId="org-tech"
-                  organizationName="Programování a vývoj"
-                />
+                <InviteMemberDialog organizationId="org-skupina-1" organizationName="Skupina 1" />
               </div>
             </div>
 
-            {/* Box 2: Schránka pozvánek (Pozvaný uživatel) */}
-            <div className="border-border bg-card space-y-5 rounded-2xl border p-6 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-purple-100 text-purple-600">
-                  <Mail className="size-5" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold">Příchozí pozvánky</h2>
-                  <p className="text-muted-foreground text-xs">Schránka oznámení uživatele</p>
-                </div>
-              </div>
-
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Zde vidíte pozvánky, které vám byly zaslány od ostatních vlastníků skupin. Můžete
-                pozvánku přijmout a stát se členem, nebo ji odmítnout.
-              </p>
-
-              <div className="flex items-center gap-3 pt-2">
-                <NotificationInbox />
-                <span className="text-muted-foreground text-xs">
-                  Klikněte na zvoneček pro otevření nabídky pozvánek
-                </span>
-              </div>
+            {/* Specifikace toků */}
+            <div className="space-y-3 rounded-3xl border border-[#DFD8CC] bg-[#FAF7F2] p-6 shadow-xs">
+              <h3 className="flex items-center gap-2 font-bold text-[#1C261F]">
+                <Bell className="size-4 text-[#1E3426]" />
+                <span>Souhrn prvků z Mockupu & Wireframu</span>
+              </h3>
+              <ul className="space-y-2 text-xs text-[#5E5A54]">
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 font-bold text-[#1C261F]">• Zvonek:</span>
+                  <span>Tlačítko s ikonou zvonku a červeným kolečkem (unreadCount).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 font-bold text-[#1C261F]">• Oznámení:</span>
+                  <span>Nadpis otevřeného panelu s tlačítkem pro zavření (x).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 font-bold text-[#1C261F]">• Pozvánka:</span>
+                  <span>
+                    Karta s textem <code>Byli jste pozváni do skupiny &quot;Skupina 1&quot;</code>.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 font-bold text-[#1C261F]">• Tlačítka:</span>
+                  <span>
+                    Béžové <strong>Odmítnout</strong> a tmavě zelené <strong>Přijmout</strong>.
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
-
-          {/* Info card */}
-          <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 text-xs text-blue-800">
-            <div className="flex items-center gap-2 font-semibold">
-              <Sparkles className="size-4" />
-              <span>Napojení na backend:</span>
-            </div>
-            <p className="mt-1">
-              Používá endpointy z PR #24:{' '}
-              <code className="rounded bg-blue-100 px-1 py-0.5">
-                POST /api/organizations/:id/invitations
-              </code>
-              , <code className="rounded bg-blue-100 px-1 py-0.5">GET /api/notifications</code> a{' '}
-              <code className="rounded bg-blue-100 px-1 py-0.5">
-                POST /api/auth/organization/accept-invitation
-              </code>
-              .
-            </p>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </Suspense>
   );
 }
