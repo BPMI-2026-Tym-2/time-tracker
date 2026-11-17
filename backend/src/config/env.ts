@@ -1,5 +1,15 @@
 import 'dotenv/config';
 
+export function requiredEnv(name: string): string {
+  const value = process.env[name]?.trim();
+
+  if (!value) {
+    throw new Error(`${name} environment variable is required`);
+  }
+
+  return value;
+}
+
 function readPort(value: string | undefined): number {
   const port = Number(value ?? 3001);
 
@@ -12,5 +22,5 @@ function readPort(value: string | undefined): number {
 
 export const env = {
   port: readPort(process.env.PORT),
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+  corsOrigin: requiredEnv('CORS_ORIGIN'),
 } as const;
