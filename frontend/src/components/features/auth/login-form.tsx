@@ -1,104 +1,89 @@
 import { LoaderCircle, LucideEye, LucideEyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type ChangeEvent, type SyntheticEvent } from 'react';
+import Image from 'next/image';
+import { useState } from 'react';
+import { useFormState, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import Image from 'next/image';
-import { loginSchema } from '@time-tracker/shared';
+import type { LoginSchema } from '@time-tracker/shared';
 import { getFieldStyle, RequiredMark } from '@/lib/form-styles';
 
 type LoginFormProps = {
-  email: string;
-  password: string;
+  form: UseFormReturn<LoginSchema>;
   isPending: boolean;
   loginPending: boolean;
   googlePending: boolean;
   errorMessage?: string;
-  onEmailChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (event: SyntheticEvent<HTMLFormElement>) => void;
+  onSubmit: SubmitHandler<LoginSchema>;
   onGoogleLogin: () => void;
 };
 
 export function LoginForm({
-  email,
-  password,
+  form,
   isPending,
   loginPending,
   googlePending,
   errorMessage,
-  onEmailChange,
-  onPasswordChange,
   onSubmit,
   onGoogleLogin,
 }: LoginFormProps) {
+  const { control } = form;
+  const { errors, dirtyFields } = useFormState({ control });
+
   const [showPassword, setShowPassword] = useState(false);
 
-  const isEmailValid = email.length > 0 && loginSchema.shape.email.safeParse(email).success;
-
-  const isPasswordValid =
-    password.length > 0 && loginSchema.shape.password.safeParse(password).success;
-
-  const emailFieldStyle = getFieldStyle(isEmailValid, email.length > 0);
-  const passwordFieldStyle = getFieldStyle(isPasswordValid, password.length > 0);
+  const emailFieldStyle = getFieldStyle(!errors.email, Boolean(dirtyFields.email));
+  const passwordFieldStyle = getFieldStyle(!errors.password, Boolean(dirtyFields.password));
 
   return (
     <div className="flex w-xs flex-col gap-y-6 sm:w-md">
       <h1 className="text-center text-2xl font-bold">Přihlášení</h1>
 
-      <form onSubmit={onSubmit} noValidate>
+      <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <FieldSet>
           <FieldGroup>
-            <Field className="gap-1" data-invalid={!isEmailValid && email.length > 0}>
+            <Field className="gap-1" data-invalid={Boolean(errors.email)}>
               <FieldLabel htmlFor="email" className={emailFieldStyle}>
                 E-mail <RequiredMark />
               </FieldLabel>
               <Input
                 id="email"
-                name="email"
                 type="email"
                 autoComplete="email"
                 required
                 placeholder="jan.novak@seznam.cz"
-                value={email}
-                onChange={onEmailChange}
-                aria-invalid={!isEmailValid && email.length > 0}
                 className={emailFieldStyle}
+                aria-invalid={Boolean(errors.email)}
+                {...form.register('email')}
               />
-              {!isEmailValid && email.length > 0 && (
-                <FieldError>Zadejte platnou e-mailovou adresu.</FieldError>
-              )}
+              {errors.email && <FieldError>{errors.email.message}</FieldError>}
             </Field>
 
-            <Field className="gap-1" data-invalid={!isPasswordValid && password.length > 0}>
+            <Field className="gap-1" data-invalid={Boolean(errors.password)}>
               <FieldLabel htmlFor="password" className={passwordFieldStyle}>
                 Heslo <RequiredMark />
               </FieldLabel>
               <span className="relative">
                 <Input
                   id="password"
-                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
                   placeholder="••••••••"
-                  value={password}
-                  onChange={onPasswordChange}
-                  aria-invalid={!isPasswordValid && password.length > 0}
                   className={passwordFieldStyle}
+                  aria-invalid={Boolean(errors.password)}
+                  {...form.register('password')}
                 />
                 <button
                   type="button"
-                  className="absolute top-1/2 right-0 w-fit -translate-y-1/2 px-3"
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-0 w-fit -translate-y-1/2 px-3"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <LucideEye size="16" /> : <LucideEyeOff size="16" />}
                 </button>
               </span>
-              {!isPasswordValid && password.length > 0 && (
-                <FieldError>Heslo je povinné.</FieldError>
-              )}
+              {errors.password && <FieldError>{errors.password.message}</FieldError>}
             </Field>
           </FieldGroup>
 

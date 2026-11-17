@@ -1,7 +1,9 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
-import { useTable } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
+import { useTable, type SortingState, type ColumnFiltersState } from '@tanstack/react-table';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -14,12 +16,10 @@ import type { User, UserRole } from '../types';
 import { createUserColumns } from '../table/columns';
 import { userTableFeatures } from '../table/features';
 import { UserListControls } from './user-list-controls';
-import { UserTablePagination } from './user-table-pagination';
 
 const initialState = {
   columnVisibility: { joinedAt: false },
-  pagination: { pageIndex: 0, pageSize: 5 },
-  sorting: [{ id: 'joinedAt', desc: true }],
+  pagination: { pageIndex: 0, pageSize: 7 },
 };
 
 type UserTableProps = {
@@ -28,35 +28,39 @@ type UserTableProps = {
 };
 
 export function UserTable({ users, canViewEmail }: UserTableProps) {
-  const [searchInput, setSearchInput] = useState('');
   const columns = useMemo(() => createUserColumns(canViewEmail), [canViewEmail]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'joinedAt', desc: true }]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const table = useTable({
     features: userTableFeatures,
     data: users,
     columns,
     initialState,
-    globalFilterFn: 'includesString',
+    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
+    state: {
+      sorting,
+      columnFilters,
+    },
   });
+  const nameFilter = table.getColumn('name')?.getFilterValue();
+  const searchInput = typeof nameFilter === 'string' ? nameFilter : '';
   const roleFilter = table.getColumn('role')?.getFilterValue();
   const selectedRole: UserRole | '' =
     roleFilter === 'Člen' || roleFilter === 'admin' ? roleFilter : '';
   const isNewestFirst = table.getColumn('joinedAt')?.getIsSorted() !== 'asc';
   const visibleRows = table.getRowModel().rows;
   const columnCount = table.getVisibleLeafColumns().length;
+  const rowCount = table.getFilteredRowModel().rows.length;
+  const pageCount = table.getPageCount();
 
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    table.setGlobalFilter(searchInput.trim());
+  function handleSearchInputChange(value: string) {
+    table.getColumn('name')?.setFilterValue(value);
     table.setPageIndex(0);
   }
 
   function handleRoleChange(role: UserRole | '') {
     table.getColumn('role')?.setFilterValue(role || undefined);
-    table.setPageIndex(0);
-  }
-
-  function handleSortToggle() {
-    table.getColumn('joinedAt')?.toggleSorting(!isNewestFirst);
     table.setPageIndex(0);
   }
 
@@ -67,10 +71,13 @@ export function UserTable({ users, canViewEmail }: UserTableProps) {
         searchInput={searchInput}
         selectedRole={selectedRole}
         isNewestFirst={isNewestFirst}
-        onSearchInputChange={setSearchInput}
-        onSearch={handleSearch}
+        onSearchInputChange={handleSearchInputChange}
         onRoleChange={handleRoleChange}
-        onSortToggle={handleSortToggle}
+        onSortToggle={() => {
+          const column = table.getColumn('joinedAt');
+          column?.toggleSorting(column.getIsSorted() === 'asc');
+          table.setPageIndex(0);
+        }}
       />
       <div className="overflow-hidden rounded-md border border-slate-200">
         <Table className="min-w-120 border-collapse text-left text-sm">
@@ -110,14 +117,40 @@ export function UserTable({ users, canViewEmail }: UserTableProps) {
           </TableBody>
         </Table>
       </div>
-      <UserTablePagination
-        currentPage={table.state.pagination.pageIndex}
-        pageCount={table.getPageCount()}
-        rowCount={table.getFilteredRowModel().rows.length}
-        canGoBack={table.getCanPreviousPage()}
-        canGoForward={table.getCanNextPage()}
-        onPageChange={(page) => table.setPageIndex(page)}
-      />
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-2">
+        <p aria-live="polite" className="flex-1 text-sm text-slate-600">
+          Počet uživatelů: <span className="font-semibold text-slate-900">{rowCount}</span>
+        </p>
+        {rowCount > 0 && (
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 lg:gap-8">
+            <p className="min-w-24 text-center text-sm font-medium">
+              Stránka {table.state.pagination.pageIndex + 1} z {pageCount}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                aria-label="Předchozí stránka"
+              >
+                <ChevronLeft aria-hidden="true" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                aria-label="Další stránka"
+              >
+                <ChevronRight aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }

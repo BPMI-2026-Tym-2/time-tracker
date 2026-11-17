@@ -7,6 +7,6 @@ export type User = {
   joinedAt: string;
 };
 
-export type UserListViewerRole = 'member' | 'admin' | 'superAdmin';
+export type UserListViewerRole = 'owner' | 'admin';
 export type UserListApiState =
   'loading' | 'success' | 'empty' | 'unauthenticated' | 'forbidden' | 'not-found' | 'error';

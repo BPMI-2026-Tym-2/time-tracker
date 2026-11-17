@@ -47,3 +47,15 @@ node --import tsx --test tests/group-members.test.ts
 
 Pokud test vyžaduje MongoDB, musí to být v jeho názvu nebo dokumentaci
 zřejmé. Kontroly lint, formátování, typecheck a build databázi nepotřebují.
+
+## Test registrace
+
+Test kontrol registrace. HTTP testy volají přímo `POST /api/auth/sign-up/email`
+(existující e-mail vrátí 409, prázdné pole 400, obojí s českou hláškou).
+Vyžadují běžící MongoDB replica set a vyplněný `backend/.env` podle
+`backend/.env.example` (včetně `BETTER_AUTH_*` a `GOOGLE_*`):
+
+```sh
+npm run db:up
+npm run test:registration
+```

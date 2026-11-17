@@ -14,6 +14,10 @@ export const statement = {
 
 export const ac = createAccessControl(statement);
 
+// Globální role (admin plugin). Organizační role (owner, member) jsou v organization pluginu.
+export const globalRoles = ['user', 'admin'] as const;
+export type GlobalRole = (typeof globalRoles)[number];
+
 export const admin = ac.newRole({
   ...statement,
 });
