@@ -21,6 +21,40 @@ Prisma
 - Mappery převádějí databázové záznamy na API response.
 - Veřejná request a response schémata jsou v `shared/src/schemas`.
 
+## Namespaced API konvence
+
+Backendové moduly a sdílená Zod schémata používají namespaced API,
+označované také jako object-based module/service pattern.
+
+Související funkce jsou seskupené pod jedním objektovým namespace místo
+samostatných exportů:
+
+```ts
+groupService.listMembers(...);
+groupRepository.findMembers(...);
+groupMapper.toGroupMemberResponse(...);
+group.listMembersQuery.parse(request.query);
+```
+
+Tento přístup zlepšuje orientaci v kódu, omezuje kolize názvů a jasně ukazuje,
+ke kterému modulu daná funkce nebo schema patří.
+
+Např. v group modulu jsou runtime objekty pojmenované podle vrstvy:
+
+- groupService – business logika,
+- groupRepository – databázové dotazy,
+- groupMapper – převod databázových záznamů na API response,
+- groupController – HTTP controllery,
+- groupSchema – sdílená Zod schémata.
+
+TypeScript typy zůstávají exportované samostatně, protože jde o compile-time kontrakty:
+
+```ts
+import type { GroupRole, ListGroupMembersResponse } from '@time-tracker/shared';
+```
+
+Runtime schémata a odvozené typy jsou definované společně v shared/src/schemas/group.schema.ts.
+
 ## Task modul
 
 Aktuálně jsou implementované:
@@ -39,3 +73,16 @@ repository, mapper připraví API response a response se ověří response schem
 - async handler pro Express,
 - CORS middleware,
 - response helpery.
+
+## Environment konfigurace
+
+Povinné environment proměnné se načítají pomocí helperu `requiredEnv` z
+`backend/src/config/env.ts`. Helper odstraní okolní mezery a při chybějící nebo
+prázdné hodnotě vyhodí explicitní chybu.
+
+Při přidávání konfigurace, která bez environment proměnné nemůže bezpečně
+fungovat, se má použít `requiredEnv` místo přímého čtení `process.env`.
+
+Volitelné proměnné s definovanou výchozí hodnotou, například `PORT` nebo
+`CORS_ORIGIN`, zůstávají zpracované v konfiguraci vlastním validačním helperem
+nebo fallbackem.

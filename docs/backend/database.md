@@ -39,3 +39,15 @@ Schema aktuálně obsahuje model `Task`:
 
 API response není přímo Prisma model. Převod zajišťuje
 `backend/src/modules/tasks/task.mapper.ts`.
+
+### Skupiny
+
+- `Group` – `id`, `name`, `createdAt`, `updatedAt`.
+- `GroupMember` – členství uživatele ve skupině: `groupId`, `userId`,
+  `role` (`"member"` nebo `"owner"` = zakladatel) a `joinedAt`. Dvojice
+  `groupId` + `userId` je unikátní.
+- `User.role` – globální role `"user"` (výchozí) nebo `"admin"`. Zdroj pravdy je
+  `GlobalRole` v `shared/src/permissions.ts`.
+
+Při smazání skupiny nebo uživatele se příslušná členství smažou automaticky
+(`onDelete: Cascade`).
