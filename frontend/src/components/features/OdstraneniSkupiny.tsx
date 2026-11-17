@@ -2,6 +2,8 @@
 import { useRef } from 'react';
 import { Trash } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
+import { useMutation } from '@tanstack/react-query';
+import { publicEnv } from '@/lib/env';
 
 type OdstraneniSkupinyProps = {
   groupId: string;
@@ -25,10 +27,10 @@ export default function OdstraneniSkupiny({
     dialogRef.current?.close();
   }
 
-  async function handleDelete() {
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/groups/${encodeURIComponent(groupId)}`,
+        `${publicEnv.apiUrl}/api/organizations/${encodeURIComponent(groupId)}`,
         {
           method: 'DELETE',
           credentials: 'include',
@@ -36,9 +38,22 @@ export default function OdstraneniSkupiny({
       );
 
       if (!response.ok) {
-        throw new Error('Group deletion failed');
+        throw new Error('Organization deletion failed');
       }
-    } catch {
+    },
+
+    onSuccess: () => {
+      closeDialog();
+
+      toast.add({
+        type: 'success',
+        title: 'Skupina byla úspěšně odstraněna.',
+      });
+
+      onDeleted?.();
+    },
+
+    onError: () => {
       closeDialog();
 
       toast.add({
@@ -46,18 +61,8 @@ export default function OdstraneniSkupiny({
         title: 'Odstranění skupiny se nezdařilo.',
         description: 'Zkuste to prosím znovu.',
       });
-
-      return;
-    }
-
-    closeDialog();
-
-    toast.add({
-      type: 'success',
-      title: 'Skupina byla úspěšně odstraněna.',
-    });
-    onDeleted?.();
-  }
+    },
+  });
 
   if (!isOwner) {
     //pokud uživatel není vlastník skupiny, nezobrazovat komponentu
@@ -113,7 +118,7 @@ export default function OdstraneniSkupiny({
           <button
             type="button"
             className="rounded-xl bg-red-600 px-4 py-2 font-bold text-white"
-            onClick={handleDelete}
+            onClick={() => deleteMutation.mutate()}
           >
             Odstranit
           </button>
