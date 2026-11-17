@@ -5,11 +5,33 @@ import { auth } from '../../config/auth.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import type {
   CreateOrganizationRequest,
+  CreateInvitationRequest,
+  InvitationResponse,
   CreateOrganizationResponse,
   ListOrganizationMembersQuery,
   ListOrganizationMembersResponse,
 } from '@time-tracker/shared';
 import organizationMapper from './organization.mapper.js';
+
+async function createInvitation(
+  request: Request,
+  organizationId: string,
+  input: CreateInvitationRequest,
+): Promise<InvitationResponse> {
+  try {
+    const invitation = await auth.api.createInvitation({
+      headers: fromNodeHeaders(request.headers),
+      body: { organizationId, email: input.email, role: 'member' },
+    });
+    return organizationMapper.toInvitationResponse(invitation);
+  } catch (error) {
+    if (isAPIError(error) && error.statusCode < 500) {
+      throw new AppError('Pozvánku se nepodařilo odeslat', error.statusCode);
+    }
+    console.error(error);
+    throw new AppError('Pozvánku se nepodařilo odeslat', 500);
+  }
+}
 
 async function deleteOrganization(request: Request, organizationId: string): Promise<void> {
   try {
@@ -97,6 +119,7 @@ async function listMembers(
 }
 
 const organizationService = {
+  createInvitation,
   createOrganization,
   listMembers,
   deleteOrganization,

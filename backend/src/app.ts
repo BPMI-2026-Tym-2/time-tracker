@@ -5,6 +5,7 @@ import authRouter from './modules/auth/auth.routes.js';
 import organizationRouter from './modules/organizations/organization.routes.js';
 import { userRouter } from './modules/users/user.routes.js';
 import { requireAuth } from './shared/auth/require-auth.js';
+import { notificationRouter } from './modules/notifications/notification.routes.js';
 
 const app = express();
 const apiRouter = express.Router();
@@ -21,6 +22,7 @@ apiRouter.use(express.json());
 apiRouter.use(requireAuth);
 apiRouter.use('/organizations', organizationRouter);
 apiRouter.use('/users', userRouter);
+apiRouter.use('/notifications', notificationRouter);
 
 // Pro přístup k tomuto endpointu je vyžadována role 'admin'
 //* apiRouter.get('/admin', requireRole('admin'), asyncHandler(adminController));

@@ -2,6 +2,21 @@ import type { Request, Response } from 'express';
 import { organizationSchema } from '@time-tracker/shared';
 import { sendData } from '../../shared/http/response.js';
 import organizationService from './organization.service.js';
+import { AppError } from '../../shared/errors/app-error.js';
+
+async function createInvitation(request: Request, response: Response): Promise<void> {
+  const { organizationId } = organizationSchema.organizationParams.parse(request.params);
+  const input = organizationSchema.createInvitationRequest.safeParse(request.body);
+  if (!input.success) {
+    throw new AppError('Zadejte platnou e-mailovou adresu.', 400);
+  }
+  const invitation = await organizationService.createInvitation(
+    request,
+    organizationId,
+    input.data,
+  );
+  sendData(response, organizationSchema.invitationResponse.parse(invitation), 201);
+}
 
 async function listMembers(request: Request, response: Response): Promise<void> {
   const { organizationId } = organizationSchema.organizationParams.parse(request.params);
@@ -26,6 +41,7 @@ async function deleteOrganization(request: Request, response: Response): Promise
 }
 
 const organizationController = {
+  createInvitation,
   listMembers,
   createOrganization,
   deleteOrganization,
