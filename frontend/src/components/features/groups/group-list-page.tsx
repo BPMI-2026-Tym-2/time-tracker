@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -12,46 +12,12 @@ import {
   LayoutGrid,
   Tag,
   User,
-  AlertCircle,
   FolderX,
 } from 'lucide-react';
 import { GroupListControls } from './group-list-controls';
 import { GroupTable } from './group-table';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { Spinner } from '@/components/ui/spinner';
-import { Button } from '@/components/ui/button';
-import type { OrganizationItemResponse } from '@time-tracker/shared';
-
-const PREVIEW_GROUPS: OrganizationItemResponse[] = [
-  {
-    id: 'grp-prog',
-    name: 'Programování',
-    slug: 'programovani',
-    role: 'owner',
-    createdAt: new Date('2025-01-01'),
-  },
-  {
-    id: 'grp-fit',
-    name: 'Fitness a zdraví',
-    slug: 'fitness-a-zdravi',
-    role: 'member',
-    createdAt: new Date('2025-01-02'),
-  },
-  {
-    id: 'grp-cest',
-    name: 'Cestování',
-    slug: 'cestovani',
-    role: 'member',
-    createdAt: new Date('2025-01-03'),
-  },
-  {
-    id: 'grp-game',
-    name: 'Gaming',
-    slug: 'gaming',
-    role: 'owner',
-    createdAt: new Date('2025-01-04'),
-  },
-];
 
 export function GroupListPage() {
   const [search, setSearch] = useState('');
@@ -59,33 +25,13 @@ export function GroupListPage() {
   const [sort, setSort] = useState<'default' | 'name_asc' | 'name_desc'>('default');
   const [page, setPage] = useState(1);
 
-  const { organizations, isError, isLoading, error, refetch } = useOrganizations({
+  const { organizations, isLoading } = useOrganizations({
     search: search.trim() || undefined,
     role,
     sort,
     page,
     pageSize: 10,
   });
-
-  const displayGroups = useMemo(() => {
-    const source =
-      !isLoading && !isError && organizations.length > 0 ? organizations : PREVIEW_GROUPS;
-
-    let filtered = [...source];
-    if (role !== 'all') {
-      filtered = filtered.filter((g) => g.role === role);
-    }
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      filtered = filtered.filter((g) => g.name.toLowerCase().includes(q));
-    }
-    if (sort === 'name_asc') {
-      filtered.sort((a, b) => a.name.localeCompare(b.name, 'cs'));
-    } else if (sort === 'name_desc') {
-      filtered.sort((a, b) => b.name.localeCompare(a.name, 'cs'));
-    }
-    return filtered;
-  }, [organizations, isLoading, isError, role, search, sort]);
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -190,23 +136,7 @@ export function GroupListPage() {
               </div>
             )}
 
-            {!isLoading && isError && organizations.length === 0 && (
-              <div className="space-y-4 rounded-2xl border border-[#E0DDD6] bg-white p-8 text-center shadow-2xs">
-                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-red-100 text-red-600">
-                  <AlertCircle className="size-6" />
-                </div>
-                <h2 className="text-lg font-bold text-[#163820]">Chyba při načítání seznamu</h2>
-                <p className="text-sm text-[#5A685D]">
-                  {error?.message ??
-                    'Dostupné skupiny se nepodařilo načíst. Zkuste to prosím znovu.'}
-                </p>
-                <Button variant="outline" onClick={() => void refetch()}>
-                  Zkusit znovu
-                </Button>
-              </div>
-            )}
-
-            {!isLoading && displayGroups.length === 0 && (
+            {!isLoading && organizations.length === 0 && (
               <div className="space-y-3 rounded-2xl border border-[#E0DDD6] bg-white p-12 text-center shadow-2xs">
                 <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-[#163820]">
                   <FolderX className="size-6" />
@@ -220,14 +150,14 @@ export function GroupListPage() {
               </div>
             )}
 
-            {!isLoading && displayGroups.length > 0 && (
+            {!isLoading && organizations.length > 0 && (
               <div className="space-y-5">
-                <GroupTable groups={displayGroups} />
+                <GroupTable groups={organizations} />
 
                 {/* 1:1 Footer */}
                 <div className="flex flex-col items-center justify-between gap-4 pt-1 sm:flex-row">
                   <div className="text-sm font-medium text-[#163820]">
-                    Počet skupin: <span className="font-bold">{displayGroups.length}</span>
+                    Počet skupin: <span className="font-bold">{organizations.length}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
