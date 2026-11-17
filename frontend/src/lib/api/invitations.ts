@@ -8,82 +8,25 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-export type InvitationErrorCode =
-  'INVALID_OR_NOT_FOUND' | 'ALREADY_MEMBER' | 'CONNECTION_FAILED' | 'UNKNOWN';
-
 export class ApiError extends Error {
   constructor(
     message: string,
     public statusCode: number,
-    public code: InvitationErrorCode = 'UNKNOWN',
   ) {
     super(message);
     this.name = 'ApiError';
   }
 }
 
-export function classifyInvitationError(
-  message: string,
-  status?: number,
-): {
-  code: InvitationErrorCode;
-  title: string;
-  description: string;
-} {
-  const lower = (message || '').toLowerCase();
-  if (
-    status === 404 ||
-    lower.includes('expired') ||
-    lower.includes('vyprš') ||
-    lower.includes('neplatn') ||
-    lower.includes('not found') ||
-    lower.includes('neexistuje') ||
-    lower.includes('invalid')
-  ) {
-    return {
-      code: 'INVALID_OR_NOT_FOUND',
-      title: 'Pozvánku nelze přijmout',
-      description: 'Pozvánka již vypršela nebo skupina neexistuje.',
-    };
-  }
-
-  if (
-    lower.includes('already member') ||
-    lower.includes('already a member') ||
-    lower.includes('již člen') ||
-    lower.includes('uz je clen') ||
-    lower.includes('already_member')
-  ) {
-    return {
-      code: 'ALREADY_MEMBER',
-      title: 'Již jste členem skupiny',
-      description: 'V této skupině jste již zařazeni.',
-    };
-  }
-
-  return {
-    code: 'CONNECTION_FAILED',
-    title: 'Připojení se nezdařilo',
-    description: 'Pozvánku se nepodařilo zpracovat. Zkuste to prosím znovu.',
-  };
-}
-
 async function extractErrorMessage(response: Response): Promise<string> {
   try {
     const errorBody = await response.json();
-    if (typeof errorBody?.error?.message === 'string') {
-      return errorBody.error.message;
-    }
-    if (typeof errorBody?.error === 'string') {
-      return errorBody.error;
-    }
-    if (typeof errorBody?.message === 'string') {
-      return errorBody.message;
-    }
+    return (
+      errorBody?.error?.message ?? errorBody?.message ?? errorBody?.error ?? response.statusText
+    );
   } catch {
-    // ignore
+    return response.statusText || `Chyba ${response.status}`;
   }
-  return response.statusText || `Požadavek selhal s kódem ${response.status}`;
 }
 
 export async function createInvitation(
@@ -101,8 +44,7 @@ export async function createInvitation(
 
   if (!response.ok) {
     const message = await extractErrorMessage(response);
-    const classification = classifyInvitationError(message, response.status);
-    throw new ApiError(message, response.status, classification.code);
+    throw new ApiError(message, response.status);
   }
 
   const json = await response.json();
@@ -125,37 +67,4 @@ export async function fetchNotifications(): Promise<ListNotificationsResponse> {
 
   const json = await response.json();
   return notificationSchema.listResponse.parse(json.data ?? json);
-}
-
-export async function acceptInvitation(invitationId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/organization/accept-invitation`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ invitationId }),
-  });
-
-  if (!response.ok) {
-    const message = await extractErrorMessage(response);
-    const classification = classifyInvitationError(message, response.status);
-    throw new ApiError(message, response.status, classification.code);
-  }
-}
-
-export async function rejectInvitation(invitationId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/organization/reject-invitation`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ invitationId }),
-  });
-
-  if (!response.ok) {
-    const message = await extractErrorMessage(response);
-    throw new ApiError(message, response.status);
-  }
 }

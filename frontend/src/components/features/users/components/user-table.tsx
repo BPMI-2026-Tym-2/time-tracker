@@ -25,10 +25,9 @@ const initialState = {
 type UserTableProps = {
   users: User[];
   canViewEmail: boolean;
-  groupName?: string;
 };
 
-export function UserTable({ users, canViewEmail, groupName }: UserTableProps) {
+export function UserTable({ users, canViewEmail }: UserTableProps) {
   const [searchInput, setSearchInput] = useState('');
   const columns = useMemo(() => createUserColumns(canViewEmail), [canViewEmail]);
   const table = useTable({
@@ -68,7 +67,6 @@ export function UserTable({ users, canViewEmail, groupName }: UserTableProps) {
         searchInput={searchInput}
         selectedRole={selectedRole}
         isNewestFirst={isNewestFirst}
-        groupName={groupName}
         onSearchInputChange={setSearchInput}
         onSearch={handleSearch}
         onRoleChange={handleRoleChange}

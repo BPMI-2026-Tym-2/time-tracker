@@ -1,64 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, CheckCircle2, AlertCircle, Info, RefreshCw } from 'lucide-react';
-import { useNotifications, useRespondInvitation } from '@/hooks/use-invitations';
+import { Bell } from 'lucide-react';
+import { useNotifications } from '@/hooks/use-invitations';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
-interface NotificationInboxProps {
-  onAcceptSuccess?: (organizationName?: string) => void;
-  onRejectSuccess?: (organizationName?: string) => void;
-  onlyPopup?: boolean;
-}
-
-export function NotificationInbox({
-  onAcceptSuccess,
-  onRejectSuccess,
-  onlyPopup = true,
-}: NotificationInboxProps) {
+export function NotificationInbox() {
   const [isOpen, setIsOpen] = useState(false);
-  const { notifications, count, isLoading, refetch } = useNotifications();
-  const { acceptInvitation, isAccepting, rejectInvitation, isRejecting, feedback } =
-    useRespondInvitation();
-  const [processingId, setProcessingId] = useState<string | null>(null);
-
-  async function handleAccept(id: string, organizationName?: string) {
-    if (onlyPopup) {
-      setIsOpen(false);
-      onAcceptSuccess?.(organizationName);
-      return;
-    }
-    setProcessingId(id);
-    try {
-      await acceptInvitation({ invitationId: id, organizationName });
-      void refetch();
-      onAcceptSuccess?.(organizationName);
-    } catch {
-      // Handled via hook feedback
-    } finally {
-      setProcessingId(null);
-    }
-  }
-
-  async function handleReject(id: string, organizationName?: string) {
-    if (onlyPopup) {
-      setIsOpen(false);
-      onRejectSuccess?.(organizationName);
-      return;
-    }
-    setProcessingId(id);
-    try {
-      await rejectInvitation({ invitationId: id, organizationName });
-      void refetch();
-      onRejectSuccess?.(organizationName);
-    } catch {
-      // Handled via hook feedback
-    } finally {
-      setProcessingId(null);
-    }
-  }
+  const { notifications, count, isLoading } = useNotifications();
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -93,48 +44,6 @@ export function NotificationInbox({
           <span className="text-muted-foreground text-xs">{count} nevyřízených</span>
         </div>
 
-        {feedback && (
-          <div className="p-3">
-            <div
-              className={`relative rounded-xl border p-3 text-xs ${
-                feedback.type === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200'
-                  : feedback.type === 'info'
-                    ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200'
-                    : 'border-destructive/30 bg-destructive/10 text-destructive'
-              }`}
-            >
-              <div className="flex items-start gap-2">
-                {feedback.type === 'success' && (
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-                )}
-                {feedback.type === 'info' && (
-                  <Info className="mt-0.5 size-4 shrink-0 text-amber-600" />
-                )}
-                {feedback.type === 'error' && <AlertCircle className="mt-0.5 size-4 shrink-0" />}
-                <div className="space-y-1">
-                  <p className="leading-tight font-semibold">{feedback.title}</p>
-                  <p className="text-[11px] opacity-90">{feedback.message}</p>
-                  {feedback.code === 'CONNECTION_FAILED' && feedback.invitationId && (
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="destructive"
-                      onClick={() =>
-                        handleAccept(feedback.invitationId!, feedback.organizationName)
-                      }
-                      className="mt-1 gap-1"
-                    >
-                      <RefreshCw className="size-3" />
-                      <span>Zkusit znovu</span>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="max-h-80 overflow-y-auto p-3">
           {isLoading ? (
             <div className="flex h-24 items-center justify-center">
@@ -150,51 +59,40 @@ export function NotificationInbox({
             </div>
           ) : (
             <div className="space-y-2.5">
-              {notifications.map((notification) => {
-                const isItemProcessing = processingId === notification.id;
-                const isButtonsDisabled = isItemProcessing || isAccepting || isRejecting;
-
-                return (
-                  <div
-                    key={notification.id}
-                    className="border-border bg-muted/40 hover:bg-muted/60 rounded-xl border p-3.5 transition-colors"
-                  >
-                    <div className="space-y-0.5">
-                      <h3 className="text-foreground text-xs font-bold">Pozvánka do skupiny</h3>
-                      <p className="text-muted-foreground text-xs">
-                        Byli jste pozváni do skupiny &quot;{notification.organization.name}&quot;
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isButtonsDisabled}
-                        onClick={() =>
-                          handleReject(notification.id, notification.organization.name)
-                        }
-                        className="flex-1"
-                      >
-                        {isItemProcessing && isRejecting ? 'Odmítání...' : 'Odmítnout'}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={isButtonsDisabled}
-                        onClick={() =>
-                          handleAccept(notification.id, notification.organization.name)
-                        }
-                        className="flex-1"
-                      >
-                        {isItemProcessing && isAccepting ? 'Přijímání...' : 'Přijmout'}
-                      </Button>
-                    </div>
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className="border-border bg-muted/40 hover:bg-muted/60 rounded-xl border p-3.5 transition-colors"
+                >
+                  <div className="space-y-0.5">
+                    <h3 className="text-foreground text-xs font-bold">Pozvánka do skupiny</h3>
+                    <p className="text-muted-foreground text-xs">
+                      Byli jste pozváni do skupiny &quot;{notification.organization.name}&quot;
+                    </p>
                   </div>
-                );
-              })}
+
+                  <div className="flex items-center gap-2 pt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsOpen(false)}
+                      className="flex-1"
+                    >
+                      Odmítnout
+                    </Button>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => setIsOpen(false)}
+                      className="flex-1"
+                    >
+                      Přijmout
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
