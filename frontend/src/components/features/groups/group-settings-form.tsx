@@ -95,19 +95,24 @@ export function GroupSettingsForm({
             </div>
             <div className="border-border bg-muted/50 flex w-full items-center justify-between rounded-xl border px-4 py-2 text-sm">
               <span className="font-mono tracking-wider">{settings.invitationCode}</span>
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => void handleCopyCode()}
-                aria-label="Zkopírovat pozvánkový kód"
+                onClick={handleCopyCode}
+                className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors"
+                title="Kopírovat kód"
               >
                 {copiedCode ? (
-                  <Check className="size-3.5 text-green-600" />
+                  <>
+                    <Check className="text-primary size-4" />
+                    <span>Zkopírováno</span>
+                  </>
                 ) : (
-                  <Copy className="size-3.5" />
+                  <>
+                    <Copy className="size-4" />
+                    <span>Kopírovat</span>
+                  </>
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         </FieldGroup>

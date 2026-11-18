@@ -1,4 +1,8 @@
-import type { ListOrganizationsQuery, OrganizationItemResponse } from '@time-tracker/shared';
+import type {
+  ListOrganizationsQuery,
+  OrganizationItemResponse,
+  OrganizationSettingsResponse,
+} from '@time-tracker/shared';
 
 export const mockGroups: OrganizationItemResponse[] = [
   {
@@ -30,6 +34,26 @@ export const mockGroups: OrganizationItemResponse[] = [
     createdAt: new Date('2025-01-04'),
   },
 ];
+
+export function getMockGroupSettings(organizationId: string): OrganizationSettingsResponse {
+  const group = mockGroups.find((g) => g.id === organizationId || g.slug === organizationId);
+  return {
+    id: group?.id ?? organizationId,
+    name: group?.name ?? 'Programování',
+    slug: group?.slug ?? 'programovani',
+    invitationCode: group ? group.slug.toUpperCase() : 'SKUPINA1',
+    owner: {
+      id: 'owner-1',
+      name: 'Jan',
+      surname: 'Novák',
+    },
+    currentUserRole: 'owner',
+    permissions: {
+      canEdit: true,
+      canDelete: true,
+    },
+  };
+}
 
 export function getFilteredMockGroups(query: Partial<ListOrganizationsQuery> = {}) {
   let items = [...mockGroups];
