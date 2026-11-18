@@ -11,7 +11,6 @@ import type {
   OrganizationSettingsResponse,
   UpdateOrganizationSettingsRequest,
 } from '@time-tracker/shared';
-import { getMockGroupSettings } from '@/components/features/groups/data/mock-groups';
 
 export function useOrganizationSettings(organizationId: string) {
   const queryClient = useQueryClient();
@@ -19,19 +18,7 @@ export function useOrganizationSettings(organizationId: string) {
 
   const settingsQuery = useQuery<OrganizationSettingsResponse, Error>({
     queryKey,
-    queryFn: async () => {
-      try {
-        return await fetchOrganizationSettings(organizationId);
-      } catch (err) {
-        if (
-          process.env.NODE_ENV !== 'production' &&
-          !(err instanceof ApiError && (err.statusCode === 403 || err.statusCode === 404))
-        ) {
-          return getMockGroupSettings(organizationId);
-        }
-        throw err;
-      }
-    },
+    queryFn: () => fetchOrganizationSettings(organizationId),
     retry: (failureCount, error) => {
       if (error instanceof ApiError && (error.statusCode === 403 || error.statusCode === 404)) {
         return false;
@@ -45,36 +32,14 @@ export function useOrganizationSettings(organizationId: string) {
     Error,
     UpdateOrganizationSettingsRequest
   >({
-    mutationFn: async (body) => {
-      try {
-        return await updateOrganizationSettings(organizationId, body);
-      } catch (err) {
-        if (
-          process.env.NODE_ENV !== 'production' &&
-          !(err instanceof ApiError && err.statusCode === 403)
-        ) {
-          const current = settingsQuery.data ?? getMockGroupSettings(organizationId);
-          return { ...current, name: body.name };
-        }
-        throw err;
-      }
-    },
+    mutationFn: (body) => updateOrganizationSettings(organizationId, body),
     onSuccess: (updatedSettings) => {
       queryClient.setQueryData(queryKey, updatedSettings);
     },
   });
 
   const deleteMutation = useMutation<void, Error, void>({
-    mutationFn: async () => {
-      try {
-        await deleteOrganization(organizationId);
-      } catch (err) {
-        if (process.env.NODE_ENV !== 'production') {
-          return;
-        }
-        throw err;
-      }
-    },
+    mutationFn: () => deleteOrganization(organizationId),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey });
     },
