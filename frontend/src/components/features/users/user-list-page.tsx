@@ -9,6 +9,8 @@ import type { UserListApiState, UserListViewerRole } from './types';
 type UserListPageProps = {
   viewerRole: UserListViewerRole;
   apiState?: UserListApiState;
+  organizationId?: string;
+  organizationName?: string;
 };
 
 const apiStateMessages: Partial<Record<UserListApiState, string>> = {
@@ -20,16 +22,24 @@ const apiStateMessages: Partial<Record<UserListApiState, string>> = {
   error: 'Seznam uživatelů se nepodařilo načíst. Zkuste to prosím později.',
 };
 
-export function UserListPage({ viewerRole, apiState = 'success' }: UserListPageProps) {
+export function UserListPage({
+  viewerRole,
+  apiState = 'success',
+  organizationId,
+  organizationName,
+}: UserListPageProps) {
   const [selectedGroup, setSelectedGroup] = useState<MockUserGroup>(mockUserGroups[0]);
   // Stejné pravidlo jako backend (includeEmail): e-maily vidí owner a admin.
   const canViewEmail = viewerRole === 'owner' || viewerRole === 'admin';
   const groupUsers = mockUsers.filter((user) => user.group === selectedGroup);
   const stateMessage = apiStateMessages[apiState];
 
+  const currentOrgId = organizationId ?? selectedGroup;
+  const currentOrgName = organizationName ?? selectedGroup;
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="flex min-h-14 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+    <main className="flex flex-1 flex-col justify-start bg-slate-50 text-slate-900">
+      <div className="flex min-h-14 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <h1 className="relative flex items-center">
           <label htmlFor="selected-group" className="sr-only">
             Vybrat skupinu
@@ -56,13 +66,17 @@ export function UserListPage({ viewerRole, apiState = 'success' }: UserListPageP
             className="pointer-events-none absolute right-1 size-4 text-slate-500"
           />
         </h1>
-        <div aria-label="Profil uživatele" className="size-9 rounded-full bg-slate-900" />
-      </header>
+      </div>
 
       <section aria-label="Seznam uživatelů" className="p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl rounded-xl bg-white p-4 shadow-sm sm:p-6">
           {apiState === 'success' ? (
-            <UserTable users={groupUsers} canViewEmail={canViewEmail} />
+            <UserTable
+              users={groupUsers}
+              canViewEmail={canViewEmail}
+              organizationId={currentOrgId}
+              organizationName={currentOrgName}
+            />
           ) : (
             <div className="rounded-md border border-slate-200 p-4">
               <p

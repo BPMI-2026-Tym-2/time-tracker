@@ -18,5 +18,7 @@ authRouter.post('/one-tap/callback', authHandler);
 authRouter.get('/get-session', authHandler);
 authRouter.post('/sign-out', authHandler);
 authRouter.get('/error', authHandler);
+authRouter.post('/organization/accept-invitation', authHandler);
+authRouter.post('/organization/reject-invitation', authHandler);
 
 export default authRouter;

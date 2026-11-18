@@ -23,5 +23,10 @@ export const userSchema = {
 };
 
 export type PublicUser = z.infer<typeof userResponseSchema>;
+export const userProfileResponseSchema = userResponseSchema.extend({
+  hasPassword: z.boolean(),
+});
+
+export type UserProfile = z.infer<typeof userProfileResponseSchema>;
 export type DeleteUserParams = z.infer<typeof deleteParams>;
 export type DeleteUserResponse = z.infer<typeof deleteResponse>;
