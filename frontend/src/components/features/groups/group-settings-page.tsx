@@ -22,8 +22,8 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
 
   const fallbackSettings: OrganizationSettingsResponse = {
     id: groupId || 'skupina-1',
-    name: 'Skupina 1',
-    description: 'Sdílený prostor pro plánování aktivit, záznamy a spolupráci členů skupiny.',
+    name: '',
+    description: null,
     slug: 'skupina-1',
     owner: {
       id: 'owner-id',
@@ -42,8 +42,8 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
   const form = useForm<UpdateOrganizationSettingsRequest>({
     resolver: zodResolver(organizationSchema.updateOrganizationSettingsRequest),
     values: {
-      name: activeSettings.name,
-      description: activeSettings.description ?? '',
+      name: settings?.name ?? '',
+      description: settings?.description ?? '',
     },
     mode: 'onChange',
     reValidateMode: 'onChange',
@@ -67,12 +67,14 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
           <div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Nastavení skupiny</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Správa základních informací o skupině {activeSettings.name}
+              {activeSettings.name
+                ? `Správa základních informací o skupině ${activeSettings.name}`
+                : 'Správa základních informací o skupině'}
             </p>
           </div>
           <InviteMemberDialog
             organizationId={activeSettings.id}
-            organizationName={activeSettings.name}
+            organizationName={activeSettings.name || 'Skupina 1'}
           />
         </div>
 

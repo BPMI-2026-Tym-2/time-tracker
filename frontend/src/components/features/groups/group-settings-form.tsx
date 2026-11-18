@@ -81,7 +81,7 @@ export function GroupSettingsForm({
                 id="group-description"
                 rows={3}
                 maxLength={1000}
-                placeholder="Popište zaměření a cíle této skupiny..."
+                placeholder="Sdílený prostor pro plánování aktivit, záznamy a spolupráci členů skupiny."
                 aria-invalid={Boolean(errors.description)}
                 className={cn('resize-y', descFieldStyle)}
                 {...register('description')}
