@@ -37,8 +37,8 @@ const listMembersResponse = z.object({
 });
 
 const createOrganizationRequest = z.object({
-  name: z.string().trim().min(1, 'Název organizace je povinný').max(100),
-  slug: z.string().trim().min(1, 'Slug organizace je povinný').max(100),
+  name: z.string().trim().min(1, 'Název Skupiny je povinný').max(100),
+  slug: z.string().trim().min(1, 'Slug Skupiny je povinný').max(100),
 });
 
 const createOrganizationResponse = z.object({

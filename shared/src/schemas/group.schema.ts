@@ -17,7 +17,6 @@ const memberResponse = z.object({
   id: z.string().min(1),
   name: z.string(),
   surname: z.string(),
-  // Vrací se jen zakladateli skupiny a super adminovi.
   email: z.email().optional(),
   role: role,
   joinedAt: z.coerce.date(),

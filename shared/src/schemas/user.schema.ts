@@ -10,3 +10,9 @@ export const userResponseSchema = z.object({
 });
 
 export type PublicUser = z.infer<typeof userResponseSchema>;
+
+export const userProfileResponseSchema = userResponseSchema.extend({
+  hasPassword: z.boolean(),
+});
+
+export type UserProfile = z.infer<typeof userProfileResponseSchema>;

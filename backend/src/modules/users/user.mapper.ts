@@ -1,4 +1,4 @@
-import type { PublicUser } from '@time-tracker/shared';
+import type { PublicUser, UserProfile } from '@time-tracker/shared';
 import type { UserRecord } from './user.types.js';
 
 export function toPublicUser(user: UserRecord): PublicUser {
@@ -11,3 +11,17 @@ export function toPublicUser(user: UserRecord): PublicUser {
     createdAt: user.createdAt,
   };
 }
+
+export function toUserProfile(user: UserRecord, hasPassword: boolean): UserProfile {
+  return {
+    ...toPublicUser(user),
+    hasPassword,
+  };
+}
+
+const userMapper = {
+  toPublicUser,
+  toUserProfile,
+};
+
+export default userMapper;

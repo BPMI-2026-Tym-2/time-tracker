@@ -45,9 +45,10 @@ export function AppHeader() {
       <div className="flex items-center gap-4">
         <NotificationInbox />
 
-        <div
+        <Link
+          href="/myaccount"
           aria-label={`Uživatelský profil: ${sessionUser?.name ?? 'Uživatel'}`}
-          className="flex size-9 items-center justify-center rounded-full border-2 border-[#163820] text-[#163820] select-none"
+          className="flex size-9 items-center justify-center rounded-full border-2 border-[#163820] text-[#163820] transition-opacity select-none hover:opacity-80"
         >
           {sessionUser?.name ? (
             <span className="text-xs font-bold">
@@ -57,7 +58,7 @@ export function AppHeader() {
           ) : (
             <User className="size-5" />
           )}
-        </div>
+        </Link>
       </div>
     </header>
   );
