@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ShieldAlert } from 'lucide-react';
 import { GroupSettingsForm } from './group-settings-form';
 import { InviteMemberDialog } from './invite-member-dialog';
+import OdstraneniSkupiny from '@/components/features/OdstraneniSkupiny';
 import { useOrganizationSettings } from '@/hooks/use-organization-settings';
 import { ApiError } from '@/lib/api/organizations';
 import { Spinner } from '@/components/ui/spinner';
@@ -130,6 +131,17 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
             isPending={isUpdating}
             errorMessage={updateError?.message}
           />
+
+          {settings.permissions.canDelete && (
+            <div className="border-border flex justify-end border-t pt-6">
+              <OdstraneniSkupiny
+                groupId={settings.id}
+                groupName={settings.name}
+                isOwner={settings.permissions.canDelete}
+                onDeleted={() => router.push('/groups')}
+              />
+            </div>
+          )}
         </div>
       )}
     </main>
