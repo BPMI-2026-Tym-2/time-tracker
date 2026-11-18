@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,16 +10,6 @@ import { useOrganizationSettings } from '@/hooks/use-organization-settings';
 import { ApiError } from '@/lib/api/organizations';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { organizationSchema, type UpdateOrganizationSettingsRequest } from '@time-tracker/shared';
 
 type GroupSettingsPageProps = {
@@ -29,7 +18,6 @@ type GroupSettingsPageProps = {
 
 export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
   const router = useRouter();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const {
     settings,
@@ -40,8 +28,6 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
     isUpdating,
     updateError,
     resetUpdateError,
-    deleteOrganization,
-    isDeleting,
   } = useOrganizationSettings(groupId);
 
   const form = useForm<UpdateOrganizationSettingsRequest>({
@@ -55,11 +41,6 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
     resetUpdateError();
     await updateSettings(data);
   };
-
-  async function handleDelete() {
-    await deleteOrganization();
-    router.push('/');
-  }
 
   const isForbidden = error instanceof ApiError && error.statusCode === 403;
 
@@ -126,34 +107,8 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
             onSubmit={onSubmit}
             isPending={isUpdating}
             errorMessage={updateError?.message}
-            onDeleteClick={() => setShowDeleteDialog(true)}
           />
         </div>
-      )}
-
-      {settings && (
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Odstranit skupinu?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Opravdu si přejete trvale odstranit skupinu{' '}
-                <strong className="text-foreground font-semibold">{settings.name}</strong>? Tato
-                akce je nevratná.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Zrušit</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                onClick={() => void handleDelete()}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Odstraňuji...' : 'Odstranit'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       )}
     </main>
   );

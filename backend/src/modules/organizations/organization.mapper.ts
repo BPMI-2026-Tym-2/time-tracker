@@ -105,12 +105,10 @@ function toSettingsResponse({
   organization,
   owner,
   currentUserRole,
-  invitationCode,
 }: {
   organization: { id: string; name: string; slug: string };
-  owner: { id: string; name: string; surname?: string } | null;
+  owner: { id: string; name: string; surname: string };
   currentUserRole: string | null;
-  invitationCode: string;
 }): OrganizationSettingsResponse {
   const isOwner = currentUserRole === 'owner';
 
@@ -118,14 +116,11 @@ function toSettingsResponse({
     id: organization.id,
     name: organization.name,
     slug: organization.slug,
-    invitationCode,
-    owner: owner
-      ? {
-          id: owner.id,
-          name: owner.name,
-          surname: owner.surname ?? '',
-        }
-      : null,
+    owner: {
+      id: owner.id,
+      name: owner.name,
+      surname: owner.surname,
+    },
     currentUserRole:
       currentUserRole === 'owner' || currentUserRole === 'member' ? currentUserRole : null,
     permissions: {

@@ -68,14 +68,11 @@ const organizationSettingsResponse = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   slug: z.string(),
-  invitationCode: z.string(),
-  owner: z
-    .object({
-      id: z.string().min(1),
-      name: z.string(),
-      surname: z.string(),
-    })
-    .nullable(),
+  owner: z.object({
+    id: z.string().min(1),
+    name: z.string(),
+    surname: z.string(),
+  }),
   currentUserRole: role.nullable(),
   permissions: z.object({
     canEdit: z.boolean(),

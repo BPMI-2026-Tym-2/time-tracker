@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchOrganizationSettings,
   updateOrganizationSettings,
-  deleteOrganization,
   ApiError,
 } from '@/lib/api/organizations';
 import type {
@@ -38,13 +37,6 @@ export function useOrganizationSettings(organizationId: string) {
     },
   });
 
-  const deleteMutation = useMutation<void, Error, void>({
-    mutationFn: () => deleteOrganization(organizationId),
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey });
-    },
-  });
-
   return {
     settings: settingsQuery.data,
     isLoading: settingsQuery.isLoading,
@@ -55,8 +47,5 @@ export function useOrganizationSettings(organizationId: string) {
     isUpdating: updateMutation.isPending,
     updateError: updateMutation.error,
     resetUpdateError: updateMutation.reset,
-    deleteOrganization: deleteMutation.mutateAsync,
-    isDeleting: deleteMutation.isPending,
-    deleteError: deleteMutation.error,
   };
 }

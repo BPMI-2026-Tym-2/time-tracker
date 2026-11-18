@@ -3,7 +3,6 @@ import { isAPIError } from 'better-auth/api';
 import type { Request } from 'express';
 import type { Prisma } from '@prisma/client';
 import { auth } from '../../config/auth.js';
-import { prisma } from '../../db/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import type {
   CreateOrganizationRequest,
@@ -18,6 +17,7 @@ import type {
   ListOrganizationsResponse,
 } from '@time-tracker/shared';
 import organizationMapper from './organization.mapper.js';
+import organizationRepository from './organization.repository.js';
 
 async function createInvitation(
   request: Request,
@@ -88,16 +88,24 @@ async function listMembers(
     throw error;
   }
 
-  const isOwner = memberRoleResult?.role === 'owner';
-
-  const organization = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { id: true, name: true, slug: true, createdAt: true },
-  });
+  let organization;
+  try {
+    organization = await auth.api.getFullOrganization({
+      headers,
+      query: { organizationId },
+    });
+  } catch (error) {
+    if (isAPIError(error) && error.statusCode < 500) {
+      throw new AppError(error.message, error.statusCode);
+    }
+    throw error;
+  }
 
   if (!organization) {
-    throw new AppError('Organization not found', 404);
+    throw new AppError('Skupina nebyla nalezena', 404);
   }
+
+  const isOwner = memberRoleResult?.role === 'owner';
 
   const where: Prisma.MemberWhereInput = {
     organizationId,
@@ -118,23 +126,13 @@ async function listMembers(
   const take = query.pageSize;
 
   const [members, total] = await Promise.all([
-    prisma.member.findMany({
+    organizationRepository.findOrganizationMembers({
       where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            surname: true,
-            email: isOwner,
-          },
-        },
-      },
-      orderBy: { createdAt: 'asc' },
       skip,
       take,
+      isOwner,
     }),
-    prisma.member.count({ where }),
+    organizationRepository.countOrganizationMembers(where),
   ]);
 
   return organizationMapper.toMembersResponse({
@@ -188,16 +186,13 @@ async function listOrganizations(
   const take = query.pageSize;
 
   const [members, total] = await Promise.all([
-    prisma.member.findMany({
+    organizationRepository.findUserOrganizations({
       where,
-      include: {
-        organization: true,
-      },
       orderBy,
       skip,
       take,
     }),
-    prisma.member.count({ where }),
+    organizationRepository.countUserOrganizations(where),
   ]);
 
   return organizationMapper.toListOrganizationsResponse({
@@ -227,37 +222,22 @@ async function getSettings(
     throw error;
   }
 
-  const organization = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { id: true, name: true, slug: true },
-  });
+  const organization = await organizationRepository.findOrganizationById(organizationId);
 
   if (!organization) {
     throw new AppError('Skupina nebyla nalezena', 404);
   }
 
-  const ownerMember = await prisma.member.findFirst({
-    where: {
-      organizationId,
-      role: 'owner',
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          surname: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'asc' },
-  });
+  const owner = await organizationRepository.findOrganizationOwner(organizationId);
+
+  if (!owner) {
+    throw new AppError('Vlastník skupiny nebyl nalezen', 404);
+  }
 
   return organizationMapper.toSettingsResponse({
     organization,
-    owner: ownerMember?.user ?? null,
+    owner,
     currentUserRole: memberRoleResult?.role ?? null,
-    invitationCode: organization.slug,
   });
 }
 
@@ -285,10 +265,7 @@ async function updateSettings(
     throw new AppError('K úpravě nastavení nemáte oprávnění', 403);
   }
 
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { name: input.name },
-  });
+  await organizationRepository.updateOrganizationName(organizationId, input.name);
 
   return getSettings(request, organizationId);
 }
