@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react';
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { InviteMemberDialog } from '@/components/features/groups/invite-member-dialog';
 import type { UserRole } from '../types';
 
 type UserListControlsProps = {
@@ -12,6 +13,8 @@ type UserListControlsProps = {
   onSearch: (event: FormEvent<HTMLFormElement>) => void;
   onRoleChange: (role: UserRole | '') => void;
   onSortToggle: () => void;
+  organizationId?: string;
+  organizationName?: string;
 };
 
 export function UserListControls({
@@ -23,26 +26,31 @@ export function UserListControls({
   onSearch,
   onRoleChange,
   onSortToggle,
+  organizationId = 'skupina-1',
+  organizationName = 'Skupina 1',
 }: UserListControlsProps) {
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold tracking-tight text-slate-900">Seznam uživatelů</h2>
-        <Button
-          type="button"
-          aria-label={
-            isNewestFirst ? 'Seřadit od nejstaršího vstupu' : 'Seřadit od nejnovějšího vstupu'
-          }
-          onClick={onSortToggle}
-          className="h-9 rounded-md bg-blue-600 px-3 text-white hover:bg-blue-700"
-        >
-          {isNewestFirst ? (
-            <ArrowDownWideNarrow aria-hidden="true" />
-          ) : (
-            <ArrowUpWideNarrow aria-hidden="true" />
-          )}
-          Řazení: {isNewestFirst ? 'nejnovější vstupy' : 'nejstarší vstupy'}
-        </Button>
+        <div className="flex items-center gap-3">
+          <InviteMemberDialog organizationId={organizationId} organizationName={organizationName} />
+          <Button
+            type="button"
+            aria-label={
+              isNewestFirst ? 'Seřadit od nejstaršího vstupu' : 'Seřadit od nejnovějšího vstupu'
+            }
+            onClick={onSortToggle}
+            className="h-9 rounded-md bg-blue-600 px-3 text-white hover:bg-blue-700"
+          >
+            {isNewestFirst ? (
+              <ArrowDownWideNarrow aria-hidden="true" />
+            ) : (
+              <ArrowUpWideNarrow aria-hidden="true" />
+            )}
+            Řazení: {isNewestFirst ? 'nejnovější vstupy' : 'nejstarší vstupy'}
+          </Button>
+        </div>
       </div>
 
       <form
