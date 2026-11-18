@@ -42,6 +42,7 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
     await updateSettings(data);
   };
 
+  const isUnauthorized = error instanceof ApiError && error.statusCode === 401;
   const isForbidden = error instanceof ApiError && error.statusCode === 403;
 
   return (
@@ -52,7 +53,24 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
         </div>
       )}
 
-      {!isLoading && isForbidden && (
+      {!isLoading && isUnauthorized && (
+        <div className="flex flex-1 items-center justify-center p-8">
+          <div className="border-border bg-card w-full max-w-md space-y-4 rounded-3xl border p-8 text-center shadow-sm">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-600">
+              <ShieldAlert className="size-6" />
+            </div>
+            <h2 className="text-xl font-bold">Přihlášení vyžadováno</h2>
+            <p className="text-muted-foreground text-sm">
+              Pro zobrazení nastavení skupiny se musíte nejprve přihlásit do svého účtu.
+            </p>
+            <Button variant="default" onClick={() => router.push('/login')}>
+              Přejít na přihlášení
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && !isUnauthorized && isForbidden && (
         <div className="flex flex-1 items-center justify-center p-8">
           <div className="border-border bg-card w-full max-w-md space-y-4 rounded-3xl border p-8 text-center shadow-sm">
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-600">
@@ -70,7 +88,7 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
         </div>
       )}
 
-      {!isLoading && !isForbidden && (error || !settings) && (
+      {!isLoading && !isUnauthorized && !isForbidden && (error || !settings) && (
         <div className="flex flex-1 items-center justify-center p-8">
           <div className="border-border bg-card w-full max-w-md space-y-4 rounded-3xl border p-8 text-center shadow-sm">
             <h2 className="text-xl font-bold">Skupina není dostupná</h2>
