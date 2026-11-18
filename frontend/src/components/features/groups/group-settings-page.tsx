@@ -23,6 +23,7 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
   const fallbackSettings: OrganizationSettingsResponse = {
     id: groupId || 'skupina-1',
     name: 'Skupina 1',
+    description: 'Sdílený prostor pro plánování aktivit, záznamy a spolupráci členů skupiny.',
     slug: 'skupina-1',
     owner: {
       id: 'owner-id',
@@ -40,7 +41,10 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
 
   const form = useForm<UpdateOrganizationSettingsRequest>({
     resolver: zodResolver(organizationSchema.updateOrganizationSettingsRequest),
-    values: { name: activeSettings.name },
+    values: {
+      name: activeSettings.name,
+      description: activeSettings.description ?? '',
+    },
     mode: 'onChange',
     reValidateMode: 'onChange',
   });

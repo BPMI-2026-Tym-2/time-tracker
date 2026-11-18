@@ -114,15 +114,28 @@ function toSettingsResponse({
   owner,
   currentUserRole,
 }: {
-  organization: { id: string; name: string; slug: string };
+  organization: { id: string; name: string; slug: string; metadata?: string | null };
   owner: { id: string; name: string; surname: string };
   currentUserRole: string | null;
 }): OrganizationSettingsResponse {
   const isOwner = currentUserRole === 'owner';
 
+  let description: string | null = null;
+  if (organization.metadata) {
+    try {
+      const parsed = JSON.parse(organization.metadata);
+      if (typeof parsed.description === 'string') {
+        description = parsed.description;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return {
     id: organization.id,
     name: organization.name,
+    description,
     slug: organization.slug,
     owner: {
       id: owner.id,

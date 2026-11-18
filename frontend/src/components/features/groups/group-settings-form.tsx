@@ -5,9 +5,10 @@ import type {
   OrganizationSettingsResponse,
   UpdateOrganizationSettingsRequest,
 } from '@time-tracker/shared';
-import { Pencil, Users, LoaderCircle } from 'lucide-react';
+import { Pencil, Users, LoaderCircle, AlignLeft } from 'lucide-react';
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { getFieldStyle, RequiredMark } from '@/lib/form-styles';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ export function GroupSettingsForm({
   const { errors, dirtyFields, isDirty } = useFormState({ control });
 
   const nameFieldStyle = getFieldStyle(!errors.name, Boolean(dirtyFields.name));
+  const descFieldStyle = getFieldStyle(!errors.description, Boolean(dirtyFields.description));
   const ownerFullName = `${settings.owner.name} ${settings.owner.surname}`.trim();
 
   return (
@@ -60,6 +62,31 @@ export function GroupSettingsForm({
                 {...register('name')}
               />
               {errors.name && <FieldError>{errors.name.message}</FieldError>}
+            </div>
+          </Field>
+
+          <Field
+            className="grid grid-cols-1 items-start gap-3 sm:grid-cols-[160px_1fr]"
+            data-invalid={Boolean(errors.description)}
+          >
+            <FieldLabel
+              htmlFor="group-description"
+              className={cn('flex items-center gap-2 pt-2 text-sm font-semibold', descFieldStyle)}
+            >
+              <AlignLeft className="size-4" />
+              <span>Popis skupiny</span>
+            </FieldLabel>
+            <div className="w-full">
+              <Textarea
+                id="group-description"
+                rows={3}
+                maxLength={1000}
+                placeholder="Popište zaměření a cíle této skupiny..."
+                aria-invalid={Boolean(errors.description)}
+                className={cn('resize-y', descFieldStyle)}
+                {...register('description')}
+              />
+              {errors.description && <FieldError>{errors.description.message}</FieldError>}
             </div>
           </Field>
 
