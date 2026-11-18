@@ -1,11 +1,13 @@
-import type {
-  CreateOrganizationResponse,
-  InvitationResponse,
-  ListOrganizationMembersResponse,
-  ListOrganizationsResponse,
-  OrganizationMemberResponse,
-  OrganizationSettingsResponse,
+import {
+  organizationSchema,
+  type CreateOrganizationResponse,
+  type InvitationResponse,
+  type ListOrganizationMembersResponse,
+  type ListOrganizationsResponse,
+  type OrganizationMemberResponse,
+  type OrganizationSettingsResponse,
 } from '@time-tracker/shared';
+import { AppError } from '../../shared/errors/app-error.js';
 
 function toInvitationResponse(invitation: {
   id: string;
@@ -56,12 +58,18 @@ function toMemberResponse({
   member: OrganizationMemberRecord;
   includeEmail: boolean;
 }): OrganizationMemberResponse {
+  const parsedRole = organizationSchema.role.safeParse(member.role);
+
+  if (!parsedRole.success) {
+    throw new AppError(`Neznámá organizační role: ${member.role}`, 500);
+  }
+
   return {
     id: member.id,
     name: member.user.name,
-    surname: member.user.surname,
+    surname: member.user.surname ?? '',
     ...(includeEmail && member.user.email ? { email: member.user.email } : {}),
-    role: member.role === 'owner' ? 'owner' : 'member',
+    role: parsedRole.data,
     joinedAt: member.createdAt,
   };
 }

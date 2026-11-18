@@ -29,7 +29,8 @@ export function UserListPage({
   organizationName,
 }: UserListPageProps) {
   const [selectedGroup, setSelectedGroup] = useState<MockUserGroup>(mockUserGroups[0]);
-  const canViewEmail = viewerRole === 'admin' || viewerRole === 'superAdmin';
+  // Stejné pravidlo jako backend (includeEmail): e-maily vidí owner a admin.
+  const canViewEmail = viewerRole === 'owner' || viewerRole === 'admin';
   const groupUsers = mockUsers.filter((user) => user.group === selectedGroup);
   const stateMessage = apiStateMessages[apiState];
 

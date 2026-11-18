@@ -1,11 +1,17 @@
 import { createAuthClient } from 'better-auth/react';
-import { inferAdditionalFields, oneTapClient } from 'better-auth/client/plugins';
+import {
+  adminClient,
+  inferAdditionalFields,
+  oneTapClient,
+  organizationClient,
+} from 'better-auth/client/plugins';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+import { publicEnv } from '@/lib/env';
 
 export const authClient = createAuthClient({
-  baseURL: `${apiUrl}/auth`,
+  baseURL: `${publicEnv.apiUrl}/api/auth`,
   plugins: [
+    adminClient(),
     inferAdditionalFields({
       user: {
         surname: {
@@ -16,7 +22,7 @@ export const authClient = createAuthClient({
       },
     }),
     oneTapClient({
-      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID as string,
+      clientId: publicEnv.googleClientId,
       // Optional client configuration:
       autoSelect: false,
       cancelOnTapOutside: true,
@@ -30,6 +36,7 @@ export const authClient = createAuthClient({
         maxAttempts: 5, // Maximum number of attempts before triggering onPromptNotification (default: 5)
       },
     }),
+    organizationClient(),
   ],
   fetchOptions: {
     credentials: 'include',

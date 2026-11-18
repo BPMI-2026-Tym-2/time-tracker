@@ -38,7 +38,6 @@ async function createInvitation(
     throw new AppError('Pozvánku se nepodařilo odeslat', 500);
   }
 }
-
 async function createOrganization(
   request: Request,
   input: CreateOrganizationRequest,
@@ -74,7 +73,6 @@ async function listMembers(
   query: ListOrganizationMembersQuery,
 ): Promise<ListOrganizationMembersResponse> {
   const headers = fromNodeHeaders(request.headers);
-
   let memberRoleResult;
   try {
     memberRoleResult = await auth.api.getActiveMemberRole({
@@ -279,10 +277,11 @@ async function deleteOrganization(request: Request, organizationId: string): Pro
       body: { organizationId },
     });
   } catch (error) {
-    if (isAPIError(error)) {
+    if (isAPIError(error) && error.statusCode < 500) {
       throw new AppError(error.message, error.statusCode);
     }
-    throw error;
+    console.error(error);
+    throw new AppError('Odstranění skupiny se nezdařilo. Zkuste to prosím znovu', 500);
   }
 }
 

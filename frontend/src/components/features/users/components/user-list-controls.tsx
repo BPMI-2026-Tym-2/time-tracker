@@ -1,7 +1,7 @@
-import type { FormEvent } from 'react';
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InviteMemberDialog } from '@/components/features/groups/invite-member-dialog';
+import { Input } from '@/components/ui/input';
 import type { UserRole } from '../types';
 
 type UserListControlsProps = {
@@ -10,7 +10,6 @@ type UserListControlsProps = {
   selectedRole: UserRole | '';
   isNewestFirst: boolean;
   onSearchInputChange: (value: string) => void;
-  onSearch: (event: FormEvent<HTMLFormElement>) => void;
   onRoleChange: (role: UserRole | '') => void;
   onSortToggle: () => void;
   organizationId?: string;
@@ -23,7 +22,6 @@ export function UserListControls({
   selectedRole,
   isNewestFirst,
   onSearchInputChange,
-  onSearch,
   onRoleChange,
   onSortToggle,
   organizationId = 'skupina-1',
@@ -33,47 +31,27 @@ export function UserListControls({
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold tracking-tight text-slate-900">Seznam uživatelů</h2>
-        <div className="flex items-center gap-3">
-          <InviteMemberDialog organizationId={organizationId} organizationName={organizationName} />
-          <Button
-            type="button"
-            aria-label={
-              isNewestFirst ? 'Seřadit od nejstaršího vstupu' : 'Seřadit od nejnovějšího vstupu'
-            }
-            onClick={onSortToggle}
-            className="h-9 rounded-md bg-blue-600 px-3 text-white hover:bg-blue-700"
-          >
-            {isNewestFirst ? (
-              <ArrowDownWideNarrow aria-hidden="true" />
-            ) : (
-              <ArrowUpWideNarrow aria-hidden="true" />
-            )}
-            Řazení: {isNewestFirst ? 'nejnovější vstupy' : 'nejstarší vstupy'}
-          </Button>
-        </div>
+        <InviteMemberDialog organizationId={organizationId} organizationName={organizationName} />
       </div>
 
-      <form
-        onSubmit={onSearch}
-        className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
-      >
-        <label htmlFor="user-search" className="sr-only">
-          {canViewEmail
-            ? 'Vyhledat uživatele podle jména nebo e-mailu'
-            : 'Vyhledat uživatele podle jména'}
-        </label>
+      <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
         <div className="relative min-w-0">
+          <label htmlFor="user-search" className="sr-only">
+            {canViewEmail
+              ? 'Vyhledat uživatele podle jména nebo e-mailu'
+              : 'Vyhledat uživatele podle jména'}
+          </label>
           <Search
             aria-hidden="true"
             className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500"
           />
-          <input
+          <Input
             id="user-search"
             type="search"
             value={searchInput}
             onChange={(event) => onSearchInputChange(event.target.value)}
             placeholder={canViewEmail ? 'Jméno / e-mail...' : 'Jméno...'}
-            className="h-10 w-full rounded-md border border-slate-200 bg-white pr-3 pl-10 text-sm outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="pr-3 pl-10"
           />
         </div>
         <label htmlFor="role-filter" className="sr-only">
@@ -95,13 +73,22 @@ export function UserListControls({
           <option value="admin">admin</option>
         </select>
         <Button
-          type="submit"
-          className="h-10 rounded-md bg-blue-600 px-4 text-white hover:bg-blue-700"
+          type="button"
+          variant="outline"
+          aria-label={
+            isNewestFirst ? 'Seřadit od nejstaršího vstupu' : 'Seřadit od nejnovějšího vstupu'
+          }
+          onClick={onSortToggle}
+          className="h-10 border-slate-200 bg-white px-3 text-slate-700 hover:bg-slate-50"
         >
-          <Search aria-hidden="true" />
-          Hledat
+          {isNewestFirst ? (
+            <ArrowDownWideNarrow aria-hidden="true" />
+          ) : (
+            <ArrowUpWideNarrow aria-hidden="true" />
+          )}
+          Řazení: {isNewestFirst ? 'nejnovější vstupy' : 'nejstarší vstupy'}
         </Button>
-      </form>
+      </div>
     </>
   );
 }

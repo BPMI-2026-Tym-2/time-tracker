@@ -1,5 +1,5 @@
 import { APIError, createAuthMiddleware, isAPIError } from 'better-auth/api';
-import { findUserByEmail } from '../users/user.repository.js';
+import userRepository from '../users/user.repository.js';
 import { registrationMessages } from './auth.messages.js';
 import { validateRegistration } from './auth.service.js';
 
@@ -39,7 +39,7 @@ export const registrationHooks = {
     if (
       result.body?.code === 'FAILED_TO_CREATE_USER' &&
       typeof ctx.body?.email === 'string' &&
-      (await findUserByEmail(ctx.body.email))
+      (await userRepository.findUserByEmail(ctx.body.email))
     ) {
       // Return an explicit response: Better Auth otherwise retains the
       // endpoint's original 422 status when an after hook throws an APIError.
