@@ -1,10 +1,34 @@
 import {
   organizationSchema,
   type CreateOrganizationResponse,
+  type InvitationResponse,
   type ListOrganizationMembersResponse,
   type OrganizationMemberResponse,
 } from '@time-tracker/shared';
 import { AppError } from '../../shared/errors/app-error.js';
+
+function toInvitationResponse(invitation: {
+  id: string;
+  organizationId: string;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: Date;
+  expiresAt: Date;
+}): InvitationResponse {
+  if (invitation.role !== 'member' || invitation.status !== 'pending') {
+    throw new Error('Unexpected invitation role or status');
+  }
+  return {
+    id: invitation.id,
+    organizationId: invitation.organizationId,
+    email: invitation.email,
+    role: invitation.role,
+    status: invitation.status,
+    createdAt: invitation.createdAt,
+    expiresAt: invitation.expiresAt,
+  };
+}
 
 type OrganizationRecord = {
   id: string;
@@ -84,6 +108,7 @@ function toMembersResponse({
 }
 
 const organizationMapper = {
+  toInvitationResponse,
   toMemberResponse,
   toOrganizationResponse,
   toMembersResponse,

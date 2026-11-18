@@ -5,11 +5,54 @@ import { auth } from '../../config/auth.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import type {
   CreateOrganizationRequest,
+  CreateInvitationRequest,
+  InvitationResponse,
   CreateOrganizationResponse,
   ListOrganizationMembersQuery,
   ListOrganizationMembersResponse,
 } from '@time-tracker/shared';
 import organizationMapper from './organization.mapper.js';
+
+function respondToInvitation(
+  request: Request,
+  invitationId: string,
+  action: 'accept' | 'reject',
+): Promise<Response> {
+  const headers = fromNodeHeaders(request.headers);
+  headers.delete('content-length');
+  headers.delete('transfer-encoding');
+  headers.set('content-type', 'application/json');
+
+  // Keep Better Auth's HTTP origin checks and session handling on the new routes.
+  const url = new URL(`/api/auth/organization/${action}-invitation`, auth.options.baseURL);
+  return auth.handler(
+    new globalThis.Request(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ invitationId }),
+    }),
+  );
+}
+
+async function createInvitation(
+  request: Request,
+  organizationId: string,
+  input: CreateInvitationRequest,
+): Promise<InvitationResponse> {
+  try {
+    const invitation = await auth.api.createInvitation({
+      headers: fromNodeHeaders(request.headers),
+      body: { organizationId, email: input.email, role: 'member' },
+    });
+    return organizationMapper.toInvitationResponse(invitation);
+  } catch (error) {
+    if (isAPIError(error) && error.statusCode < 500) {
+      throw new AppError('Pozvánku se nepodařilo odeslat', error.statusCode);
+    }
+    console.error(error);
+    throw new AppError('Pozvánku se nepodařilo odeslat', 500);
+  }
+}
 
 async function createOrganization(
   request: Request,
@@ -93,6 +136,8 @@ async function deleteOrganization(request: Request, organizationId: string): Pro
 }
 
 const organizationService = {
+  createInvitation,
+  respondToInvitation,
   createOrganization,
   listMembers,
   deleteOrganization,
