@@ -5,6 +5,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { getPageMetadata } from '@/lib/page-metadata';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { Toaster } from '@/components/ui/toast';
 
 const roboto = Roboto({ subsets: ['latin'], variable: '--font-roboto-font' });
 const figtree = Figtree({ subsets: ['latin'], variable: '--font-figtree-font' });
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="cs" className={cn('h-full', 'antialiased', roboto.variable, figtree.variable)}>
       <body className="flex min-h-full flex-col">
         <QueryProvider>{children}</QueryProvider>
+        <Toaster />
       </body>
     </html>
   );
