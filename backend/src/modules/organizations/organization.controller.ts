@@ -1,8 +1,24 @@
-import type { Request, Response } from 'express';
+import type { Request, RequestHandler, Response } from 'express';
 import { organizationSchema } from '@time-tracker/shared';
 import { sendData } from '../../shared/http/response.js';
 import organizationService from './organization.service.js';
 import { AppError } from '../../shared/errors/app-error.js';
+
+function respondToInvitation(action: 'accept' | 'reject'): RequestHandler {
+  return async (request, response) => {
+    const { invitationId } = organizationSchema.invitationParams.parse(request.params);
+    const result = await organizationService.respondToInvitation(request, invitationId, action);
+
+    for (const name of ['content-type', 'cache-control']) {
+      const value = result.headers.get(name);
+      if (value) response.setHeader(name, value);
+    }
+    for (const cookie of result.headers.getSetCookie()) {
+      response.append('Set-Cookie', cookie);
+    }
+    response.status(result.status).send(await result.text());
+  };
+}
 
 async function createInvitation(request: Request, response: Response): Promise<void> {
   const { organizationId } = organizationSchema.organizationParams.parse(request.params);
@@ -42,6 +58,7 @@ async function deleteOrganization(request: Request, response: Response): Promise
 
 const organizationController = {
   createInvitation,
+  respondToInvitation,
   listMembers,
   createOrganization,
   deleteOrganization,

@@ -13,6 +13,27 @@ import type {
 } from '@time-tracker/shared';
 import organizationMapper from './organization.mapper.js';
 
+function respondToInvitation(
+  request: Request,
+  invitationId: string,
+  action: 'accept' | 'reject',
+): Promise<Response> {
+  const headers = fromNodeHeaders(request.headers);
+  headers.delete('content-length');
+  headers.delete('transfer-encoding');
+  headers.set('content-type', 'application/json');
+
+  // Keep Better Auth's HTTP origin checks and session handling on the new routes.
+  const url = new URL(`/api/auth/organization/${action}-invitation`, auth.options.baseURL);
+  return auth.handler(
+    new globalThis.Request(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ invitationId }),
+    }),
+  );
+}
+
 async function createInvitation(
   request: Request,
   organizationId: string,
@@ -116,6 +137,7 @@ async function deleteOrganization(request: Request, organizationId: string): Pro
 
 const organizationService = {
   createInvitation,
+  respondToInvitation,
   createOrganization,
   listMembers,
   deleteOrganization,

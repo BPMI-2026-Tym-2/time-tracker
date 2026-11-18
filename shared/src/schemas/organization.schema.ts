@@ -6,6 +6,10 @@ const organizationParams = z.object({
   organizationId: z.string().min(1),
 });
 
+const invitationParams = z.object({
+  invitationId: z.string().min(1),
+});
+
 const listMembersQuery = z.object({
   search: z.string().trim().min(1).max(200).optional(),
   role: role.optional(),
@@ -67,6 +71,7 @@ const invitationResponse = z.object({
 export const organizationSchema = {
   role,
   organizationParams,
+  invitationParams,
   listMembersQuery,
   listMembersResponse,
   memberResponse,

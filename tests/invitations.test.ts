@@ -9,6 +9,7 @@ process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
   'mongodb://127.0.0.1:27017/time_tracker_invitations_test?replicaSet=rs0&directConnection=true';
 process.env.BETTER_AUTH_URL ??= 'http://localhost:3001';
+const corsOrigin = (process.env.CORS_ORIGIN ??= 'http://localhost:3000');
 process.env.BETTER_AUTH_SECRET ??= 'invitation-test-secret-at-least-32-characters';
 process.env.GOOGLE_CLIENT_ID ??= 'invitation-test';
 process.env.GOOGLE_CLIENT_SECRET ??= 'invitation-test';
@@ -20,11 +21,11 @@ const runId = randomUUID();
 const organizationId = randomUUID();
 const users: { id: string; email: string; cookie: string }[] = [];
 
-function request(path: string, userIndex?: number, body?: unknown) {
+function request(path: string, userIndex?: number, body?: unknown, origin = corsOrigin) {
   return fetch(`${baseURL}/api${path}`, {
     method: body === undefined ? 'GET' : 'POST',
     headers: {
-      origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+      origin,
       ...(userIndex !== undefined && { cookie: users[userIndex].cookie }),
       ...(body !== undefined && { 'content-type': 'application/json' }),
     },
@@ -55,7 +56,7 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
           name,
           surname: 'Invitation test',
           email: `${name.toLowerCase()}-${runId}@example.com`,
-          password: `test-password-${runId}`,
+          password: `Test1!${runId}`,
         },
         returnHeaders: true,
       });
@@ -152,16 +153,11 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
       items: [],
     });
     assert.equal((await request('/notifications')).status, 401);
-    assert.equal(
-      (await request('/auth/organization/accept-invitation', 3, { invitationId: invitation.id }))
-        .status,
-      403,
-    );
-    assert.equal(
-      (await request('/auth/organization/accept-invitation', 2, { invitationId: invitation.id }))
-        .status,
-      200,
-    );
+    const acceptPath = `/organizations/invitations/${invitation.id}/accept`;
+    assert.equal((await request(acceptPath, undefined, {})).status, 401);
+    assert.equal((await request(acceptPath, 3, {})).status, 403);
+    assert.equal((await request(acceptPath, 2, {}, 'https://untrusted.example')).status, 403);
+    assert.equal((await request(acceptPath, 2, {})).status, 200);
     assert.equal(await prisma.member.count({ where: { organizationId, userId: users[2].id } }), 1);
     assert.deepEqual(await (await request('/notifications', 2)).json(), { items: [] });
   });
@@ -181,8 +177,7 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
       [second.id],
     );
     assert.equal(
-      (await request('/auth/organization/reject-invitation', 3, { invitationId: second.id }))
-        .status,
+      (await request(`/organizations/invitations/${second.id}/reject`, 3, {})).status,
       200,
     );
     assert.deepEqual(await (await request('/notifications', 3)).json(), { items: [] });
@@ -190,21 +185,15 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
     await prisma.invitation.update({ where: { id: expired.id }, data: { expiresAt: new Date(0) } });
     assert.deepEqual(await (await request('/notifications', 3)).json(), { items: [] });
     assert.equal(
-      (await request('/auth/organization/accept-invitation', 3, { invitationId: expired.id }))
-        .status,
+      (await request(`/organizations/invitations/${expired.id}/accept`, 3, {})).status,
       400,
     );
     assert.equal(await prisma.member.count({ where: { organizationId, userId: users[3].id } }), 0);
   });
 
-  test('unverified accounts cannot enumerate or accept invitations', async () => {
-    const invitation = await (await invite(users[4].email)).json();
+  test('unverified accounts cannot enumerate invitations', async () => {
+    assert.equal((await invite(users[4].email)).status, 201);
     assert.equal((await request('/notifications', 4)).status, 403);
-    assert.equal(
-      (await request('/auth/organization/accept-invitation', 4, { invitationId: invitation.id }))
-        .status,
-      403,
-    );
   });
 
   test('delivery persists for an email without an account; database failure permits retry', async (t) => {

@@ -10,6 +10,14 @@ organizationRouter.post(
   '/:organizationId/invitations',
   asyncHandler(organizationController.createInvitation),
 );
+organizationRouter.post(
+  '/invitations/:invitationId/accept',
+  asyncHandler(organizationController.respondToInvitation('accept')),
+);
+organizationRouter.post(
+  '/invitations/:invitationId/reject',
+  asyncHandler(organizationController.respondToInvitation('reject')),
+);
 organizationRouter.delete(
   '/:organizationId',
   requireOrganizationRole('owner'),
