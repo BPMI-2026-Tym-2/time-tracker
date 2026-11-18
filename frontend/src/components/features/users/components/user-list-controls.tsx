@@ -24,14 +24,16 @@ export function UserListControls({
   onSearchInputChange,
   onRoleChange,
   onSortToggle,
-  organizationId = 'skupina-1',
-  organizationName = 'Skupina 1',
+  organizationId,
+  organizationName,
 }: UserListControlsProps) {
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold tracking-tight text-slate-900">Seznam uživatelů</h2>
-        <InviteMemberDialog organizationId={organizationId} organizationName={organizationName} />
+        {organizationId && (
+          <InviteMemberDialog organizationId={organizationId} organizationName={organizationName} />
+        )}
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">

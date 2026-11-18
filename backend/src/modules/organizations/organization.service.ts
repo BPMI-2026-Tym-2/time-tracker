@@ -263,7 +263,10 @@ async function updateSettings(
     throw new AppError('K úpravě nastavení nemáte oprávnění', 403);
   }
 
-  await organizationRepository.updateOrganizationName(organizationId, input.name);
+  await organizationRepository.updateOrganizationSettings(organizationId, {
+    name: input.name,
+    description: input.description,
+  });
 
   return getSettings(request, organizationId);
 }

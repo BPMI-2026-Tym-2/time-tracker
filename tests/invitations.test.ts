@@ -55,7 +55,7 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
           name,
           surname: 'Invitation test',
           email: `${name.toLowerCase()}-${runId}@example.com`,
-          password: `test-password-${runId}`,
+          password: `Password123!-${runId}`,
         },
         returnHeaders: true,
       });

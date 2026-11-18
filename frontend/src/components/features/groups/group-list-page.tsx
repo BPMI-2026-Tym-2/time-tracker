@@ -23,6 +23,8 @@ export function GroupListPage() {
   });
 
   const organizations = data?.items ?? [];
+  const totalPages = data?.pageInfo.totalPages ?? 1;
+  const total = data?.pageInfo.total ?? organizations.length;
 
   return (
     <main className="flex flex-1 flex-col justify-start p-6 md:p-8">
@@ -97,57 +99,49 @@ export function GroupListPage() {
           <div className="space-y-5">
             <GroupTable groups={organizations} />
 
-            {/* 1:1 Footer */}
             <div className="flex flex-col items-center justify-between gap-4 pt-1 sm:flex-row">
               <div className="text-sm font-medium text-[#163820]">
-                Počet skupin: <span className="font-bold">{organizations.length}</span>
+                Počet skupin: <span className="font-bold">{total}</span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                  disabled={page <= 1}
-                  aria-label="Předchozí stránka"
-                  className="flex size-9 items-center justify-center rounded-xl border border-[#E0DDD6] bg-white text-[#163820] transition-colors hover:bg-slate-50 disabled:opacity-40"
-                >
-                  <ChevronLeft className="size-4 stroke-[2.5]" />
-                </button>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                    disabled={page <= 1}
+                    aria-label="Předchozí stránka"
+                    className="flex size-9 items-center justify-center rounded-xl border border-[#E0DDD6] bg-white text-[#163820] transition-colors hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    <ChevronLeft className="size-4 stroke-[2.5]" />
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setPage(1)}
-                  className={`flex size-9 items-center justify-center rounded-xl text-sm font-bold shadow-xs transition-colors ${
-                    page === 1
-                      ? 'bg-[#163820] text-white'
-                      : 'border border-[#E0DDD6] bg-white text-[#163820] hover:bg-slate-50'
-                  }`}
-                >
-                  1
-                </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setPage(pageNum)}
+                      className={`flex size-9 items-center justify-center rounded-xl text-sm font-bold shadow-xs transition-colors ${
+                        page === pageNum
+                          ? 'bg-[#163820] text-white'
+                          : 'border border-[#E0DDD6] bg-white text-[#163820] hover:bg-slate-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
 
-                <button
-                  type="button"
-                  onClick={() => setPage(2)}
-                  className={`flex size-9 items-center justify-center rounded-xl text-sm font-bold shadow-xs transition-colors ${
-                    page === 2
-                      ? 'bg-[#163820] text-white'
-                      : 'border border-[#E0DDD6] bg-white text-[#163820] hover:bg-slate-50'
-                  }`}
-                >
-                  2
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(p + 1, 2))}
-                  disabled={page >= 2}
-                  aria-label="Další stránka"
-                  className="flex size-9 items-center justify-center rounded-xl border border-[#E0DDD6] bg-white text-[#163820] transition-colors hover:bg-slate-50 disabled:opacity-40"
-                >
-                  <ChevronRight className="size-4 stroke-[2.5]" />
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={page >= totalPages}
+                    aria-label="Další stránka"
+                    className="flex size-9 items-center justify-center rounded-xl border border-[#E0DDD6] bg-white text-[#163820] transition-colors hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    <ChevronRight className="size-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

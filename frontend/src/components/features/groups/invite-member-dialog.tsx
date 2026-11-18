@@ -28,7 +28,7 @@ type InviteMemberDialogProps = {
 
 export function InviteMemberDialog({
   organizationId,
-  organizationName = 'Skupina 1',
+  organizationName,
   trigger,
   onSuccess,
 }: InviteMemberDialogProps) {
@@ -95,8 +95,14 @@ export function InviteMemberDialog({
         <DialogHeader className="text-center sm:text-center">
           <DialogTitle className="text-xl font-bold tracking-tight">Pozvat člena</DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
-            Pozvěte nového člena do skupiny{' '}
-            <strong className="text-foreground">&quot;{organizationName}&quot;</strong>!
+            {organizationName ? (
+              <>
+                Pozvěte nového člena do skupiny{' '}
+                <strong className="text-foreground">&quot;{organizationName}&quot;</strong>!
+              </>
+            ) : (
+              'Pozvěte nového člena do skupiny zadáním jeho e-mailové adresy.'
+            )}
           </DialogDescription>
         </DialogHeader>
 

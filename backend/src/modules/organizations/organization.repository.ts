@@ -11,12 +11,13 @@ export type OrganizationSettingsRecord = {
   id: string;
   name: string;
   slug: string;
+  metadata?: string | null;
 };
 
 export function findOrganizationById(id: string) {
   return prisma.organization.findUnique({
     where: { id },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, metadata: true },
   });
 }
 
@@ -47,6 +48,37 @@ export function updateOrganizationName(id: string, name: string) {
   return prisma.organization.update({
     where: { id },
     data: { name },
+  });
+}
+
+export async function updateOrganizationSettings(
+  id: string,
+  input: { name: string; description?: string | null },
+) {
+  let metadata: string | undefined = undefined;
+  if (input.description !== undefined) {
+    const existing = await prisma.organization.findUnique({
+      where: { id },
+      select: { metadata: true },
+    });
+    let metaObj: Record<string, unknown> = {};
+    if (existing?.metadata) {
+      try {
+        metaObj = JSON.parse(existing.metadata);
+      } catch {
+        metaObj = {};
+      }
+    }
+    metaObj.description = input.description;
+    metadata = JSON.stringify(metaObj);
+  }
+
+  return prisma.organization.update({
+    where: { id },
+    data: {
+      name: input.name,
+      ...(metadata !== undefined ? { metadata } : {}),
+    },
   });
 }
 
@@ -103,6 +135,7 @@ const organizationRepository = {
   findOrganizationById,
   findOrganizationOwner,
   updateOrganizationName,
+  updateOrganizationSettings,
   findOrganizationMembers,
   countOrganizationMembers,
   findUserOrganizations,
