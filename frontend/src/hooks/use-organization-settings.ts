@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchOrganizationSettings,
   updateOrganizationSettings,
-  deleteOrganization,
   ApiError,
 } from '@/lib/api/organizations';
 import type {
@@ -12,46 +11,13 @@ import type {
   UpdateOrganizationSettingsRequest,
 } from '@time-tracker/shared';
 
-function getDummySettings(organizationId: string): OrganizationSettingsResponse {
-  return {
-    id: organizationId,
-    name: 'Programování',
-    slug: 'programovani',
-    invitationCode: 'PRG123',
-    owner: {
-      id: 'owner-1',
-      name: 'Jan',
-      surname: 'Novák',
-    },
-    currentUserRole: 'owner',
-    permissions: {
-      canEdit: true,
-      canDelete: true,
-    },
-  };
-}
-
 export function useOrganizationSettings(organizationId: string) {
   const queryClient = useQueryClient();
   const queryKey = ['organization-settings', organizationId];
 
   const settingsQuery = useQuery<OrganizationSettingsResponse, Error>({
     queryKey,
-    queryFn: async () => {
-      try {
-        return await fetchOrganizationSettings(organizationId);
-      } catch (err) {
-        // V development prostředí při nedostupném backendu fallback na dummy data pro náhled UI
-        if (
-          process.env.NODE_ENV !== 'production' &&
-          !(err instanceof ApiError && (err.statusCode === 403 || err.statusCode === 404))
-        ) {
-          console.warn('Backend není dostupný, používám dummy data pro náhled UI.');
-          return getDummySettings(organizationId);
-        }
-        throw err;
-      }
-    },
+    queryFn: () => fetchOrganizationSettings(organizationId),
     retry: (failureCount, error) => {
       if (error instanceof ApiError && (error.statusCode === 403 || error.statusCode === 404)) {
         return false;
@@ -65,40 +31,9 @@ export function useOrganizationSettings(organizationId: string) {
     Error,
     UpdateOrganizationSettingsRequest
   >({
-    mutationFn: async (body) => {
-      try {
-        return await updateOrganizationSettings(organizationId, body);
-      } catch (err) {
-        if (
-          process.env.NODE_ENV !== 'production' &&
-          !(err instanceof ApiError && err.statusCode === 403)
-        ) {
-          console.warn('Backend není dostupný, simuluji uložení v dev módu.');
-          const current = settingsQuery.data ?? getDummySettings(organizationId);
-          return { ...current, name: body.name };
-        }
-        throw err;
-      }
-    },
+    mutationFn: (body) => updateOrganizationSettings(organizationId, body),
     onSuccess: (updatedSettings) => {
       queryClient.setQueryData(queryKey, updatedSettings);
-    },
-  });
-
-  const deleteMutation = useMutation<void, Error, void>({
-    mutationFn: async () => {
-      try {
-        await deleteOrganization(organizationId);
-      } catch (err) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn('Backend není dostupný, simuluji smazání v dev módu.');
-          return;
-        }
-        throw err;
-      }
-    },
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey });
     },
   });
 
@@ -112,8 +47,5 @@ export function useOrganizationSettings(organizationId: string) {
     isUpdating: updateMutation.isPending,
     updateError: updateMutation.error,
     resetUpdateError: updateMutation.reset,
-    deleteOrganization: deleteMutation.mutateAsync,
-    isDeleting: deleteMutation.isPending,
-    deleteError: deleteMutation.error,
   };
 }

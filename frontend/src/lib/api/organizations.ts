@@ -1,5 +1,7 @@
 import {
   organizationSchema,
+  type ListOrganizationsQuery,
+  type ListOrganizationsResponse,
   type OrganizationSettingsResponse,
   type UpdateOrganizationSettingsRequest,
 } from '@time-tracker/shared';
@@ -29,6 +31,36 @@ async function extractErrorMessage(response: Response): Promise<string> {
     // ignore
   }
   return response.statusText || `Požadavek selhal s kódem ${response.status}`;
+}
+
+export async function fetchOrganizations(
+  query: Partial<ListOrganizationsQuery> = {},
+): Promise<ListOrganizationsResponse> {
+  const searchParams = new URLSearchParams();
+  if (query.search) searchParams.set('search', query.search);
+  if (query.role && query.role !== 'all') searchParams.set('role', query.role);
+  if (query.sort && query.sort !== 'default') searchParams.set('sort', query.sort);
+  if (query.page) searchParams.set('page', String(query.page));
+  if (query.pageSize) searchParams.set('pageSize', String(query.pageSize));
+
+  const queryString = searchParams.toString();
+  const url = `${API_BASE_URL}/api/organizations${queryString ? `?${queryString}` : ''}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
+  }
+
+  const json = await response.json();
+  return organizationSchema.listOrganizationsResponse.parse(json.data ?? json);
 }
 
 export async function fetchOrganizationSettings(

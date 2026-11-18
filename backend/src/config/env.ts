@@ -22,5 +22,5 @@ function readPort(value: string | undefined): number {
 
 export const env = {
   port: readPort(process.env.PORT),
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+  corsOrigin: requiredEnv('CORS_ORIGIN'),
 } as const;

@@ -1,10 +1,10 @@
 import express from 'express';
 import { errorHandler } from './shared/errors/error-handler.js';
 import { corsMiddleware } from './shared/http/cors.js';
-import authRouter from './modules/auth/auth.routes.js';
 import organizationRouter from './modules/organizations/organization.routes.js';
 import { userRouter } from './modules/users/user.routes.js';
 import { requireAuth } from './shared/auth/require-auth.js';
+import authRouter from './modules/auth/auth.routes.js';
 
 const app = express();
 const apiRouter = express.Router();
