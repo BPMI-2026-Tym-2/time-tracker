@@ -10,21 +10,26 @@ export function createUserColumns(canViewEmail: boolean) {
   return columnHelper.columns([
     columnHelper.accessor('name', {
       header: 'Uživatel',
-      enableGlobalFilter: true,
+      filterFn: (row, _columnId, filterValue) => {
+        if (typeof filterValue !== 'string') return false;
+        const query = filterValue.trim().toLowerCase();
+        return (
+          row.original.name.toLowerCase().includes(query) ||
+          (canViewEmail && row.original.email.toLowerCase().includes(query))
+        );
+      },
       cell: ({ getValue }) => <span className="font-semibold text-slate-800">{getValue()}</span>,
     }),
     ...(canViewEmail
       ? [
           columnHelper.accessor('email', {
             header: 'E-mail',
-            enableGlobalFilter: true,
             cell: ({ getValue }) => <span className="text-slate-600">{getValue()}</span>,
           }),
         ]
       : []),
     columnHelper.accessor('role', {
       header: 'Role',
-      enableGlobalFilter: false,
       filterFn: 'equalsString',
       cell: ({ getValue }) => {
         const role = getValue();
@@ -40,8 +45,7 @@ export function createUserColumns(canViewEmail: boolean) {
       },
     }),
     columnHelper.accessor('joinedAt', {
-      header: '',
-      enableGlobalFilter: false,
+      header: 'Datum vstupu',
       enableColumnFilter: false,
       enableHiding: false,
     }),
