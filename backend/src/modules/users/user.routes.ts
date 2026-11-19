@@ -5,3 +5,4 @@ import userController from './user.controller.js';
 export const userRouter = Router();
 
 userRouter.get('/profile', asyncHandler(userController.getProfile));
+userRouter.delete('/:userId', asyncHandler(userController.deleteUser));

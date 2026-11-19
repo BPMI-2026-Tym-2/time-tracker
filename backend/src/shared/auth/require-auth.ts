@@ -14,12 +14,9 @@ export const requireAuth: RequestHandler = async (request, _response, next) => {
     return;
   }
 
-  const roles = parseRoles(session.user.role);
-
-  if (roles.length === 0) {
-    next(new AppError('Uživatel má neplatnou roli!', 500));
-    return;
-  }
+  // Každý uživatel má minimálně roli 'user'. Neplatná nebo prázdná hodnota se bere jako 'user'.
+  const parsedRoles = parseRoles(session.user.role);
+  const roles = parsedRoles.length > 0 ? parsedRoles : ['user' as const];
 
   request.user = {
     id: session.user.id,

@@ -1,0 +1,56 @@
+import { APIError } from 'better-auth/api';
+import { registerFieldsSchema, type RegisterFieldsSchema } from '@time-tracker/shared';
+
+// Validuje a normalizuje údaje z registrace (jména ořízne, e-mail na malá písmena).
+// Při neplatném vstupu vyhazuje APIError s kódem, který vrací Better Auth endpoint.
+function parseRegistrationInput(body: unknown): RegisterFieldsSchema {
+  const parsed = registerFieldsSchema.safeParse(body);
+
+  if (!parsed.success) {
+    const message = parsed.error.issues.map((issue) => issue.message).join(', ');
+
+    throw new APIError('BAD_REQUEST', { code: 'INVALID_REGISTRATION', message });
+  }
+
+  return parsed.data;
+}
+
+const authService = {
+  parseRegistrationInput,
+};
+
+export default authService;
+import { registrationFieldLabels, registrationMessages } from './auth.messages.js';
+import { registrationEmailSchema } from './auth.schemas.js';
+import type { RegistrationResult } from './auth.types.js';
+
+// Kontroly registrace e-mailem a heslem.
+// Délku hesla kontroluje Better Auth.
+
+function readString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+export function validateRegistration(body: unknown): RegistrationResult {
+  const input = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {};
+  const name = readString(input.name).trim();
+  const surname = readString(input.surname).trim();
+  const email = readString(input.email).trim();
+  const password = readString(input.password);
+
+  const values = { name, surname, email, password: password.trim() };
+  const emptyFields = (Object.keys(values) as (keyof typeof values)[])
+    .filter((field) => values[field] === '')
+    .map((field) => registrationFieldLabels[field]);
+
+  if (emptyFields.length > 0) {
+    return { ok: false, status: 400, message: registrationMessages.emptyFields(emptyFields) };
+  }
+
+  if (!registrationEmailSchema.safeParse(email).success) {
+    return { ok: false, status: 400, message: registrationMessages.invalidEmail };
+  }
+
+  //ukládá e-mail malými písmeny
+  return { ok: true, data: { name, surname, email: email.toLowerCase(), password } };
+}

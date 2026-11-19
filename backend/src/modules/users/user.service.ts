@@ -1,12 +1,18 @@
-import type { UserProfile } from '@time-tracker/shared';
+import type { DeleteUserResponse, UserProfile } from '@time-tracker/shared';
+import type { RequestingUser } from '../../shared/auth/types.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import { toUserProfile } from './user.mapper.js';
-import { findUserById, hasCredentialAccount } from './user.repository.js';
+import userRepository from './user.repository.js';
+
+export type UserService = {
+  getProfile: (userId: string) => Promise<UserProfile>;
+  deleteUser: (requestingUser: RequestingUser, userId: string) => Promise<DeleteUserResponse>;
+};
 
 async function getProfile(userId: string): Promise<UserProfile> {
   const [user, hasPassword] = await Promise.all([
-    findUserById(userId),
-    hasCredentialAccount(userId),
+    userRepository.findUserById(userId),
+    userRepository.hasCredentialAccount(userId),
   ]);
 
   if (!user) {
@@ -16,8 +22,37 @@ async function getProfile(userId: string): Promise<UserProfile> {
   return toUserProfile(user, hasPassword);
 }
 
-const userService = {
+// odstranit muze sam uživatel, cizí účet jen super admin
+async function deleteUser(
+  requestingUser: RequestingUser,
+  userId: string,
+): Promise<DeleteUserResponse> {
+  if (requestingUser.id !== userId && !requestingUser.roles.includes('admin')) {
+    throw new AppError('Účet může odstranit pouze jeho vlastník', 403);
+  }
+
+  try {
+    await userRepository.deleteUser(userId, (user) => {
+      if (!user) {
+        throw new AppError('User not found', 404);
+      }
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    console.error('User deletion failed', error);
+    throw new AppError('Odstranění účtu se nezdařilo. Zkuste to prosím znovu', 500);
+  }
+
+  return {
+    message: requestingUser.id === userId ? 'Váš účet byl odstraněn' : 'Účet byl odstraněn.',
+  };
+}
+
+const userService: UserService = {
   getProfile,
+  deleteUser,
 };
 
 export default userService;
