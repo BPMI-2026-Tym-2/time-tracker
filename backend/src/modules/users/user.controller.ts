@@ -4,18 +4,17 @@ import { AppError } from '../../shared/errors/app-error.js';
 import { sendData } from '../../shared/http/response.js';
 import userService from './user.service.js';
 
-async function getMe(request: Request, response: Response): Promise<void> {
+async function getProfile(request: Request, response: Response): Promise<void> {
   if (!request.user) {
-    throw new AppError('Uživatel není přihlášen!', 401);
+    throw new AppError('Platnost přihlášení vypršela. Přihlaste se prosím znovu', 401);
   }
 
-  const profile = await userService.getOwnProfile(request.user.id);
-
+  const profile = await userService.getProfile(request.user.id);
   sendData(response, userProfileResponseSchema.parse(profile));
 }
 
 const userController = {
-  getMe,
+  getProfile,
 };
 
 export default userController;

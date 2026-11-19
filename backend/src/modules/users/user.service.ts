@@ -3,7 +3,7 @@ import { AppError } from '../../shared/errors/app-error.js';
 import { toUserProfile } from './user.mapper.js';
 import { findUserById, hasCredentialAccount } from './user.repository.js';
 
-async function getOwnProfile(userId: string): Promise<UserProfile> {
+async function getProfile(userId: string): Promise<UserProfile> {
   const [user, hasPassword] = await Promise.all([
     findUserById(userId),
     hasCredentialAccount(userId),
@@ -17,7 +17,7 @@ async function getOwnProfile(userId: string): Promise<UserProfile> {
 }
 
 const userService = {
-  getOwnProfile,
+  getProfile,
 };
 
 export default userService;

@@ -4,4 +4,4 @@ import userController from './user.controller.js';
 
 export const userRouter = Router();
 
-userRouter.get('/me', asyncHandler(userController.getMe));
+userRouter.get('/profile', asyncHandler(userController.getProfile));
