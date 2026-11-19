@@ -21,13 +21,30 @@ const profileResponse = userResponseSchema.extend({
   hasPassword: z.boolean(),
 });
 
+const PROFILE_NAME_MAX_LENGTH = 50;
+
+const updateProfileBody = z.strictObject({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: 'Pole Jméno nesmí být prázdné!' })
+    .max(PROFILE_NAME_MAX_LENGTH, { message: 'Pozor, jméno je příliš dlouhé.' }),
+  surname: z
+    .string()
+    .trim()
+    .min(1, { message: 'Pole Příjmení nesmí být prázdné!' })
+    .max(PROFILE_NAME_MAX_LENGTH, { message: 'Pozor, příjmení je příliš dlouhé.' }),
+});
+
 export const userSchema = {
   deleteParams,
   deleteResponse,
   profileResponse,
+  updateProfileBody,
 };
 
 export type PublicUser = z.infer<typeof userResponseSchema>;
 export type DeleteUserParams = z.infer<typeof deleteParams>;
 export type DeleteUserResponse = z.infer<typeof deleteResponse>;
 export type UserProfile = z.infer<typeof profileResponse>;
+export type UpdateProfileBody = z.infer<typeof updateProfileBody>;
