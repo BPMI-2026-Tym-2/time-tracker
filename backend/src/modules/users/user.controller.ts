@@ -7,6 +7,7 @@ import userService from './user.service.js';
 
 export type UserController = {
   getProfile: (request: Request, response: Response) => Promise<void>;
+  updateProfile: (request: Request, response: Response) => Promise<void>;
   deleteUser: (request: Request, response: Response) => Promise<void>;
 };
 
@@ -16,6 +17,16 @@ async function getProfile(request: Request, response: Response): Promise<void> {
   }
 
   const profile = await userService.getProfile(request.user.id);
+  sendData(response, userSchema.profileResponse.parse(profile));
+}
+
+async function updateProfile(request: Request, response: Response): Promise<void> {
+  if (!request.user) {
+    throw new AppError('Platnost přihlášení vypršela. Přihlaste se prosím znovu', 401);
+  }
+
+  const body = userSchema.updateProfileBody.parse(request.body);
+  const profile = await userService.updateProfile(request.user.id, body);
   sendData(response, userSchema.profileResponse.parse(profile));
 }
 
@@ -54,6 +65,7 @@ async function deleteUser(request: Request, response: Response) {
 
 const userController: UserController = {
   getProfile,
+  updateProfile,
   deleteUser,
 };
 

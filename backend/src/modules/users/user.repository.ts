@@ -1,3 +1,4 @@
+import type { UpdateProfileBody } from '@time-tracker/shared';
 import { prisma } from '../../db/prisma.js';
 import { publicUserSelect } from './user.schemas.js';
 import type { UserRecord } from './user.types.js';
@@ -9,6 +10,7 @@ export type UserRepository = {
   findUserByEmail: (email: string) => Promise<UserRecord | null>;
   findUserById: (id: string) => Promise<UserRecord | null>;
   hasCredentialAccount: (userId: string) => Promise<boolean>;
+  updateProfile: (userId: string, data: UpdateProfileBody) => Promise<UserRecord | null>;
 };
 
 const CREDENTIAL_PROVIDER_ID = 'credential';
@@ -34,6 +36,15 @@ async function hasCredentialAccount(userId: string): Promise<boolean> {
   });
 
   return account !== null;
+}
+
+async function updateProfile(userId: string, data: UpdateProfileBody): Promise<UserRecord | null> {
+  const { count } = await prisma.user.updateMany({
+    where: { id: userId },
+    data: { name: data.name, surname: data.surname },
+  });
+
+  return count === 0 ? null : findUserById(userId);
 }
 
 // smaže uživatele, jeho session, účty, členství, odeslané pozvánky
@@ -74,6 +85,7 @@ const userRepository: UserRepository = {
   findUserByEmail,
   findUserById,
   hasCredentialAccount,
+  updateProfile,
 };
 
 export default userRepository;
