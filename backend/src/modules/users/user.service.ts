@@ -1,11 +1,26 @@
-import type { DeleteUserResponse } from '@time-tracker/shared';
+import type { DeleteUserResponse, UserProfile } from '@time-tracker/shared';
 import type { RequestingUser } from '../../shared/auth/types.js';
 import { AppError } from '../../shared/errors/app-error.js';
+import { toUserProfile } from './user.mapper.js';
 import userRepository from './user.repository.js';
 
 export type UserService = {
+  getProfile: (userId: string) => Promise<UserProfile>;
   deleteUser: (requestingUser: RequestingUser, userId: string) => Promise<DeleteUserResponse>;
 };
+
+async function getProfile(userId: string): Promise<UserProfile> {
+  const [user, hasPassword] = await Promise.all([
+    userRepository.findUserById(userId),
+    userRepository.hasCredentialAccount(userId),
+  ]);
+
+  if (!user) {
+    throw new AppError('Údaje profilu se nepodařilo načíst.', 404);
+  }
+
+  return toUserProfile(user, hasPassword);
+}
 
 // odstranit muze sam uživatel, cizí účet jen super admin
 async function deleteUser(
@@ -36,6 +51,7 @@ async function deleteUser(
 }
 
 const userService: UserService = {
+  getProfile,
   deleteUser,
 };
 

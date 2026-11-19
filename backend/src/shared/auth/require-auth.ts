@@ -10,7 +10,7 @@ export const requireAuth: RequestHandler = async (request, _response, next) => {
   });
 
   if (!session) {
-    next(new AppError('Uživatel není přihlášen!', 401));
+    next(new AppError('Platnost přihlášení vypršela. Přihlaste se prosím znovu', 401));
     return;
   }
 

@@ -6,8 +6,18 @@ import { auth } from '../../config/auth.js';
 import userService from './user.service.js';
 
 export type UserController = {
+  getProfile: (request: Request, response: Response) => Promise<void>;
   deleteUser: (request: Request, response: Response) => Promise<void>;
 };
+
+async function getProfile(request: Request, response: Response): Promise<void> {
+  if (!request.user) {
+    throw new AppError('Platnost přihlášení vypršela. Přihlaste se prosím znovu', 401);
+  }
+
+  const profile = await userService.getProfile(request.user.id);
+  sendData(response, userSchema.profileResponse.parse(profile));
+}
 
 async function deleteUser(request: Request, response: Response) {
   if (!request.user) {
@@ -43,6 +53,7 @@ async function deleteUser(request: Request, response: Response) {
 }
 
 const userController: UserController = {
+  getProfile,
   deleteUser,
 };
 

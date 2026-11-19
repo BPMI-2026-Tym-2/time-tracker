@@ -17,11 +17,17 @@ const deleteResponse = z.object({
   message: z.enum(['Váš účet byl odstraněn', 'Účet byl odstraněn.']),
 });
 
+const profileResponse = userResponseSchema.extend({
+  hasPassword: z.boolean(),
+});
+
 export const userSchema = {
   deleteParams,
   deleteResponse,
+  profileResponse,
 };
 
 export type PublicUser = z.infer<typeof userResponseSchema>;
 export type DeleteUserParams = z.infer<typeof deleteParams>;
 export type DeleteUserResponse = z.infer<typeof deleteResponse>;
+export type UserProfile = z.infer<typeof profileResponse>;

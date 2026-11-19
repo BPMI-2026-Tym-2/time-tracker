@@ -7,13 +7,33 @@ export type UserDeletionAuthorization = (user: { id: string } | null) => void | 
 export type UserRepository = {
   deleteUser: (userId: string, authorize: UserDeletionAuthorization) => Promise<void>;
   findUserByEmail: (email: string) => Promise<UserRecord | null>;
+  findUserById: (id: string) => Promise<UserRecord | null>;
+  hasCredentialAccount: (userId: string) => Promise<boolean>;
 };
+
+const CREDENTIAL_PROVIDER_ID = 'credential';
 
 function findUserByEmail(email: string): Promise<UserRecord | null> {
   return prisma.user.findUnique({
     where: { email },
     select: publicUserSelect,
   });
+}
+
+function findUserById(id: string): Promise<UserRecord | null> {
+  return prisma.user.findUnique({
+    where: { id },
+    select: publicUserSelect,
+  });
+}
+
+async function hasCredentialAccount(userId: string): Promise<boolean> {
+  const account = await prisma.account.findFirst({
+    where: { userId, providerId: CREDENTIAL_PROVIDER_ID },
+    select: { id: true },
+  });
+
+  return account !== null;
 }
 
 // smaže uživatele, jeho session, účty, členství, odeslané pozvánky
@@ -52,6 +72,8 @@ async function deleteUser(userId: string, authorize: UserDeletionAuthorization):
 const userRepository: UserRepository = {
   deleteUser,
   findUserByEmail,
+  findUserById,
+  hasCredentialAccount,
 };
 
 export default userRepository;
