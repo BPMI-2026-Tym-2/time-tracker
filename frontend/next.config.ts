@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
     },
   },
   transpilePackages: ['@time-tracker/shared'],
+  experimental: {
+    agentUpgrade: 'security',
+  },
 };
 
 export default nextConfig;
