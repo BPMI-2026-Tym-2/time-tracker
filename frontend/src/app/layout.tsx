@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Figtree } from 'next/font/google';
 import type { ReactNode } from 'react';
 import './globals.css';
+import { getPageMetadata } from '@/lib/page-metadata';
 import { cn } from '@/lib/utils';
 
 const figtree = Figtree({ subsets: ['latin'], variable: '--font-sans' });
@@ -16,10 +16,7 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-export const metadata: Metadata = {
-  title: 'Time Tracker',
-  description: 'Track your time and tasks efficiently with Time Tracker.',
-};
+export const metadata = getPageMetadata('/');
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
