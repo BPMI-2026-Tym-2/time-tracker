@@ -5,6 +5,10 @@ const metadataByRoute = {
     title: 'Time Tracker',
     description: 'Track your time and tasks efficiently with Time Tracker.',
   },
+  '/profile': {
+    title: 'Profil | Time Tracker',
+    description: 'View your Time Tracker profile.',
+  },
   '/users': {
     title: 'Seznam uživatelů | Time Tracker',
   },

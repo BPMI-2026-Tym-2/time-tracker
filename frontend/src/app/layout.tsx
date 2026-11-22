@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { Figtree, Roboto } from 'next/font/google';
 import type { ReactNode } from 'react';
 import './globals.css';
-import { cn } from '@/lib/utils';
 import { getPageMetadata } from '@/lib/page-metadata';
+import { cn } from '@/lib/utils';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/toast';
 

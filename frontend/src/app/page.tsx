@@ -6,6 +6,8 @@ import { authClient } from '@/lib/auth-client';
 import { Spinner } from '@/components/ui/spinner';
 import { useLogout } from '@/hooks/use-logout';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { LucideArrowUpRight } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
@@ -27,11 +29,17 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="flex min-h-screen flex-col items-center p-24">
       <div className="flex flex-col items-center gap-4">
         <h1 className="text-3xl font-bold">Welcome to the Time Tracker</h1>
-        <p>{session.data.user.name}</p>
-        <p>{session.data.user.surname}</p>
+        <p>
+          {session.data.user.name} {session.data.user.surname}
+        </p>
+        <p>{session.data.user.email}</p>
+        <Link href="/profile" className="flex items-center gap-1 text-blue-500 underline">
+          <span>Go to Profile</span>
+          <LucideArrowUpRight />
+        </Link>
         <Button type="button" onClick={() => logout()} disabled={isLogoutPending}>
           {isLogoutPending ? 'Odhlášení...' : 'Odhlásit se'}
         </Button>
