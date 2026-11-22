@@ -90,47 +90,41 @@ async function listMembers(
   organizationId: string,
   query: ListOrganizationMembersQuery,
 ): Promise<ListOrganizationMembersResponse> {
-  const headers = fromNodeHeaders(request.headers);
-  const [organization, membersResult] = await Promise.all([
-    auth.api.getOrganization({
-      headers,
-      query: { organizationId },
-    }),
-    auth.api.listMembers({
-      headers,
-      query: {
-        organizationId,
-        limit: query.pageSize,
-        offset: (query.page - 1) * query.pageSize,
-        ...(query.role && {
-          filterField: 'role',
-          filterOperator: 'eq',
-          filterValue: query.role,
-        }),
-        ...(query.search && {
-          filterField: 'user.name',
-          filterOperator: 'contains',
-          filterValue: query.search,
-        }),
+  const isOwner = request.organization?.role === 'owner';
+  const where: Prisma.MemberWhereInput = {
+    organizationId,
+    ...(query.role && { role: query.role }),
+    ...(query.search && {
+      user: {
+        OR: [
+          { name: { contains: query.search, mode: 'insensitive' } },
+          { surname: { contains: query.search, mode: 'insensitive' } },
+        ],
       },
     }),
+  };
+  const [organization, members, total] = await Promise.all([
+    organizationRepository.findOrganizationById(organizationId),
+    organizationRepository.findOrganizationMembers({
+      where,
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize,
+      isOwner,
+    }),
+    organizationRepository.countOrganizationMembers(where),
   ]);
 
   if (!organization) {
     throw new AppError('Organizace nebyla nalezena', 404);
   }
 
-  if (!membersResult) {
-    throw new AppError('Členy organizace se nepodařilo načíst', 500);
-  }
-
   return organizationMapper.toMembersResponse({
     organization,
-    members: membersResult.members,
+    members,
     page: query.page,
     pageSize: query.pageSize,
-    total: membersResult.total,
-    includeEmail: request.organization?.role === 'owner',
+    total,
+    includeEmail: isOwner,
   });
 }
 

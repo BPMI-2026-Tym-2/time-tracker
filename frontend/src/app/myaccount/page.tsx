@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { PasswordVisibilityField } from '@/components/features/account/password-visibility-field';
 import { Field, FieldContent, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { authClient } from '@/lib/auth-client';
 import { getProfile } from '@/lib/api/profile';
@@ -57,12 +56,11 @@ export default function MyAccountPage() {
     );
   }
 
-  const firstName = user.name || profile?.name || '';
-  const lastName = (user as { surname?: string }).surname || profile?.surname || '';
-  const email = user.email || profile?.email || '';
-  const photoUrl = user.image || profile?.profileImageUrl || null;
+  const firstName = profile?.name ?? user.name;
+  const lastName = profile?.surname ?? user.surname;
+  const email = profile?.email ?? user.email;
+  const photoUrl = profile?.profileImageUrl ?? user.image;
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U';
-  const hasPassword = profile?.hasPassword ?? true;
 
   return (
     <main className="flex-1 px-6 py-12">
@@ -113,36 +111,8 @@ export default function MyAccountPage() {
                 </output>
               </FieldContent>
             </Field>
-
-            {!hasPassword ? (
-              <Field className="items-center text-center">
-                <FieldLabel htmlFor="profile-password" className="justify-center text-center">
-                  Heslo
-                </FieldLabel>
-                <FieldContent className="items-center text-center">
-                  <output id="profile-password" className={profileValueClassName}>
-                    Spravuje Google
-                  </output>
-                </FieldContent>
-              </Field>
-            ) : (
-              <Field className="mx-auto w-full max-w-sm items-center text-center">
-                <FieldLabel htmlFor="profile-password" className="justify-center text-center">
-                  Heslo
-                </FieldLabel>
-                <FieldContent className="w-full items-center text-center">
-                  <PasswordVisibilityField id="profile-password" />
-                </FieldContent>
-              </Field>
-            )}
           </FieldGroup>
         </FieldSet>
-
-        <div className="flex w-full max-w-3xl justify-end pr-8">
-          <Button type="button" variant="outline" className="border-black/50">
-            Upravit profil
-          </Button>
-        </div>
       </div>
     </main>
   );

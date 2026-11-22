@@ -98,7 +98,7 @@ function toMembersResponse({
   total,
   includeEmail,
 }: {
-  organization: OrganizationRecord;
+  organization: Pick<OrganizationRecord, 'id' | 'name' | 'slug'>;
   members: OrganizationMemberRecord[];
   page: number;
   pageSize: number;
@@ -121,7 +121,9 @@ function toSettingsResponse({
   owner,
   currentUserRole,
 }: {
-  organization: OrganizationRecord & { metadata?: string | null };
+  organization: Pick<OrganizationRecord, 'id' | 'name' | 'slug' | 'description'> & {
+    metadata?: string | null;
+  };
   owner: { id: string; name: string; surname: string };
   currentUserRole: string | null;
 }): OrganizationSettingsResponse {
