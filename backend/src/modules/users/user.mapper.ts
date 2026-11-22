@@ -14,9 +14,9 @@ export function toPublicUser(user: UserRecord): PublicUser {
 
 export function toUserProfile(user: UserRecord): UserProfile {
   return {
-    firstName: user.name,
-    lastName: user.surname,
+    name: user.name,
+    surname: user.surname,
     email: user.email,
-    photoUrl: user.image,
+    profileImageUrl: user.image,
   };
 }

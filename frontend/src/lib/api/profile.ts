@@ -1,29 +1,20 @@
-import type { Profile } from '@/types/profile';
+import { userSchema, type UserProfile } from '@time-tracker/shared';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function parseProfile(value: unknown): Profile {
-  if (
-    !isRecord(value) ||
-    typeof value.firstName !== 'string' ||
-    typeof value.lastName !== 'string' ||
-    typeof value.email !== 'string' ||
-    (value.photoUrl !== null && typeof value.photoUrl !== 'string')
-  ) {
+function parseProfile(value: unknown): UserProfile {
+  const result = userSchema.profileResponse.safeParse(value);
+
+  if (!result.success) {
     throw new Error('Backend returned an invalid profile response.');
   }
 
-  return {
-    firstName: value.firstName,
-    lastName: value.lastName,
-    email: value.email,
-    photoUrl: value.photoUrl,
-  };
+  return result.data;
 }
 
-export async function getProfile(signal: AbortSignal): Promise<Profile> {
+export async function getProfile(signal: AbortSignal): Promise<UserProfile> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   if (!apiUrl) {

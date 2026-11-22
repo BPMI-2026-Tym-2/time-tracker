@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PROFILE_NAME_MAX_LENGTH } from './user.schema.js';
 
 // Heslo: alespoň 8 znaků, bez mezer; alespoň jedno velké písmeno (včetně českých),
 // jedno malé písmeno, jedna číslice a jeden speciální znak (cokoli, co není písmeno ani číslice).
@@ -16,8 +17,16 @@ export const passwordSchema = z
 // Pole odesílaná na backend při registraci (bez potvrzení hesla).
 // Používá je auth.service v before hooku Better Auth, aby se pravidla nedala obejít přímým voláním API.
 export const registerFieldsSchema = z.object({
-  name: z.string().trim().min(1, { message: 'Jméno je povinné.' }),
-  surname: z.string().trim().min(1, { message: 'Příjmení je povinné.' }),
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: 'Jméno je povinné.' })
+    .max(PROFILE_NAME_MAX_LENGTH, { message: 'Jméno může mít maximálně 50 znaků.' }),
+  surname: z
+    .string()
+    .trim()
+    .min(1, { message: 'Příjmení je povinné.' })
+    .max(PROFILE_NAME_MAX_LENGTH, { message: 'Příjmení může mít maximálně 50 znaků.' }),
   email: z
     .string()
     .trim()

@@ -1,17 +1,17 @@
 'use client';
 
+import type { UserProfile } from '@time-tracker/shared';
 import { useEffect, useState } from 'react';
 import { getProfile } from '@/lib/api/profile';
-import type { Profile } from '@/types/profile';
 
 type UseProfileResult = {
-  profile: Profile | null;
+  profile: UserProfile | null;
   isLoading: boolean;
   error: string | null;
 };
 
 export function useProfile(): UseProfileResult {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

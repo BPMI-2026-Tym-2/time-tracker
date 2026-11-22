@@ -1,4 +1,6 @@
+import type { UpdateProfileRequest } from '@time-tracker/shared';
 import { prisma } from '../../db/prisma.js';
+import { isPrismaError } from '../../db/prisma-errors.js';
 import { publicUserSelect } from './user.schemas.js';
 import type { UserRecord } from './user.types.js';
 
@@ -8,10 +10,8 @@ export type UserRepository = {
   deleteUser: (userId: string, authorize: UserDeletionAuthorization) => Promise<void>;
   findUserByEmail: (email: string) => Promise<UserRecord | null>;
   findUserById: (id: string) => Promise<UserRecord | null>;
-  hasCredentialAccount: (userId: string) => Promise<boolean>;
+  updateProfile: (userId: string, data: UpdateProfileRequest) => Promise<UserRecord | null>;
 };
-
-const CREDENTIAL_PROVIDER_ID = 'credential';
 
 function findUserByEmail(email: string): Promise<UserRecord | null> {
   return prisma.user.findUnique({
@@ -27,13 +27,22 @@ function findUserById(id: string): Promise<UserRecord | null> {
   });
 }
 
-async function hasCredentialAccount(userId: string): Promise<boolean> {
-  const account = await prisma.account.findFirst({
-    where: { userId, providerId: CREDENTIAL_PROVIDER_ID },
-    select: { id: true },
-  });
-
-  return account !== null;
+async function updateProfile(
+  userId: string,
+  data: UpdateProfileRequest,
+): Promise<UserRecord | null> {
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { name: data.name, surname: data.surname },
+      select: publicUserSelect,
+    });
+  } catch (error) {
+    if (isPrismaError(error) && error.code === 'P2025') {
+      return null;
+    }
+    throw error;
+  }
 }
 
 // smaže uživatele, jeho session, účty, členství, odeslané pozvánky
@@ -73,7 +82,7 @@ const userRepository: UserRepository = {
   deleteUser,
   findUserByEmail,
   findUserById,
-  hasCredentialAccount,
+  updateProfile,
 };
 
 export default userRepository;
