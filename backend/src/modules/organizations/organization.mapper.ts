@@ -3,7 +3,9 @@ import {
   type CreateOrganizationResponse,
   type InvitationResponse,
   type ListOrganizationMembersResponse,
+  type ListOrganizationsResponse,
   type OrganizationMemberResponse,
+  type OrganizationSettingsResponse,
 } from '@time-tracker/shared';
 import { AppError } from '../../shared/errors/app-error.js';
 
@@ -107,11 +109,79 @@ function toMembersResponse({
   };
 }
 
+function toSettingsResponse({
+  organization,
+  owner,
+  currentUserRole,
+  invitationCode,
+}: {
+  organization: { id: string; name: string; slug: string };
+  owner: { id: string; name: string; surname?: string } | null;
+  currentUserRole: string | null;
+  invitationCode: string;
+}): OrganizationSettingsResponse {
+  const isOwner = currentUserRole === 'owner';
+
+  return {
+    id: organization.id,
+    name: organization.name,
+    slug: organization.slug,
+    invitationCode,
+    owner: owner
+      ? {
+          id: owner.id,
+          name: owner.name,
+          surname: owner.surname ?? '',
+        }
+      : null,
+    currentUserRole:
+      currentUserRole === 'owner' || currentUserRole === 'member' ? currentUserRole : null,
+    permissions: {
+      canEdit: isOwner,
+      canDelete: isOwner,
+    },
+  };
+}
+
+function toListOrganizationsResponse({
+  items,
+  page,
+  pageSize,
+  total,
+}: {
+  items: Array<{
+    organization: { id: string; name: string; slug: string; logo: string | null; createdAt: Date };
+    role: string;
+  }>;
+  page: number;
+  pageSize: number;
+  total: number;
+}): ListOrganizationsResponse {
+  return {
+    items: items.map((item) => ({
+      id: item.organization.id,
+      name: item.organization.name,
+      slug: item.organization.slug,
+      logo: item.organization.logo,
+      role: item.role === 'owner' ? 'owner' : 'member',
+      createdAt: item.organization.createdAt,
+    })),
+    pageInfo: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
+}
+
 const organizationMapper = {
   toInvitationResponse,
   toMemberResponse,
   toOrganizationResponse,
   toMembersResponse,
+  toSettingsResponse,
+  toListOrganizationsResponse,
 };
 
 export default organizationMapper;

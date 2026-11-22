@@ -49,6 +49,28 @@ async function createOrganization(request: Request, response: Response): Promise
   sendData(response, organizationSchema.createOrganizationResponse.parse(organization), 201);
 }
 
+async function listOrganizations(request: Request, response: Response): Promise<void> {
+  const query = organizationSchema.listOrganizationsQuery.parse(request.query);
+  const result = await organizationService.listOrganizations(request, query);
+
+  sendData(response, organizationSchema.listOrganizationsResponse.parse(result));
+}
+
+async function getSettings(request: Request, response: Response): Promise<void> {
+  const { organizationId } = organizationSchema.organizationParams.parse(request.params);
+  const result = await organizationService.getSettings(request, organizationId);
+
+  sendData(response, organizationSchema.organizationSettingsResponse.parse(result));
+}
+
+async function updateSettings(request: Request, response: Response): Promise<void> {
+  const { organizationId } = organizationSchema.organizationParams.parse(request.params);
+  const input = organizationSchema.updateOrganizationSettingsRequest.parse(request.body);
+  const result = await organizationService.updateSettings(request, organizationId, input);
+
+  sendData(response, organizationSchema.organizationSettingsResponse.parse(result));
+}
+
 async function deleteOrganization(request: Request, response: Response): Promise<void> {
   const { organizationId } = organizationSchema.organizationParams.parse(request.params);
   await organizationService.deleteOrganization(request, organizationId);
@@ -61,6 +83,9 @@ const organizationController = {
   respondToInvitation,
   listMembers,
   createOrganization,
+  listOrganizations,
+  getSettings,
+  updateSettings,
   deleteOrganization,
 };
 

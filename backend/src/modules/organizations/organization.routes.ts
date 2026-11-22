@@ -6,6 +6,7 @@ import organizationController from './organization.controller.js';
 
 const organizationRouter = Router();
 
+organizationRouter.get('/', asyncHandler(organizationController.listOrganizations));
 organizationRouter.post('/', asyncHandler(organizationController.createOrganization));
 organizationRouter.post(
   '/:organizationId/invitations',
@@ -33,6 +34,15 @@ organizationRouter.get(
   '/:organizationId/activities',
   requireOrganizationRole('owner', 'member'),
   asyncHandler(activityController.listOrganization),
+);
+
+organizationRouter.get(
+  '/:organizationId/settings',
+  asyncHandler(organizationController.getSettings),
+);
+organizationRouter.patch(
+  '/:organizationId/settings',
+  asyncHandler(organizationController.updateSettings),
 );
 
 export default organizationRouter;
