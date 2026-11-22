@@ -25,9 +25,16 @@ const initialState = {
 type UserTableProps = {
   users: User[];
   canViewEmail: boolean;
+  organizationId?: string;
+  organizationName?: string;
 };
 
-export function UserTable({ users, canViewEmail }: UserTableProps) {
+export function UserTable({
+  users,
+  canViewEmail,
+  organizationId,
+  organizationName,
+}: UserTableProps) {
   const columns = useMemo(() => createUserColumns(canViewEmail), [canViewEmail]);
   const [sorting, setSorting] = useState<SortingState>([{ id: 'joinedAt', desc: true }]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -78,6 +85,8 @@ export function UserTable({ users, canViewEmail }: UserTableProps) {
           column?.toggleSorting(column.getIsSorted() === 'asc');
           table.setPageIndex(0);
         }}
+        organizationId={organizationId}
+        organizationName={organizationName}
       />
       <div className="overflow-hidden rounded-md border border-slate-200">
         <Table className="min-w-120 border-collapse text-left text-sm">

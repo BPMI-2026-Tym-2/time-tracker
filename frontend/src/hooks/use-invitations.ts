@@ -1,45 +1,41 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createInvitation, fetchNotifications } from '@/lib/api/invitations';
+import { createInvitation, fetchNotifications, respondToInvitation } from '@/lib/api/invitations';
 import type {
   CreateInvitationRequest,
-  InvitationNotification,
   InvitationResponse,
   ListNotificationsResponse,
 } from '@time-tracker/shared';
 
-const FALLBACK_NOTIFICATIONS: InvitationNotification[] = [
-  {
-    id: 'inv-1',
-    type: 'organization-invitation',
-    organization: {
-      id: 'org-1',
-      name: 'Skupina 1',
-    },
-    createdAt: new Date(),
-    expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-  },
-];
-
 export function useNotifications() {
   const query = useQuery<ListNotificationsResponse, Error>({
     queryKey: ['notifications'],
-    queryFn: async () => {
-      try {
-        return await fetchNotifications();
-      } catch {
-        return { items: FALLBACK_NOTIFICATIONS };
-      }
-    },
+    queryFn: fetchNotifications,
   });
 
   return {
     notifications: query.data?.items ?? [],
     count: query.data?.items.length ?? 0,
     isLoading: query.isLoading,
+    error: query.error,
     refetch: query.refetch,
   };
+}
+
+export function useRespondToInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ invitationId, action }: { invitationId: string; action: 'accept' | 'reject' }) =>
+      respondToInvitation(invitationId, action),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+        queryClient.invalidateQueries({ queryKey: ['organizations'] }),
+      ]);
+    },
+  });
 }
 
 export function useCreateInvitation(organizationId: string) {

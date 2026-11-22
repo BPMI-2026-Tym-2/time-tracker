@@ -40,14 +40,14 @@ type OrganizationRecord = {
 };
 
 type OrganizationMemberRecord = {
-  userId: string;
+  id: string;
   role: string;
   createdAt: Date;
   user: {
     id: string;
     name: string;
-    surname?: string;
-    email: string;
+    surname: string;
+    email?: string;
   };
 };
 
@@ -65,10 +65,10 @@ function toMemberResponse({
   }
 
   return {
-    id: member.user.id,
+    id: member.id,
     name: member.user.name,
     surname: member.user.surname ?? '',
-    ...(includeEmail && { email: member.user.email }),
+    ...(includeEmail && member.user.email ? { email: member.user.email } : {}),
     role: parsedRole.data,
     joinedAt: member.createdAt,
   };

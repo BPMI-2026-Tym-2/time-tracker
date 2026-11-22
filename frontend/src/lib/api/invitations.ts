@@ -68,3 +68,14 @@ export async function fetchNotifications(): Promise<ListNotificationsResponse> {
   const json = await response.json();
   return notificationSchema.listResponse.parse(json.data ?? json);
 }
+
+export async function respondToInvitation(invitationId: string, action: 'accept' | 'reject') {
+  const response = await fetch(
+    `${API_BASE_URL}/api/organizations/invitations/${encodeURIComponent(invitationId)}/${action}`,
+    { method: 'POST', credentials: 'include' },
+  );
+
+  if (!response.ok) {
+    throw new ApiError(await extractErrorMessage(response), response.status);
+  }
+}

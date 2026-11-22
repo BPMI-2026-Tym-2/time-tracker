@@ -12,7 +12,7 @@ import type { AccessControl } from 'better-auth/plugins/access';
 export const authCorsConfig = {
   origin: env.corsOrigin,
   headers: 'Content-Type, Authorization',
-  methods: 'GET, POST, PUT, DELETE, OPTIONS',
+  methods: 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   credentials: 'true',
 } as const;
 
