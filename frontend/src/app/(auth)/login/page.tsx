@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     async function initializeOneTap() {
-      await authClient.oneTap();
+      await authClient.oneTap({ callbackURL: '/overview' });
     }
 
     void initializeOneTap();

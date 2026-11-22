@@ -2,39 +2,50 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, LayoutGrid, Tag } from 'lucide-react';
+import { BookOpen, Info, Settings, UserRound, Users } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { href: '/', label: 'Přehled', icon: Home, matchExact: true },
-  { href: '/groups', label: 'Skupiny', icon: Users, matchExact: false },
-  { href: '/categories', label: 'Kategorie', icon: LayoutGrid, matchExact: false },
-  { href: '/tags', label: 'Tagy', icon: Tag, matchExact: false },
+const mainLinks = [
+  { href: '/overview', label: 'Přehled', icon: BookOpen },
+  { href: '/groups', label: 'Skupiny', icon: Users },
+  { href: '/myaccount', label: 'Můj účet', icon: UserRound },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const groupPath = pathname.match(/^\/groups\/[^/]+/)?.[0];
+  const links = groupPath
+    ? [
+        ...mainLinks,
+        { href: groupPath, label: 'Detail skupiny', icon: Info },
+        { href: `${groupPath}/settings`, label: 'Nastavení', icon: Settings },
+      ]
+    : mainLinks;
 
   return (
-    <aside className="hidden w-56 shrink-0 pt-8 pr-6 pl-6 md:block">
-      <nav className="space-y-3">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive = item.matchExact
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+    <aside className="border-b border-[#e8e2d6] bg-[#f9f6ef] px-4 py-3 md:w-56 md:shrink-0 md:border-r md:border-b-0 md:p-5">
+      <nav
+        aria-label="Hlavní navigace"
+        className="flex flex-wrap gap-1.5 md:flex-col md:items-stretch"
+      >
+        {links.map(({ href, label, icon: Icon }) => {
+          const isActive = pathname === href;
+          const isGroupSection = href === '/groups' && Boolean(groupPath);
 
           return (
             <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3.5 px-4 py-2.5 text-base font-semibold transition-colors ${
+              key={href}
+              href={href}
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors md:gap-3 md:px-4 md:py-2.5 ${
                 isActive
-                  ? 'rounded-2xl bg-[#163820] text-white shadow-xs'
-                  : 'text-[#163820] hover:opacity-80'
+                  ? 'bg-[#163820] text-white'
+                  : isGroupSection
+                    ? 'bg-[#e9efe4] text-[#163820] hover:bg-[#dce7d7]'
+                    : 'text-[#163820] hover:bg-[#eee9df]'
               }`}
             >
-              <Icon className="size-5 stroke-[2]" />
-              <span>{item.label}</span>
+              <Icon aria-hidden="true" className="size-4 shrink-0" />
+              {label}
             </Link>
           );
         })}

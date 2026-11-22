@@ -52,7 +52,7 @@ export function useRegister() {
       return result.data;
     },
     onSuccess: () => {
-      router.replace('/');
+      router.replace('/overview');
     },
   });
 

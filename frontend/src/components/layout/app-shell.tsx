@@ -11,14 +11,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
-  if (isAuthRoute) {
+  if (pathname === '/' || isAuthRoute) {
     return <>{children}</>;
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <AppHeader />
-      <div className="flex flex-1">
+      <div className="flex flex-1 flex-col md:flex-row">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">{children}</div>
       </div>

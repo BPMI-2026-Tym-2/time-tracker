@@ -50,7 +50,7 @@ export function useLogin() {
       return result.data;
     },
     onSuccess: () => {
-      router.replace('/');
+      router.replace('/overview');
     },
   });
 
@@ -62,7 +62,7 @@ export function useLogin() {
       try {
         result = await authClient.signIn.social({
           provider: 'google',
-          callbackURL: `${frontendUrl}/`,
+          callbackURL: `${frontendUrl}/overview`,
           errorCallbackURL: `${frontendUrl}/login`,
         });
       } catch {

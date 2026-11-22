@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useOrganization } from '@/hooks/use-organization';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Recorder } from '@/components/features/activities/recorder';
 
 const roleLabels = { owner: 'Vlastník', member: 'Člen' } as const;
 
@@ -42,7 +43,7 @@ export function GroupDetail({ groupId }: { groupId: string }) {
         </Button>
       </div>
 
-      <dl className="grid gap-4 text-sm sm:grid-cols-2">
+      <dl className="border-border bg-card grid gap-4 rounded-2xl border p-5 text-sm shadow-xs sm:grid-cols-2">
         <div>
           <dt className="text-muted-foreground">Vlastník</dt>
           <dd className="font-medium">
@@ -70,6 +71,7 @@ export function GroupDetail({ groupId }: { groupId: string }) {
           <dd className="font-medium">{data.tags.length > 0 ? data.tags.join(', ') : '—'}</dd>
         </div>
       </dl>
+      {data.currentUserRole ? <Recorder organizationId={groupId} /> : null}
     </div>
   );
 }
