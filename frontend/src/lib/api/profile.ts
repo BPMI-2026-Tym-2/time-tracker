@@ -30,8 +30,9 @@ export async function getProfile(signal: AbortSignal): Promise<Profile> {
     throw new Error('NEXT_PUBLIC_API_URL is not configured.');
   }
 
-  const response = await fetch(`${apiUrl.replace(/\/+$/, '')}/users/me`, {
+  const response = await fetch(`${apiUrl.replace(/\/+$/, '')}/api/users/profile`, {
     signal,
+    credentials: 'include',
   });
 
   if (!response.ok) {

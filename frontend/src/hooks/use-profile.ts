@@ -28,9 +28,7 @@ export function useProfile(): UseProfileResult {
       } catch (caughtError) {
         if (isActive && !controller.signal.aborted) {
           setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : 'Nepodařilo se načíst profil.',
+            caughtError instanceof Error ? caughtError.message : 'Nepodařilo se načíst profil.',
           );
         }
       } finally {

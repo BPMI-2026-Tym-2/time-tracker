@@ -27,6 +27,17 @@ npm run test:db
 Test vytvoří task v transakci, načte ho, ověří jeho hodnoty a následně ho
 smaže. Jinou databázi lze zadat přes `TEST_DATABASE_URL`.
 
+## Test seznamu členů skupiny
+
+Test služby pro seznam členů skupiny (scénář Tereza/Adam/Klára) také vyžaduje
+běžící MongoDB replica set se synchronizovaným schématem. Databáze se bere
+z `DATABASE_URL` (jinak z `backend/.env`); testovací data po sobě smaže.
+
+```sh
+npm run db:up
+node --import tsx --test tests/group-members.test.ts
+```
+
 ## Kam přidávat testy
 
 - databázové testy patří do `tests/`,
@@ -36,3 +47,15 @@ smaže. Jinou databázi lze zadat přes `TEST_DATABASE_URL`.
 
 Pokud test vyžaduje MongoDB, musí to být v jeho názvu nebo dokumentaci
 zřejmé. Kontroly lint, formátování, typecheck a build databázi nepotřebují.
+
+## Test registrace
+
+Test kontrol registrace. HTTP testy volají přímo `POST /api/auth/sign-up/email`
+(existující e-mail vrátí 409, prázdné pole 400, obojí s českou hláškou).
+Vyžadují běžící MongoDB replica set a vyplněný `backend/.env` podle
+`backend/.env.example` (včetně `BETTER_AUTH_*` a `GOOGLE_*`):
+
+```sh
+npm run db:up
+npm run test:registration
+```

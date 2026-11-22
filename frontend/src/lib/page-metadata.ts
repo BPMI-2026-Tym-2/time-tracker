@@ -6,8 +6,11 @@ const metadataByRoute = {
     description: 'Track your time and tasks efficiently with Time Tracker.',
   },
   '/profile': {
-    title: 'My account | Time Tracker',
+    title: 'Profil | Time Tracker',
     description: 'View your Time Tracker profile.',
+  },
+  '/users': {
+    title: 'Seznam uživatelů | Time Tracker',
   },
 } satisfies Record<string, Metadata>;
 

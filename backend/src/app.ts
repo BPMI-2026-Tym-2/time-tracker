@@ -1,17 +1,32 @@
 import express from 'express';
 import { errorHandler } from './shared/errors/error-handler.js';
 import { corsMiddleware } from './shared/http/cors.js';
-import { authRouter } from './modules/auth/auth.routes.js';
-import { taskRouter } from './modules/tasks/task.routes.js';
+import organizationRouter from './modules/organizations/organization.routes.js';
 import { userRouter } from './modules/users/user.routes.js';
+import { requireAuth } from './shared/auth/require-auth.js';
+import { notificationRouter } from './modules/notifications/notification.routes.js';
+import authRouter from './modules/auth/auth.routes.js';
 
 const app = express();
-app.use(express.json());
-app.use(corsMiddleware);
+const apiRouter = express.Router();
 
-app.use('/auth', authRouter);
-app.use('/tasks', taskRouter);
-app.use('/users', userRouter);
-app.use(errorHandler);
+// Přidání /api prefixu pro všechny endpointy
+app.use('/api', apiRouter);
+
+// Tyto endpoity jsou veřejné a nevyžadují autentizaci
+apiRouter.use(corsMiddleware);
+apiRouter.use('/auth', authRouter);
+apiRouter.use(express.json());
+
+// Od tohoto momentu endpointy vyžadují autentizaci (uživatel musí být přihlášen)
+apiRouter.use(requireAuth);
+apiRouter.use('/organizations', organizationRouter);
+apiRouter.use('/users', userRouter);
+apiRouter.use('/notifications', notificationRouter);
+
+// Pro přístup k tomuto endpointu je vyžadována role 'admin'
+//* apiRouter.get('/admin', requireRole('admin'), asyncHandler(adminController));
+
+apiRouter.use(errorHandler);
 
 export { app };

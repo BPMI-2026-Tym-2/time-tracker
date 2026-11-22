@@ -1,6 +1,6 @@
 'use client';
 
-import { ProfileDetails } from '@/components/features/account/profile-details';
+import { ProfileDetails } from '@/components/features/profile/profile-details';
 import { useProfile } from '@/hooks/use-profile';
 
 export default function MyAccountPage() {
