@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { fromNodeHeaders } from 'better-auth/node';
 import { isAPIError } from 'better-auth/api';
 import type { Request } from 'express';
@@ -10,8 +11,11 @@ import type {
   CreateOrganizationResponse,
   ListOrganizationMembersQuery,
   ListOrganizationMembersResponse,
+  OrganizationDetailResponse,
 } from '@time-tracker/shared';
+import type { RequestingUser } from '../../shared/auth/types.js';
 import organizationMapper from './organization.mapper.js';
+import organizationRepository from './organization.repository.js';
 
 function respondToInvitation(
   request: Request,
@@ -60,11 +64,17 @@ async function createOrganization(
 ): Promise<CreateOrganizationResponse> {
   const organization = await auth.api.createOrganization({
     headers: fromNodeHeaders(request.headers),
-    body: input,
+    body: {
+      name: input.name,
+      slug: randomUUID(),
+      description: input.description,
+      categories: input.categories,
+      tags: input.tags,
+    },
   });
 
   if (!organization) {
-    throw new AppError('Organizaci se nepodařilo vytvořit', 500);
+    throw new AppError('Skupinu se nepodařilo vytvořit', 500);
   }
 
   return organizationMapper.toOrganizationResponse(organization);
@@ -135,10 +145,31 @@ async function deleteOrganization(request: Request, organizationId: string): Pro
   }
 }
 
+async function getOrganization(
+  requestingUser: RequestingUser,
+  organizationId: string,
+): Promise<OrganizationDetailResponse> {
+  const detail = await organizationRepository.findOrganizationDetailById(
+    organizationId,
+    requestingUser.id,
+  );
+
+  if (!detail) {
+    throw new AppError('Skupina nebyla nalezena', 404);
+  }
+
+  if (!detail.currentUserRole && !requestingUser.roles.includes('admin')) {
+    throw new AppError('Nemáte dostatečná oprávnění v této organizaci!', 403);
+  }
+
+  return organizationMapper.toOrganizationDetailResponse(detail);
+}
+
 const organizationService = {
   createInvitation,
   respondToInvitation,
   createOrganization,
+  getOrganization,
   listMembers,
   deleteOrganization,
 };

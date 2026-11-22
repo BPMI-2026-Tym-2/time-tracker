@@ -18,6 +18,7 @@ organizationRouter.post(
   '/invitations/:invitationId/reject',
   asyncHandler(organizationController.respondToInvitation('reject')),
 );
+organizationRouter.get('/:organizationId', asyncHandler(organizationController.getOrganization));
 organizationRouter.delete(
   '/:organizationId',
   requireOrganizationRole('owner'),
