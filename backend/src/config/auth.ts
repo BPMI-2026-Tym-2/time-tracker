@@ -6,6 +6,7 @@ import { createAuthMiddleware, APIError } from 'better-auth/api';
 import { admin, oneTap, organization } from 'better-auth/plugins';
 import { ac, admin as adminRole, owner, member, user } from '@time-tracker/shared';
 import authService from '../modules/auth/auth.service.js';
+import { organizationHooks } from '../modules/organizations/organization.hooks.js';
 import type { AccessControl } from 'better-auth/plugins/access';
 
 export const authCorsConfig = {
@@ -57,6 +58,7 @@ export const auth = betterAuth({
       creatorRole: 'owner',
       allowUserToCreateOrganization: true,
       cancelPendingInvitationsOnReInvite: true,
+      organizationHooks,
     }),
   ],
   user: {

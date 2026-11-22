@@ -191,6 +191,30 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
     assert.equal(await prisma.member.count({ where: { organizationId, userId: users[3].id } }), 0);
   });
 
+  test('existing member cannot accept again; invitation is closed as accepted', async () => {
+    // Owner cannot invite an existing member, so the pending invitation is created directly.
+    const invitation = await prisma.invitation.create({
+      data: {
+        id: randomUUID(),
+        email: users[1].email,
+        inviterId: users[0].id,
+        organizationId,
+        role: 'member',
+        status: 'pending',
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+    const response = await request(`/organizations/invitations/${invitation.id}/accept`, 1, {});
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).message, 'Jste již členem této skupiny.');
+    assert.equal(
+      (await prisma.invitation.findUniqueOrThrow({ where: { id: invitation.id } })).status,
+      'accepted',
+    );
+    assert.equal(await prisma.member.count({ where: { organizationId, userId: users[1].id } }), 1);
+  });
+
   test('unverified accounts cannot enumerate invitations', async () => {
     assert.equal((await invite(users[4].email)).status, 201);
     assert.equal((await request('/notifications', 4)).status, 403);
