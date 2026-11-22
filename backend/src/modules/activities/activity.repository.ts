@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import type { ListActivitiesQuery } from '@time-tracker/shared';
+import type { CreateActivityInput, ListActivitiesQuery } from '@time-tracker/shared';
 import { prisma } from '../../db/prisma.js';
 
 export type ActivityRecorder = { userId: string } | { organizationId: string };
@@ -41,4 +41,10 @@ async function hasActivities(recorder: ActivityRecorder): Promise<boolean> {
   return activity !== null;
 }
 
-export const activityRepository = { findActivities, hasActivities };
+function createActivity(input: CreateActivityInput, userId: string, organizationId?: string) {
+  return prisma.activity.create({
+    data: { ...input, userId, organizationId },
+  });
+}
+
+export const activityRepository = { findActivities, hasActivities, createActivity };

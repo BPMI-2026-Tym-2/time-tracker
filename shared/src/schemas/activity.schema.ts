@@ -16,6 +16,17 @@ const listQuery = z
     message: 'Konec období musí být po jeho začátku',
   });
 
+const createRequest = z
+  .strictObject({
+    name: z.string().trim().min(1, 'Zadejte název aktivity.').max(200),
+    startedAt: dateTime,
+    endedAt: dateTime,
+  })
+  .refine(({ startedAt, endedAt }) => startedAt < endedAt, {
+    path: ['endedAt'],
+    message: 'Konec aktivity musí být po jejím začátku.',
+  });
+
 const activityResponse = z.object({
   id,
   name: z.string(),
@@ -30,8 +41,10 @@ const listResponse = z.object({
   hasActivities: z.boolean(),
 });
 
-export const activitySchema = { listQuery, activityResponse, listResponse };
+export const activitySchema = { listQuery, createRequest, activityResponse, listResponse };
 
+export type CreateActivityRequest = z.input<typeof createRequest>;
+export type CreateActivityInput = z.output<typeof createRequest>;
 export type ActivityResponse = z.infer<typeof activityResponse>;
 export type ListActivitiesQuery = z.infer<typeof listQuery>;
 export type ListActivitiesResponse = z.infer<typeof listResponse>;

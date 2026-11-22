@@ -9,7 +9,7 @@ import { app } from '../backend/src/app.js';
 import { env } from '../backend/src/config/env.js';
 import { prisma } from '../backend/src/db/prisma.js';
 
-describe('Zobrazení záznamníku (MongoDB)', () => {
+describe('Zobrazení záznamníku a přidání aktivity (MongoDB)', () => {
   const runId = randomUUID();
   const emails = [`member.${runId}@example.com`, `outsider.${runId}@example.com`];
   const organizationId = randomUUID();
@@ -42,6 +42,17 @@ describe('Zobrazení záznamníku (MongoDB)', () => {
     const response = await fetch(baseURL + path, { headers: { Cookie: cookie } });
     assert.equal(response.status, 200);
     return activitySchema.listResponse.parse(await response.json());
+  }
+
+  function createActivity(path: string, body: object, cookie?: string) {
+    return fetch(baseURL + path, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cookie && { Cookie: cookie }),
+      },
+      body: JSON.stringify(body),
+    });
   }
 
   before(async () => {
@@ -155,5 +166,45 @@ describe('Zobrazení záznamníku (MongoDB)', () => {
         .status,
       400,
     );
+  });
+
+  const interval = {
+    name: '  Plánování  ',
+    startedAt: '2026-11-23T09:00:00+01:00',
+    endedAt: '2026-11-23T10:00:00+01:00',
+  };
+
+  test('uloží osobní i skupinovou aktivitu do správného záznamníku', async () => {
+    const filters = '?from=2026-11-23T00:00:00Z&to=2026-11-30T00:00:00Z';
+    const personal = await createActivity(personalPath, interval, memberCookie);
+    assert.equal(personal.status, 201);
+    const saved = activitySchema.activityResponse.parse(await personal.json());
+    assert.equal(saved.name, 'Plánování');
+    assert.equal(saved.startedAt.toISOString(), '2026-11-23T08:00:00.000Z');
+    assert.deepEqual((await readRecorder(personalPath + filters)).items, [saved]);
+    assert.deepEqual((await readRecorder(personalPath + filters, outsiderCookie)).items, []);
+    assert.deepEqual((await readRecorder(groupPath + filters)).items, []);
+
+    const group = await createActivity(groupPath, { ...interval, name: 'Porada' }, memberCookie);
+    assert.equal(group.status, 201);
+    const savedGroup = activitySchema.activityResponse.parse(await group.json());
+    assert.deepEqual((await readRecorder(groupPath + filters)).items, [savedGroup]);
+    assert.deepEqual((await readRecorder(personalPath + filters)).items, [saved]);
+  });
+
+  test('odmítne nepřihlášené uživatele, nečleny a neplatné aktivity', async () => {
+    assert.equal((await createActivity(personalPath, interval)).status, 401);
+    assert.equal((await createActivity(groupPath, interval, outsiderCookie)).status, 403);
+
+    const count = await prisma.activity.count({ where: { userId: userIds[0] } });
+    for (const body of [
+      { ...interval, endedAt: interval.startedAt },
+      { ...interval, name: ' ' },
+      { ...interval, userId: userIds[1] },
+      { ...interval, organizationId: otherOrganizationId },
+    ]) {
+      assert.equal((await createActivity(personalPath, body, memberCookie)).status, 400);
+    }
+    assert.equal(await prisma.activity.count({ where: { userId: userIds[0] } }), count);
   });
 });

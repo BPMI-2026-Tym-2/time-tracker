@@ -14,6 +14,15 @@ Oba endpointy přijímají volitelné parametry:
 
 Odpověď `200` obsahuje `items` s aktivitami seřazenými od nejdřívějšího začátku. Každá aktivita má `id`, `name`, `startedAt`, `endedAt`, `categoryIds` a `tagIds`. Příznak `hasActivities` označuje, zda záznamník obsahuje nějaké aktivity bez ohledu na zvolené období a filtry. Při prázdném záznamníku vrací API `{"items":[],"hasActivities":false}`.
 
+### Přidání aktivity
+
+- `POST /api/users/activities` uloží aktivitu do vlastního záznamníku.
+- `POST /api/organizations/:organizationId/activities` uloží aktivitu přímo do záznamníku vybrané skupiny. Přístup má zakladatel nebo člen skupiny.
+
+JSON požadavek obsahuje `name` (1 až 200 znaků po oříznutí), `startedAt` a
+`endedAt` (ISO 8601 s časovou zónou). Konec musí být po začátku. Odpověď `201`
+obsahuje uloženou aktivitu ve stejném formátu jako položka seznamu.
+
 ## Tasks
 
 ### `POST /tasks`

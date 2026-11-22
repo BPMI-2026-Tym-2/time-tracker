@@ -27,4 +27,35 @@ async function listOrganization(request: Request, response: Response): Promise<v
   sendData(response, activitySchema.listResponse.parse(result));
 }
 
-export const activityController = { listPersonal, listOrganization };
+async function createActivity(
+  request: Request,
+  response: Response,
+  organizationId?: string,
+): Promise<void> {
+  if (!request.user) {
+    throw new AppError('Platnost přihlášení vypršela. Přihlaste se prosím znovu', 401);
+  }
+
+  const input = activitySchema.createRequest.parse(request.body);
+  const result = await activityService.createActivity(input, request.user.id, organizationId);
+  sendData(response, activitySchema.activityResponse.parse(result), 201);
+}
+
+async function createPersonal(request: Request, response: Response): Promise<void> {
+  await createActivity(request, response);
+}
+
+async function createOrganization(request: Request, response: Response): Promise<void> {
+  if (!request.organization) {
+    throw new AppError('Nemáte dostatečná oprávnění v této organizaci!', 403);
+  }
+
+  await createActivity(request, response, request.organization.id);
+}
+
+export const activityController = {
+  listPersonal,
+  listOrganization,
+  createPersonal,
+  createOrganization,
+};

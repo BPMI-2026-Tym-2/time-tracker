@@ -8,4 +8,5 @@ export const userRouter = Router();
 userRouter.get('/profile', asyncHandler(userController.getProfile));
 userRouter.put('/profile', asyncHandler(userController.updateProfile));
 userRouter.get('/activities', asyncHandler(activityController.listPersonal));
+userRouter.post('/activities', asyncHandler(activityController.createPersonal));
 userRouter.delete('/:userId', asyncHandler(userController.deleteUser));

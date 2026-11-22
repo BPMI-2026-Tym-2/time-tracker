@@ -36,6 +36,11 @@ organizationRouter.get(
   requireOrganizationRole('owner', 'member'),
   asyncHandler(activityController.listOrganization),
 );
+organizationRouter.post(
+  '/:organizationId/activities',
+  requireOrganizationRole('owner', 'member'),
+  asyncHandler(activityController.createOrganization),
+);
 
 organizationRouter.get(
   '/:organizationId/settings',

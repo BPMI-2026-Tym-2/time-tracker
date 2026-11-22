@@ -1,4 +1,9 @@
-import type { ListActivitiesQuery, ListActivitiesResponse } from '@time-tracker/shared';
+import type {
+  ActivityResponse,
+  CreateActivityInput,
+  ListActivitiesQuery,
+  ListActivitiesResponse,
+} from '@time-tracker/shared';
 import { activityMapper } from './activity.mapper.js';
 import { activityRepository, type ActivityRecorder } from './activity.repository.js';
 
@@ -16,4 +21,13 @@ async function listActivities(
   };
 }
 
-export const activityService = { listActivities };
+async function createActivity(
+  input: CreateActivityInput,
+  userId: string,
+  organizationId?: string,
+): Promise<ActivityResponse> {
+  const activity = await activityRepository.createActivity(input, userId, organizationId);
+  return activityMapper.toActivityResponse(activity);
+}
+
+export const activityService = { listActivities, createActivity };
