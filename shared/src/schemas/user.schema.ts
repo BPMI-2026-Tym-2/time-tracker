@@ -17,8 +17,11 @@ const deleteResponse = z.object({
   message: z.enum(['Váš účet byl odstraněn', 'Účet byl odstraněn.']),
 });
 
-const profileResponse = userResponseSchema.extend({
-  hasPassword: z.boolean(),
+const profileResponse = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.email(),
+  photoUrl: z.string().nullable(),
 });
 
 const PROFILE_NAME_MAX_LENGTH = 50;

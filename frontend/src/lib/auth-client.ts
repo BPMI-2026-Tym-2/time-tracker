@@ -9,7 +9,8 @@ import {
 import { publicEnv } from '@/lib/env';
 
 export const authClient = createAuthClient({
-  baseURL: `${publicEnv.apiUrl}/api/auth`,
+  baseURL: `${publicEnv.apiUrl}`,
+  basePath: '/api/auth',
   plugins: [
     adminClient(),
     inferAdditionalFields({

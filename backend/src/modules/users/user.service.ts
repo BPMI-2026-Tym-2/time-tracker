@@ -11,7 +11,7 @@ export type UserService = {
 };
 
 async function getProfile(userId: string): Promise<UserProfile> {
-  const [user, hasPassword] = await Promise.all([
+  const [user] = await Promise.all([
     userRepository.findUserById(userId),
     userRepository.hasCredentialAccount(userId),
   ]);
@@ -20,7 +20,7 @@ async function getProfile(userId: string): Promise<UserProfile> {
     throw new AppError('Údaje profilu se nepodařilo načíst.', 404);
   }
 
-  return toUserProfile(user, hasPassword);
+  return toUserProfile(user);
 }
 
 async function updateProfile(userId: string, data: UpdateProfileBody): Promise<UserProfile> {
