@@ -12,6 +12,8 @@ Oba endpointy přijímají volitelné parametry:
 - `from` a `to` jsou časové hranice v ISO 8601 s časovou zónou. Vrací se aktivity, které zasahují do zadaného období. Pokud jsou zadané obě hranice, musí být `from` menší než `to`.
 - `categoryId` a `tagId` lze zadat opakovaně. Aktivita musí odpovídat alespoň jedné vybrané kategorii a alespoň jednomu vybranému štítku, pokud jsou oba filtry zadané.
 
+Okrajové mezery v ID filtrů se oříznou. Prázdné ID nebo neznámý parametr vrátí `400`.
+
 Odpověď `200` obsahuje `items` s aktivitami seřazenými od nejdřívějšího začátku. Každá aktivita má `id`, `name`, `startedAt`, `endedAt`, `categoryIds` a `tagIds`. Příznak `hasActivities` označuje, zda záznamník obsahuje nějaké aktivity bez ohledu na zvolené období a filtry. Při prázdném záznamníku vrací API `{"items":[],"hasActivities":false}`.
 
 ## Tasks

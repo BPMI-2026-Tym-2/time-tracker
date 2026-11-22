@@ -1,11 +1,14 @@
 import { z } from 'zod';
 
 const id = z.string().min(1);
-const filterIds = z.union([id, z.array(id).min(1)]).transform((value) => [value].flat());
+const filterId = z.string().trim().min(1);
+const filterIds = z
+  .union([filterId, z.array(filterId).min(1)])
+  .transform((value) => [value].flat());
 const dateTime = z.iso.datetime({ offset: true }).pipe(z.coerce.date());
 
 const listQuery = z
-  .object({
+  .strictObject({
     from: dateTime.optional(),
     to: dateTime.optional(),
     categoryId: filterIds.optional(),

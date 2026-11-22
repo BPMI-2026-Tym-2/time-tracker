@@ -11,7 +11,6 @@ import { prisma } from '../backend/src/db/prisma.js';
 
 describe('Zobrazení záznamníku (MongoDB)', () => {
   const runId = randomUUID();
-  const emails = [`member.${runId}@example.com`, `outsider.${runId}@example.com`];
   const organizationId = randomUUID();
   const emptyOrganizationId = randomUUID();
   const otherOrganizationId = randomUUID();
@@ -21,6 +20,7 @@ describe('Zobrazení záznamníku (MongoDB)', () => {
   let server: Server | undefined;
   let baseURL: string;
   let memberCookie: string;
+  let ownerCookie: string;
   let outsiderCookie: string;
   const userIds: string[] = [];
 
@@ -49,21 +49,22 @@ describe('Zobrazení záznamníku (MongoDB)', () => {
     await once(server, 'listening');
     baseURL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 
-    const member = await signUp(emails[0]);
-    const outsider = await signUp(emails[1]);
+    const member = await signUp(`member.${runId}@example.com`);
+    const owner = await signUp(`owner.${runId}@example.com`);
+    const outsider = await signUp(`outsider.${runId}@example.com`);
     memberCookie = member.cookie;
+    ownerCookie = owner.cookie;
     outsiderCookie = outsider.cookie;
 
     await prisma.organization.createMany({
       data: organizationIds.map((id) => ({ id, name: id, slug: id, createdAt: new Date() })),
     });
     await prisma.member.createMany({
-      data: [organizationId, emptyOrganizationId].map((id) => ({
-        id: randomUUID(),
-        userId: member.userId,
-        organizationId: id,
-        createdAt: new Date(),
-      })),
+      data: [
+        { userId: member.userId, organizationId, role: 'member' },
+        { userId: member.userId, organizationId: emptyOrganizationId, role: 'member' },
+        { userId: owner.userId, organizationId, role: 'owner' },
+      ].map((membership) => ({ ...membership, id: randomUUID(), createdAt: new Date() })),
     });
 
     const activity = {
@@ -122,10 +123,11 @@ describe('Zobrazení záznamníku (MongoDB)', () => {
       ['Shared', 'Group'],
     );
     assert.equal(group.hasActivities, true);
+    assert.deepEqual(await readRecorder(groupPath, ownerCookie), group);
   });
 
   test('období, kategorie a štítky se filtrují společně a prázdný výsledek zachová stav záznamníku', async () => {
-    const filters = '&categoryId=other&categoryId=work&tagId=planning';
+    const filters = '&categoryId=other&categoryId=%20work%20&tagId=planning';
     const overlap = await readRecorder(
       `${groupPath}?from=2026-11-16T09:00:00Z&to=2026-11-16T09:30:00Z${filters}`,
     );
@@ -137,23 +139,40 @@ describe('Zobrazení záznamníku (MongoDB)', () => {
       items: [],
       hasActivities: true,
     });
+    assert.deepEqual(await readRecorder(`${groupPath}?categoryId=work&tagId=other`), {
+      items: [],
+      hasActivities: true,
+    });
     assert.deepEqual(await readRecorder(`/api/organizations/${emptyOrganizationId}/activities`), {
       items: [],
       hasActivities: false,
     });
   });
 
-  test('nepřihlášený uživatel ani nečlen skupiny nemají přístup a nesprávné období je odmítnuto', async () => {
+  test('nepřihlášený uživatel ani nečlen skupiny nemají přístup', async () => {
     assert.equal((await fetch(baseURL + personalPath)).status, 401);
+    assert.equal((await fetch(baseURL + groupPath)).status, 401);
     assert.equal(
       (await fetch(baseURL + groupPath, { headers: { Cookie: outsiderCookie } })).status,
       403,
     );
-    const invalidRange = '?from=2026-11-17T00:00:00Z&to=2026-11-16T00:00:00Z';
-    assert.equal(
-      (await fetch(baseURL + groupPath + invalidRange, { headers: { Cookie: memberCookie } }))
-        .status,
-      400,
-    );
+  });
+
+  test('záznamník odmítne neplatné filtry', async () => {
+    const invalidQueries = [
+      'categoryIds=work',
+      'tagIds=planning',
+      'categoryId=%20',
+      'tagId=planning&tagId=%20',
+      'from=2026-11-17T00:00:00Z&to=2026-11-16T00:00:00Z',
+      'from=2026-11-16T00:00:00Z&to=2026-11-16T00:00:00Z',
+      'from=2026-11-16T00:00:00',
+    ];
+    for (const query of invalidQueries) {
+      const response = await fetch(`${baseURL}${groupPath}?${query}`, {
+        headers: { Cookie: memberCookie },
+      });
+      assert.equal(response.status, 400, query);
+    }
   });
 });
