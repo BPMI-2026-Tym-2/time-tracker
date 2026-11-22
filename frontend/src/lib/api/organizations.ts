@@ -2,6 +2,8 @@ import {
   organizationSchema,
   type ListOrganizationsQuery,
   type ListOrganizationsResponse,
+  type OrganizationSettingsResponse,
+  type UpdateOrganizationSettingsRequest,
 } from '@time-tracker/shared';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -59,4 +61,58 @@ export async function fetchOrganizations(
 
   const json = await response.json();
   return organizationSchema.listOrganizationsResponse.parse(json.data ?? json);
+}
+
+export async function fetchOrganizationSettings(
+  organizationId: string,
+): Promise<OrganizationSettingsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/settings`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
+  }
+
+  const json = await response.json();
+  return organizationSchema.organizationSettingsResponse.parse(json.data ?? json);
+}
+
+export async function updateOrganizationSettings(
+  organizationId: string,
+  body: UpdateOrganizationSettingsRequest,
+): Promise<OrganizationSettingsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}/settings`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
+  }
+
+  const json = await response.json();
+  return organizationSchema.organizationSettingsResponse.parse(json.data ?? json);
+}
+
+export async function deleteOrganization(organizationId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/organizations/${organizationId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
+  }
 }

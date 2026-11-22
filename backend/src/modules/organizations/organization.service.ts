@@ -3,7 +3,6 @@ import { isAPIError } from 'better-auth/api';
 import type { Prisma } from '@prisma/client';
 import type { Request } from 'express';
 import { auth } from '../../config/auth.js';
-import { prisma } from '../../db/prisma.js';
 import { AppError } from '../../shared/errors/app-error.js';
 import type {
   CreateOrganizationRequest,
@@ -18,6 +17,7 @@ import type {
   ListOrganizationsResponse,
 } from '@time-tracker/shared';
 import organizationMapper from './organization.mapper.js';
+import organizationRepository from './organization.repository.js';
 
 function respondToInvitation(
   request: Request,
@@ -166,16 +166,13 @@ async function listOrganizations(
   const take = query.pageSize;
 
   const [members, total] = await Promise.all([
-    prisma.member.findMany({
+    organizationRepository.findUserOrganizations({
       where,
-      include: {
-        organization: true,
-      },
       orderBy,
       skip,
       take,
     }),
-    prisma.member.count({ where }),
+    organizationRepository.countUserOrganizations(where),
   ]);
 
   return organizationMapper.toListOrganizationsResponse({
@@ -205,37 +202,22 @@ async function getSettings(
     throw error;
   }
 
-  const organization = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { id: true, name: true, slug: true },
-  });
+  const organization = await organizationRepository.findOrganizationById(organizationId);
 
   if (!organization) {
     throw new AppError('Skupina nebyla nalezena', 404);
   }
 
-  const ownerMember = await prisma.member.findFirst({
-    where: {
-      organizationId,
-      role: 'owner',
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          surname: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'asc' },
-  });
+  const owner = await organizationRepository.findOrganizationOwner(organizationId);
+
+  if (!owner) {
+    throw new AppError('Vlastník skupiny nebyl nalezen', 404);
+  }
 
   return organizationMapper.toSettingsResponse({
     organization,
-    owner: ownerMember?.user ?? null,
+    owner,
     currentUserRole: memberRoleResult?.role ?? null,
-    invitationCode: organization.slug,
   });
 }
 
@@ -263,9 +245,9 @@ async function updateSettings(
     throw new AppError('K úpravě nastavení nemáte oprávnění', 403);
   }
 
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { name: input.name },
+  await organizationRepository.updateOrganizationSettings(organizationId, {
+    name: input.name,
+    description: input.description,
   });
 
   return getSettings(request, organizationId);

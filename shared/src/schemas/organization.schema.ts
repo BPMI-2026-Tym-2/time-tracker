@@ -71,15 +71,13 @@ const invitationResponse = z.object({
 const organizationSettingsResponse = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  description: z.string().nullable().optional(),
   slug: z.string(),
-  invitationCode: z.string(),
-  owner: z
-    .object({
-      id: z.string().min(1),
-      name: z.string(),
-      surname: z.string(),
-    })
-    .nullable(),
+  owner: z.object({
+    id: z.string().min(1),
+    name: z.string(),
+    surname: z.string(),
+  }),
   currentUserRole: role.nullable(),
   permissions: z.object({
     canEdit: z.boolean(),
@@ -89,6 +87,7 @@ const organizationSettingsResponse = z.object({
 
 const updateOrganizationSettingsRequest = z.object({
   name: z.string().trim().min(1, 'Název skupiny je povinný').max(100),
+  description: z.string().trim().max(1000).nullable().optional(),
 });
 
 const listOrganizationsQuery = z.object({
