@@ -43,10 +43,24 @@ async function listMembers(request: Request, response: Response): Promise<void> 
 }
 
 async function createOrganization(request: Request, response: Response): Promise<void> {
-  const input = organizationSchema.createOrganizationRequest.parse(request.body);
+  const body =
+    request.body && typeof request.body === 'object'
+      ? { categories: [], tags: [], ...request.body }
+      : request.body;
+  const input = organizationSchema.createOrganizationRequest.parse(body);
   const organization = await organizationService.createOrganization(request, input);
 
   sendData(response, organizationSchema.createOrganizationResponse.parse(organization), 201);
+}
+
+async function getOrganization(request: Request, response: Response): Promise<void> {
+  if (!request.user) {
+    throw new AppError('Platnost přihlášení vypršela. Přihlaste se prosím znovu', 401);
+  }
+  const { organizationId } = organizationSchema.organizationParams.parse(request.params);
+  const organization = await organizationService.getOrganization(request.user, organizationId);
+
+  sendData(response, organizationSchema.organizationDetailResponse.parse(organization));
 }
 
 async function listOrganizations(request: Request, response: Response): Promise<void> {
@@ -83,6 +97,7 @@ const organizationController = {
   respondToInvitation,
   listMembers,
   createOrganization,
+  getOrganization,
   listOrganizations,
   getSettings,
   updateSettings,

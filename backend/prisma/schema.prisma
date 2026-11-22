@@ -71,16 +71,45 @@ model User {
 
 // Skupina
 model Organization {
-  id          String       @id @map("_id")
-  name        String
-  slug        String       @unique
-  logo        String?
-  metadata    String?
-  createdAt   DateTime
-  members     Member[]
-  invitations Invitation[]
+  id             String       @id @map("_id")
+  name           String
+  slug           String       @unique
+  logo           String?
+  metadata       String?
+  description    String       @default("")
+  categories     String[]     @default([])
+  tags           String[]     @default([])
+  createdAt      DateTime
+  members        Member[]
+  invitations    Invitation[]
+  categoryModels Category[]
+  tagModels      Tag[]
 
   @@map("organization")
+}
+
+// Kategorie ve skupině
+model Category {
+  id             String       @id @default(uuid()) @map("_id")
+  name           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@map("category")
+}
+
+// Tag ve skupině
+model Tag {
+  id             String       @id @default(uuid()) @map("_id")
+  name           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@map("tag")
 }
 
 // Člen skupiny

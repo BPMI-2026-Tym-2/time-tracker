@@ -11,13 +11,14 @@ export type OrganizationSettingsRecord = {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
   metadata?: string | null;
 };
 
 export function findOrganizationById(id: string) {
   return prisma.organization.findUnique({
     where: { id },
-    select: { id: true, name: true, slug: true, metadata: true },
+    select: { id: true, name: true, slug: true, description: true, metadata: true },
   });
 }
 
@@ -77,6 +78,7 @@ export async function updateOrganizationSettings(
     where: { id },
     data: {
       name: input.name,
+      ...(input.description !== undefined ? { description: input.description ?? '' } : {}),
       ...(metadata !== undefined ? { metadata } : {}),
     },
   });
@@ -131,8 +133,37 @@ export function countUserOrganizations(where: Prisma.MemberWhereInput) {
   return prisma.member.count({ where });
 }
 
+async function findOrganizationDetailById(organizationId: string, userId: string) {
+  const [organization, ownerMember, currentMember, memberCount] = await Promise.all([
+    prisma.organization.findUnique({ where: { id: organizationId } }),
+    // Nejstarší vlastník; chybějící vlastník nesmí shodit endpoint
+    prisma.member.findFirst({
+      where: { organizationId, role: 'owner' },
+      orderBy: { createdAt: 'asc' },
+      include: { user: { select: { id: true, name: true, surname: true } } },
+    }),
+    prisma.member.findFirst({
+      where: { organizationId, userId },
+      select: { role: true },
+    }),
+    prisma.member.count({ where: { organizationId } }),
+  ]);
+
+  if (!organization) {
+    return null;
+  }
+
+  return {
+    organization,
+    owner: ownerMember?.user ?? null,
+    memberCount,
+    currentUserRole: currentMember?.role ?? null,
+  };
+}
+
 const organizationRepository = {
   findOrganizationById,
+  findOrganizationDetailById,
   findOrganizationOwner,
   updateOrganizationName,
   updateOrganizationSettings,

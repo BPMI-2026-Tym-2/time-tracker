@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ChevronLeft, ChevronRight, FolderX, AlertCircle } from 'lucide-react';
 import { GroupListControls } from './group-list-controls';
 import { GroupTable } from './group-table';
+import { CreateGroupDialog } from './create-group-dialog';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
@@ -29,11 +30,14 @@ export function GroupListPage() {
   return (
     <main className="flex flex-1 flex-col justify-start p-6 md:p-8">
       <div className="w-full max-w-5xl space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#163820]">Seznam skupin</h1>
-          <p className="mt-1 text-sm font-medium text-[#5A685D]">
-            Správa skupin a jejich nastavení
-          </p>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#163820]">Seznam skupin</h1>
+            <p className="mt-1 text-sm font-medium text-[#5A685D]">
+              Správa skupin a jejich nastavení
+            </p>
+          </div>
+          <CreateGroupDialog />
         </div>
 
         <GroupListControls

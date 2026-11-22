@@ -1,20 +1,30 @@
 import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
+import { GroupDetail } from '@/components/features/groups/group-detail';
+import { Spinner } from '@/components/ui/spinner';
 
-type PageProps = {
+type GroupDetailPageProps = {
   params: Promise<{ groupId: string }>;
 };
 
-async function RedirectToSettings({ params }: PageProps) {
+async function GroupDetailContent({ params }: GroupDetailPageProps) {
   const { groupId } = await params;
-  redirect(`/groups/${groupId}/settings`);
-  return null;
+  return <GroupDetail groupId={groupId} />;
 }
 
-export default function GroupOverviewPage({ params }: PageProps) {
+export default function GroupDetailPage({ params }: GroupDetailPageProps) {
   return (
-    <Suspense fallback={null}>
-      <RedirectToSettings params={params} />
-    </Suspense>
+    <main className="flex flex-1 flex-col justify-start p-6 md:p-8">
+      <div className="mx-auto w-full max-w-5xl">
+        <Suspense
+          fallback={
+            <div className="flex min-h-64 items-center justify-center">
+              <Spinner />
+            </div>
+          }
+        >
+          <GroupDetailContent params={params} />
+        </Suspense>
+      </div>
+    </main>
   );
 }

@@ -59,6 +59,29 @@ export const auth = betterAuth({
       allowUserToCreateOrganization: true,
       cancelPendingInvitationsOnReInvite: true,
       organizationHooks,
+      schema: {
+        organization: {
+          additionalFields: {
+            description: {
+              type: 'string',
+              required: true,
+              input: true,
+            },
+            categories: {
+              type: 'string[]',
+              required: false,
+              defaultValue: [],
+              input: true,
+            },
+            tags: {
+              type: 'string[]',
+              required: false,
+              defaultValue: [],
+              input: true,
+            },
+          },
+        },
+      },
     }),
   ],
   user: {

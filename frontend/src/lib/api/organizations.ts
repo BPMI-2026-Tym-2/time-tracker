@@ -1,5 +1,8 @@
 import {
   organizationSchema,
+  type CreateOrganizationRequest,
+  type CreateOrganizationResponse,
+  type OrganizationDetailResponse,
   type ListOrganizationsQuery,
   type ListOrganizationsResponse,
   type OrganizationSettingsResponse,
@@ -115,4 +118,40 @@ export async function deleteOrganization(organizationId: string): Promise<void> 
     const message = await extractErrorMessage(response);
     throw new ApiError(message, response.status);
   }
+}
+
+export async function getOrganization(organizationId: string): Promise<OrganizationDetailResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/organizations/${encodeURIComponent(organizationId)}`,
+    { method: 'GET', credentials: 'include' },
+  );
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
+  }
+
+  const json = await response.json();
+  return organizationSchema.organizationDetailResponse.parse(json.data ?? json);
+}
+
+export async function createOrganization(
+  input: CreateOrganizationRequest,
+): Promise<CreateOrganizationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/organizations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new ApiError(message, response.status);
+  }
+
+  const json = await response.json();
+  return organizationSchema.createOrganizationResponse.parse(json.data ?? json);
 }
