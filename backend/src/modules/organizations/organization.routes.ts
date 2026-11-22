@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/http/async-handler.js';
 import { requireOrganizationRole } from '../../shared/auth/require-organization-role.js';
+import { activityController } from '../activities/activity.controller.js';
 import organizationController from './organization.controller.js';
 
 const organizationRouter = Router();
@@ -27,6 +28,11 @@ organizationRouter.get(
   '/:organizationId/members',
   requireOrganizationRole('owner', 'member'),
   asyncHandler(organizationController.listMembers),
+);
+organizationRouter.get(
+  '/:organizationId/activities',
+  requireOrganizationRole('owner', 'member'),
+  asyncHandler(activityController.listOrganization),
 );
 
 export default organizationRouter;

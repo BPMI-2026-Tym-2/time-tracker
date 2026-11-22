@@ -1,3 +1,4 @@
+export * from './schemas/activity.schema.js';
 export * from './schemas/auth.schema.js';
 export * from './schemas/group.schema.js';
 export * from './schemas/organization.schema.js';
