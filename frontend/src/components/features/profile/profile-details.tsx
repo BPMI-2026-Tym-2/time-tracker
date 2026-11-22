@@ -1,18 +1,18 @@
+import type { UserProfile } from '@time-tracker/shared';
 import { AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarXL } from '@/components/features/profile/avatar-xl';
 import { Button } from '@/components/ui/button';
 import { Field, FieldContent, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
-import type { Profile } from '@/types/profile';
 
 type ProfileDetailsProps = {
-  profile: Profile;
+  profile: UserProfile;
 };
 
 const profileValueClassName =
   'flex min-h-10 w-full max-w-xs items-center justify-center rounded-lg border border-black/50 bg-muted px-4 py-2 text-center text-sm text-foreground shadow-sm';
 
 export function ProfileDetails({ profile }: ProfileDetailsProps) {
-  const profileInitials = `${profile.firstName[0] ?? ''}${profile.lastName[0] ?? ''}` || '?';
+  const profileInitials = `${profile.name[0] ?? ''}${profile.surname[0] ?? ''}` || '?';
 
   return (
     <main className="flex-1 px-6 py-12">
@@ -24,10 +24,10 @@ export function ProfileDetails({ profile }: ProfileDetailsProps) {
           />
           <div className="relative z-10 flex h-44 w-full justify-center">
             <AvatarXL className="ring-card mt-8 ring-8 after:border-black/50">
-              {profile.photoUrl && (
+              {profile.profileImageUrl && (
                 <AvatarImage
-                  src={profile.photoUrl}
-                  alt={`${profile.firstName} ${profile.lastName}'s profile photo`}
+                  src={profile.profileImageUrl}
+                  alt={`${profile.name} ${profile.surname}'s profile photo`}
                 />
               )}
               <AvatarFallback>{profileInitials}</AvatarFallback>
@@ -40,7 +40,7 @@ export function ProfileDetails({ profile }: ProfileDetailsProps) {
               </FieldLabel>
               <FieldContent className="items-center text-center">
                 <output id="first-name" className={profileValueClassName}>
-                  {profile.firstName}
+                  {profile.name}
                 </output>
               </FieldContent>
             </Field>
@@ -50,7 +50,7 @@ export function ProfileDetails({ profile }: ProfileDetailsProps) {
               </FieldLabel>
               <FieldContent className="items-center text-center">
                 <output id="last-name" className={profileValueClassName}>
-                  {profile.lastName}
+                  {profile.surname}
                 </output>
               </FieldContent>
             </Field>
