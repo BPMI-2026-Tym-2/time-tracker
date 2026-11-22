@@ -26,7 +26,7 @@ export function useDeleteAccount() {
         throw new Error('Chybí konfigurace adresy API.');
       }
 
-      const response = await fetch(`${baseUrl}/users/me`, {
+      const response = await fetch(`${baseUrl}/api/users/me`, {
         method: 'DELETE',
       });
 

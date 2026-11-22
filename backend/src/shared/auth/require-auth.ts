@@ -8,6 +8,7 @@ export const requireAuth: RequestHandler = async (request, _response, next) => {
   const session = await auth.api.getSession({
     headers: fromNodeHeaders(request.headers),
   });
+  console.log(request.headers);
 
   if (!session) {
     next(new AppError('Platnost přihlášení vypršela. Přihlaste se prosím znovu', 401));

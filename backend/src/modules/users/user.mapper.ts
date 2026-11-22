@@ -12,9 +12,11 @@ export function toPublicUser(user: UserRecord): PublicUser {
   };
 }
 
-export function toUserProfile(user: UserRecord, hasPassword: boolean): UserProfile {
+export function toUserProfile(user: UserRecord): UserProfile {
   return {
-    ...toPublicUser(user),
-    hasPassword,
+    firstName: user.name,
+    lastName: user.surname,
+    email: user.email,
+    photoUrl: user.image,
   };
 }
