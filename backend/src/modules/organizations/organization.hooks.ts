@@ -1,5 +1,5 @@
 import { APIError } from 'better-auth/api';
-import { prisma } from '../../db/prisma.js';
+import invitationService from './invitation.service.js';
 
 async function beforeAcceptInvitation({
   invitation,
@@ -8,15 +8,9 @@ async function beforeAcceptInvitation({
   invitation: { id: string; organizationId: string };
   user: { id: string };
 }): Promise<void> {
-  const existingMember = await prisma.member.findFirst({
-    where: { organizationId: invitation.organizationId, userId: user.id },
-  });
-  if (!existingMember) return;
+  const result = await invitationService.checkAcceptInvitation(invitation, user.id);
+  if (result.ok) return;
 
-  await prisma.invitation.update({
-    where: { id: invitation.id },
-    data: { status: 'accepted' },
-  });
   throw new APIError('CONFLICT', {
     code: 'ALREADY_MEMBER_OF_ORGANIZATION',
     message: 'Jste již členem této skupiny.',
