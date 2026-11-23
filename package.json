@@ -30,6 +30,8 @@
     "format:check": "prettier --check .",
     "typecheck": "npm run generate && npm run typecheck --workspaces --if-present",
     "verify": "npm run lint && npm run format:check && npm run typecheck && npm run build",
+    "clean": "node -e \"for (const p of ['node_modules','frontend/node_modules','backend/node_modules','shared/node_modules','frontend/.next','frontend/out','backend/dist','shared/dist','backend/src/generated','frontend/tsconfig.tsbuildinfo','backend/tsconfig.tsbuildinfo','shared/tsconfig.tsbuildinfo','.eslintcache','.cache','.turbo']) fs.rmSync(p, { recursive: true, force: true });\"",
+    "reset": "npm run clean && npm ci",
     "test:invitations": "node --import tsx --test tests/invitations.test.ts",
     "test:profile": "node --env-file-if-exists=backend/.env --import tsx --test tests/user-profile.test.ts",
     "test:recorder": "node --env-file-if-exists=backend/.env --import tsx --test tests/recorder.test.ts",

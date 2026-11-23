@@ -3,6 +3,7 @@ import {
   type CreateOrganizationResponse,
   type InvitationResponse,
   type ListOrganizationMembersResponse,
+  type OrganizationDetailResponse,
   type OrganizationMemberResponse,
 } from '@time-tracker/shared';
 import { AppError } from '../../shared/errors/app-error.js';
@@ -34,6 +35,9 @@ type OrganizationRecord = {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
+  categories?: string[] | null;
+  tags?: string[] | null;
   createdAt: Date;
 };
 
@@ -77,6 +81,9 @@ function toOrganizationResponse(organization: OrganizationRecord): CreateOrganiz
     id: organization.id,
     name: organization.name,
     slug: organization.slug,
+    description: organization.description ?? '',
+    categories: organization.categories ?? [],
+    tags: organization.tags ?? [],
     createdAt: organization.createdAt,
   };
 }
@@ -107,10 +114,58 @@ function toMembersResponse({
   };
 }
 
+function extractDescription(organization: {
+  description?: string | null;
+  metadata?: string | null;
+}): string {
+  if (organization.description) {
+    return organization.description;
+  }
+  if (organization.metadata) {
+    try {
+      const parsed = JSON.parse(organization.metadata) as { description?: unknown };
+      if (typeof parsed.description === 'string') {
+        return parsed.description;
+      }
+    } catch {
+      // neplatný JSON v metadata se ignoruje
+    }
+  }
+  return '';
+}
+
+function toOrganizationDetailResponse(input: {
+  organization: OrganizationRecord & { logo?: string | null; metadata?: string | null };
+  owner: { id: string; name: string; surname: string } | null;
+  memberCount: number;
+  currentUserRole: string | null;
+}): OrganizationDetailResponse {
+  const parsedRole = input.currentUserRole
+    ? organizationSchema.role.safeParse(input.currentUserRole)
+    : null;
+
+  return {
+    id: input.organization.id,
+    name: input.organization.name,
+    slug: input.organization.slug,
+    description: extractDescription(input.organization),
+    categories: input.organization.categories ?? [],
+    tags: input.organization.tags ?? [],
+    logo: input.organization.logo ?? null,
+    createdAt: input.organization.createdAt,
+    owner: input.owner
+      ? { id: input.owner.id, name: input.owner.name, surname: input.owner.surname }
+      : null,
+    memberCount: input.memberCount,
+    currentUserRole: parsedRole?.success ? parsedRole.data : null,
+  };
+}
+
 const organizationMapper = {
   toInvitationResponse,
   toMemberResponse,
   toOrganizationResponse,
+  toOrganizationDetailResponse,
   toMembersResponse,
 };
 
