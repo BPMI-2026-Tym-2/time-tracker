@@ -4,7 +4,7 @@ import { ProfileDetails } from '@/components/features/profile/profile-details';
 import { useProfile } from '@/hooks/use-profile';
 
 export default function MyAccountPage() {
-  const { profile, isLoading, error } = useProfile();
+  const { profile, isLoading, error, updateProfile } = useProfile();
 
   if (isLoading) {
     return (
@@ -30,5 +30,5 @@ export default function MyAccountPage() {
     return null;
   }
 
-  return <ProfileDetails profile={profile} />;
+  return <ProfileDetails profile={profile} onSave={updateProfile} />;
 }
