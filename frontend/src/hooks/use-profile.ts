@@ -1,13 +1,14 @@
 'use client';
 
-import type { UserProfile } from '@time-tracker/shared';
+import type { UpdateProfileRequest, UserProfile } from '@time-tracker/shared';
 import { useEffect, useState } from 'react';
-import { getProfile } from '@/lib/api/profile';
+import { getProfile, updateProfile as saveProfile } from '@/lib/api/profile';
 
 type UseProfileResult = {
   profile: UserProfile | null;
   isLoading: boolean;
   error: string | null;
+  updateProfile: (values: UpdateProfileRequest) => Promise<void>;
 };
 
 export function useProfile(): UseProfileResult {
@@ -46,5 +47,10 @@ export function useProfile(): UseProfileResult {
     };
   }, []);
 
-  return { profile, isLoading, error };
+  async function updateProfile(values: UpdateProfileRequest): Promise<void> {
+    const updatedProfile = await saveProfile(values);
+    setProfile(updatedProfile);
+  }
+
+  return { profile, isLoading, error, updateProfile };
 }
