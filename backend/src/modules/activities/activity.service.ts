@@ -1,9 +1,12 @@
-import type {
-  ActivityResponse,
-  CreateActivityInput,
-  ListActivitiesQuery,
-  ListActivitiesResponse,
+import {
+  activityCalendarDate,
+  pastActivityDateMessage,
+  type ActivityResponse,
+  type CreateActivityInput,
+  type ListActivitiesQuery,
+  type ListActivitiesResponse,
 } from '@time-tracker/shared';
+import { AppError } from '../../shared/errors/app-error.js';
 import { activityMapper } from './activity.mapper.js';
 import { activityRepository, type ActivityRecorder } from './activity.repository.js';
 
@@ -26,6 +29,10 @@ async function createActivity(
   userId: string,
   organizationId?: string,
 ): Promise<ActivityResponse> {
+  if (activityCalendarDate(input.startedAt) < activityCalendarDate()) {
+    throw new AppError(pastActivityDateMessage, 400);
+  }
+
   const activity = await activityRepository.createActivity(input, userId, organizationId);
   return activityMapper.toActivityResponse(activity);
 }

@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import { ActivityRecurrence, type Prisma } from '@prisma/client';
 import type { CreateActivityInput, ListActivitiesQuery } from '@time-tracker/shared';
 import { prisma } from '../../db/prisma.js';
 
@@ -24,7 +24,29 @@ function findActivities(recorder: ActivityRecorder, query: ListActivitiesQuery) 
   return prisma.activity.findMany({
     where: {
       ...recorderFilter(recorder),
-      ...(query.from && { endedAt: { gt: query.from } }),
+      ...(query.from && {
+        AND: [
+          {
+            OR: [
+              { endedAt: { gt: query.from } },
+              ...(query.includeRecurring
+                ? [
+                    {
+                      recurrence: {
+                        in: [
+                          ActivityRecurrence.daily,
+                          ActivityRecurrence.weekly,
+                          ActivityRecurrence.monthly,
+                          ActivityRecurrence.yearly,
+                        ],
+                      },
+                    },
+                  ]
+                : []),
+            ],
+          },
+        ],
+      }),
       ...(query.to && { startedAt: { lt: query.to } }),
       ...(query.categoryId && { categoryIds: { hasSome: query.categoryId } }),
       ...(query.tagId && { tagIds: { hasSome: query.tagId } }),

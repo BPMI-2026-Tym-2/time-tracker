@@ -88,7 +88,7 @@ export function findOrganizationMembers(params: {
   where: Prisma.MemberWhereInput;
   skip: number;
   take: number;
-  isOwner: boolean;
+  order: Prisma.SortOrder;
 }) {
   return prisma.member.findMany({
     where: params.where,
@@ -98,11 +98,11 @@ export function findOrganizationMembers(params: {
           id: true,
           name: true,
           surname: true,
-          email: params.isOwner,
+          email: true,
         },
       },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ createdAt: params.order }, { id: 'asc' }],
     skip: params.skip,
     take: params.take,
   });

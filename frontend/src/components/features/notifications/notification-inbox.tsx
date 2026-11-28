@@ -13,7 +13,13 @@ export function NotificationInbox() {
   const { mutate: respond, isPending, error: responseError } = useRespondToInvitation();
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) void refetch();
+      }}
+    >
       <PopoverTrigger
         render={
           <Button

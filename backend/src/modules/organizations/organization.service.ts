@@ -86,21 +86,22 @@ async function createOrganization(
 }
 
 async function listMembers(
-  request: Request,
   organizationId: string,
   query: ListOrganizationMembersQuery,
 ): Promise<ListOrganizationMembersResponse> {
-  const isOwner = request.organization?.role === 'owner';
   const where: Prisma.MemberWhereInput = {
     organizationId,
     ...(query.role && { role: query.role }),
     ...(query.search && {
-      user: {
-        OR: [
-          { name: { contains: query.search, mode: 'insensitive' } },
-          { surname: { contains: query.search, mode: 'insensitive' } },
-        ],
-      },
+      AND: query.search.split(/\s+/).map((term) => ({
+        user: {
+          OR: [
+            { name: { contains: term, mode: 'insensitive' } },
+            { surname: { contains: term, mode: 'insensitive' } },
+            { email: { contains: term, mode: 'insensitive' } },
+          ],
+        },
+      })),
     }),
   };
   const [organization, members, total] = await Promise.all([
@@ -109,7 +110,7 @@ async function listMembers(
       where,
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
-      isOwner,
+      order: query.sort === 'newest' ? 'desc' : 'asc',
     }),
     organizationRepository.countOrganizationMembers(where),
   ]);
@@ -124,7 +125,6 @@ async function listMembers(
     page: query.page,
     pageSize: query.pageSize,
     total,
-    includeEmail: isOwner,
   });
 }
 

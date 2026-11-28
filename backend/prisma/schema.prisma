@@ -31,10 +31,20 @@ model Task {
   createdAt   DateTime @default(now())
 }
 
+enum ActivityRecurrence {
+  none
+  daily
+  weekly
+  monthly
+  yearly
+}
+
 //Aktivita
 model Activity {
   id                    String   @id @default(uuid()) @map("_id")
   name                  String
+  description           String?
+  recurrence            ActivityRecurrence?
   startedAt             DateTime
   endedAt               DateTime
   userId                String

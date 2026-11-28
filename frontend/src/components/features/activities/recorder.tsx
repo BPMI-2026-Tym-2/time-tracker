@@ -2,14 +2,23 @@
 
 import { useRef, useState } from 'react';
 import { addDays, addWeeks, format, isSameWeek, setHours, startOfDay, startOfWeek } from 'date-fns';
-import { CalendarDays, ChevronLeft, ChevronRight, List, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Grid2X2, List, Play, Square } from 'lucide-react';
 import type { ActivityResponse } from '@time-tracker/shared';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
 import { useActivities } from '@/hooks/use-activities';
 import { authClient } from '@/lib/auth-client';
 import { ActivityCalendar } from './activity-calendar';
 import { AddActivityDialog } from './add-activity-dialog';
+
+const toolbarButton =
+  'h-10 rounded-xl border-[#82796a] bg-[#ecdec8] px-4 text-[#211e18] hover:bg-[#e1d0b2]';
+const viewButton =
+  'size-10 rounded-none text-[#211e18] hover:bg-[#e1d0b2] aria-pressed:bg-[#b19a72]';
 
 const weekOptions = { weekStartsOn: 1 } as const;
 const startedAtFormat = new Intl.DateTimeFormat('cs-CZ', {
@@ -49,7 +58,13 @@ export function Recorder({ organizationId }: { organizationId?: string }) {
   const userId = session?.user.id;
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), weekOptions));
-  const [draft, setDraft] = useState<{ date: Date; trigger: HTMLButtonElement }>();
+  const [draft, setDraft] = useState<{
+    date: Date;
+    trigger: HTMLButtonElement;
+    endedAt?: Date;
+  }>();
+  const [filter, setFilter] = useState('');
+  const [timerStart, setTimerStart] = useState<Date>();
   const addButton = useRef<HTMLButtonElement>(null);
   const { data, isPending, isError, refetch } = useActivities(
     userId,
@@ -57,7 +72,10 @@ export function Recorder({ organizationId }: { organizationId?: string }) {
     addWeeks(weekStart, 1),
     organizationId,
   );
-  const activities = data?.items ?? [];
+  const search = filter.trim().toLocaleLowerCase('cs');
+  const activities = (data?.items ?? []).filter((activity) =>
+    activity.name.toLocaleLowerCase('cs').includes(search),
+  );
   const isCurrentWeek = isSameWeek(weekStart, new Date(), weekOptions);
   const weekEnd = addDays(weekStart, 6);
   const weekLabel = `${format(weekStart, weekStart.getFullYear() === weekEnd.getFullYear() ? 'd. M.' : 'd. M. yyyy')} – ${format(weekEnd, 'd. M. yyyy')}`;
@@ -75,20 +93,14 @@ export function Recorder({ organizationId }: { organizationId?: string }) {
   }
 
   return (
-    <section
-      aria-label={title}
-      className="border-border bg-card min-w-0 rounded-2xl border shadow-xs"
-    >
-      <div className="border-border flex flex-wrap items-center justify-between gap-3 border-b p-4">
-        <div className="flex items-center gap-3">
-          <span className="rounded-xl bg-[#e9efe4] p-2.5 text-[#163820]">
-            <CalendarDays aria-hidden="true" className="size-5" />
-          </span>
-          <h2 className="text-foreground text-lg font-semibold">{title}</h2>
-        </div>
+    <section aria-label={title} className="bg-card min-w-0">
+      <h2 className="text-foreground mb-2 text-lg font-semibold">{title}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
         <Button
           ref={addButton}
           type="button"
+          variant="outline"
+          className={cn(toolbarButton, 'font-bold')}
           aria-haspopup="dialog"
           disabled={!userId}
           onClick={(event) =>
@@ -98,62 +110,123 @@ export function Recorder({ organizationId }: { organizationId?: string }) {
             )
           }
         >
-          <Plus aria-hidden="true" /> Přidat aktivitu
+          Přidat aktivitu
         </Button>
-      </div>
-      <div className="border-border flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Předchozí týden"
-            onClick={() => setWeekStart((week) => addWeeks(week, -1))}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center" aria-label="Výběr týdne" role="group">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Předchozí týden"
+              onClick={() => setWeekStart((week) => addWeeks(week, -1))}
+            >
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={toolbarButton}
+              aria-label={
+                isCurrentWeek ? `Tento týden, ${weekLabel}` : `${weekLabel}, zpět na tento týden`
+              }
+              onClick={() => setWeekStart(startOfWeek(new Date(), weekOptions))}
+            >
+              {isCurrentWeek ? 'Tento týden' : weekLabel}
+            </Button>
+            <span aria-live="polite" className="sr-only">
+              {weekLabel}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Další týden"
+              onClick={() => setWeekStart((week) => addWeeks(week, 1))}
+            >
+              <ChevronRight aria-hidden="true" />
+            </Button>
+          </div>
+
+          <div
+            role="group"
+            aria-label="Zobrazení aktivit"
+            className="flex overflow-hidden rounded-xl border border-[#82796a] bg-[#ecdec8]"
           >
-            <ChevronLeft aria-hidden="true" />
-          </Button>
-          <p aria-live="polite" className="px-1 text-sm font-semibold tabular-nums">
-            {weekLabel}
-          </p>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Další týden"
-            onClick={() => setWeekStart((week) => addWeeks(week, 1))}
-          >
-            <ChevronRight aria-hidden="true" />
-          </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(viewButton, 'border-r-[#82796a]')}
+              aria-label="Seznam"
+              title="Seznam"
+              aria-pressed={view === 'list'}
+              onClick={() => setView('list')}
+            >
+              <List aria-hidden="true" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={viewButton}
+              aria-label="Kalendář"
+              title="Kalendář"
+              aria-pressed={view === 'calendar'}
+              onClick={() => setView('calendar')}
+            >
+              <Grid2X2 aria-hidden="true" />
+            </Button>
+          </div>
+
+          <Popover>
+            <PopoverTrigger
+              render={<Button type="button" variant="outline" className={toolbarButton} />}
+            >
+              {search ? 'Filtr (1)' : 'Filtr'}
+            </PopoverTrigger>
+            <PopoverContent align="end" aria-label="Filtr aktivit">
+              <Label htmlFor="recorder-activity-filter">Název aktivity</Label>
+              <Input
+                id="recorder-activity-filter"
+                type="search"
+                value={filter}
+                onChange={(event) => setFilter(event.currentTarget.value)}
+              />
+              {search && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setFilter('')}>
+                  Zrušit filtr
+                </Button>
+              )}
+            </PopoverContent>
+          </Popover>
+
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            disabled={isCurrentWeek}
-            onClick={() => setWeekStart(startOfWeek(new Date(), weekOptions))}
+            className={cn(toolbarButton, 'min-w-14', timerStart && 'bg-[#b19a72]')}
+            disabled={!userId || Boolean(draft)}
+            aria-label={timerStart ? 'Zastavit měření času' : 'Spustit měření času'}
+            title={
+              timerStart
+                ? `Zastavit měření od ${format(timerStart, 'H:mm')}`
+                : 'Spustit měření času'
+            }
+            onClick={(event) => {
+              const now = new Date();
+              if (timerStart && now > timerStart) {
+                setDraft({ date: timerStart, endedAt: now, trigger: event.currentTarget });
+                setTimerStart(undefined);
+              } else {
+                setTimerStart(now);
+              }
+            }}
           >
-            Tento týden
-          </Button>
-        </div>
-        <div
-          role="group"
-          aria-label="Zobrazení aktivit"
-          className="bg-muted flex gap-1 rounded-full p-1"
-        >
-          <Button
-            size="sm"
-            variant={view === 'calendar' ? 'default' : 'ghost'}
-            aria-pressed={view === 'calendar'}
-            onClick={() => setView('calendar')}
-          >
-            <CalendarDays aria-hidden="true" /> Kalendář
-          </Button>
-          <Button
-            size="sm"
-            variant={view === 'list' ? 'default' : 'ghost'}
-            aria-pressed={view === 'list'}
-            onClick={() => setView('list')}
-          >
-            <List aria-hidden="true" /> Seznam
+            {timerStart ? (
+              <Square aria-hidden="true" fill="currentColor" />
+            ) : (
+              <Play aria-hidden="true" fill="currentColor" />
+            )}
           </Button>
         </div>
       </div>
@@ -175,13 +248,15 @@ export function Recorder({ organizationId }: { organizationId?: string }) {
         <>
           {activities.length === 0 ? (
             <p className="text-muted-foreground border-border border-b px-4 py-3 text-sm">
-              {data.hasActivities
-                ? 'V tomto týdnu nejsou žádné aktivity.'
-                : 'Zatím tu nejsou žádné aktivity.'}
+              {search
+                ? 'Filtru neodpovídají žádné aktivity.'
+                : data.hasActivities
+                  ? 'V tomto týdnu nejsou žádné aktivity.'
+                  : 'Zatím tu nejsou žádné aktivity.'}
             </p>
           ) : null}
           {view === 'calendar' ? (
-            <ActivityCalendar weekStart={weekStart} activities={activities} onAdd={openDialog} />
+            <ActivityCalendar weekStart={weekStart} activities={activities} expanded />
           ) : (
             <ActivityList activities={activities} />
           )}
@@ -190,6 +265,7 @@ export function Recorder({ organizationId }: { organizationId?: string }) {
       {draft && userId ? (
         <AddActivityDialog
           startedAt={draft.date}
+          endedAt={draft.endedAt}
           userId={userId}
           organizationId={organizationId}
           onClose={closeDialog}

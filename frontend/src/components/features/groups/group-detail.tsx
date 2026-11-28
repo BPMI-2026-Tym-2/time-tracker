@@ -38,9 +38,16 @@ export function GroupDetail({ groupId }: { groupId: string }) {
           <h1 className="text-3xl font-bold tracking-tight">{data.name}</h1>
           <p className="text-muted-foreground text-sm">{data.description || 'Bez popisu'}</p>
         </div>
-        <Button variant="outline" render={<Link href="/groups" />} nativeButton={false}>
-          Zpět na skupiny
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {data.currentUserRole && (
+            <Button render={<Link href={`/groups/${groupId}/members`} />} nativeButton={false}>
+              Seznam uživatelů
+            </Button>
+          )}
+          <Button variant="outline" render={<Link href="/groups" />} nativeButton={false}>
+            Zpět na skupiny
+          </Button>
+        </div>
       </div>
 
       <dl className="border-border bg-card grid gap-4 rounded-2xl border p-5 text-sm shadow-xs sm:grid-cols-2">

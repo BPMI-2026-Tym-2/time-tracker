@@ -29,11 +29,33 @@ export function GroupSettingsForm({
   errorMessage,
 }: GroupSettingsFormProps) {
   const { control, register, handleSubmit, reset } = form;
+  const { canEdit } = settings.permissions;
   const { errors, dirtyFields, isDirty } = useFormState({ control });
 
   const nameFieldStyle = getFieldStyle(!errors.name, Boolean(dirtyFields.name));
   const descFieldStyle = getFieldStyle(!errors.description, Boolean(dirtyFields.description));
   const ownerFullName = `${settings.owner.name} ${settings.owner.surname}`.trim();
+
+  if (!canEdit) {
+    return (
+      <dl className="border-border bg-card space-y-5 rounded-2xl border p-6 text-sm">
+        <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+          <dt className="font-semibold">Název skupiny</dt>
+          <dd className="wrap-break-word">{settings.name}</dd>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+          <dt className="font-semibold">Popis skupiny</dt>
+          <dd className="wrap-break-word whitespace-pre-wrap">
+            {settings.description || 'Bez popisu'}
+          </dd>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+          <dt className="font-semibold">Vlastník skupiny</dt>
+          <dd className="wrap-break-word">{ownerFullName}</dd>
+        </div>
+      </dl>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -103,7 +125,7 @@ export function GroupSettingsForm({
           </div>
         </FieldGroup>
 
-        {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+        {errorMessage && <FieldError>{errorMessage}</FieldError>}
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button

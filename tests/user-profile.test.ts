@@ -111,7 +111,8 @@ describe('Zobrazení a úprava vlastního profilu (MongoDB + HTTP)', { concurren
       { name: 'Jan', surname: '' },
       { name: 'a'.repeat(PROFILE_NAME_MAX_LENGTH + 1), surname: 'Novák' },
       { name: 'Jan', surname: 'b'.repeat(PROFILE_NAME_MAX_LENGTH + 1) },
-      { name: 'Jan', surname: 'Novák', email: 'hacker@example.com' },
+      { name: 'Jan', surname: 'Novák', email: 'neplatny-email' },
+      { name: 'Jan', surname: 'Novák', profileImageUrl: 'data:image/svg+xml;base64,AAAA' },
       { name: 'Jan', surname: 'Novák', role: 'admin' },
     ];
 
@@ -119,6 +120,36 @@ describe('Zobrazení a úprava vlastního profilu (MongoDB + HTTP)', { concurren
       const response = await updateProfile(payload, user.cookie);
       assert.equal(response.status, 400);
     }
+  });
+
+  test('uloží obrázek a zachová ověřený e-mail', async () => {
+    const profileImageUrl =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X+ioAAAAASUVORK5CYII=';
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+    const response = await updateProfile(
+      { name: 'Jan', surname: 'Novák', profileImageUrl },
+      user.cookie,
+    );
+    assert.equal(response.status, 200);
+    const expected = { name: 'Jan', surname: 'Novák', email: user.email, profileImageUrl };
+    assert.deepEqual(await response.json(), expected);
+    assert.deepEqual(await (await getProfile(user.cookie)).json(), expected);
+    const saved = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    assert.equal(saved.emailVerified, true);
+  });
+
+  test('odmítne změnu e-mailu a ponechá původní profil', async () => {
+    const response = await updateProfile(
+      { name: 'Změněné jméno', surname: 'Novák', email: 'novy-email@example.com' },
+      user.cookie,
+    );
+    assert.equal(response.status, 400);
+    assert.deepEqual(await (await getProfile(user.cookie)).json(), {
+      name: 'Jan',
+      surname: 'Novák',
+      email: user.email,
+      profileImageUrl: null,
+    });
   });
 
   test('GET a PUT /api/users/profile bez přihlášení vrátí 401', async () => {

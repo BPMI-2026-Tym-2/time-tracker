@@ -1,12 +1,18 @@
-import { addDays, format, isSameDay, setHours } from 'date-fns';
+import { addDays, format, isSameDay } from 'date-fns';
 import { cs } from 'date-fns/locale';
-import { Plus } from 'lucide-react';
 import type { ActivityResponse } from '@time-tracker/shared';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const minutesPerDay = 1_440;
-const hourHeight = 56;
+const hours = [4, 8, 12, 16, 20];
+const weekdayLabels = ['NE', 'PO', 'ÚT', 'ST', 'ČT', 'PÁ', 'SO'];
+const activityColors = ['#ecdec8', '#ecdec8', '#c7e9e5', '#e2ad9f'];
+
+function activityColor(activity: ActivityResponse) {
+  const key = activity.categoryIds[0] ?? activity.tagIds[0] ?? activity.name.trim().toLowerCase();
+  const index = Array.from(key).reduce((sum, character) => sum + character.charCodeAt(0), 0);
+  return activityColors[index % activityColors.length];
+}
 
 type CalendarEntry = {
   activity: ActivityResponse;
@@ -32,7 +38,7 @@ function layoutDay(day: Date, activities: ActivityResponse[]): CalendarEntry[] {
     entries.push({
       activity,
       start,
-      end: Math.min(minutesPerDay, Math.max(end, start + 20)),
+      end: Math.min(minutesPerDay, Math.max(end, start + 45)),
       lane: 0,
       laneCount: 1,
     });
@@ -72,110 +78,109 @@ function layoutDay(day: Date, activities: ActivityResponse[]): CalendarEntry[] {
 type ActivityCalendarProps = {
   weekStart: Date;
   activities: ActivityResponse[];
-  onAdd: (date: Date, trigger: HTMLButtonElement) => void;
+  expanded?: boolean;
 };
 
-export function ActivityCalendar({ weekStart, activities, onAdd }: ActivityCalendarProps) {
+export function ActivityCalendar({
+  weekStart,
+  activities,
+  expanded = false,
+}: ActivityCalendarProps) {
   const days = Array.from({ length: 7 }, (_, index) => {
     const day = addDays(weekStart, index);
     return { day, entries: layoutDay(day, activities) };
   });
-  const today = new Date();
-  let firstHour = 8;
-  let lastHour = 19;
-  for (const { entries } of days) {
-    for (const entry of entries) {
-      firstHour = Math.min(firstHour, Math.floor(entry.start / 60));
-      lastHour = Math.max(lastHour, Math.ceil(entry.end / 60));
-    }
-  }
-
-  const hours = Array.from({ length: lastHour - firstHour }, (_, index) => firstHour + index);
-  const height = hours.length * hourHeight;
+  const today = expanded ? new Date() : undefined;
+  const hourHeight = expanded ? 42 : 28;
+  const gridInterval = 4 * hourHeight;
+  const calendarHeight = 24 * hourHeight;
 
   return (
     <div
       role="region"
       aria-label="Týdenní kalendář aktivit"
       tabIndex={0}
-      className="focus-visible:ring-ring max-h-[40rem] overflow-auto focus-visible:ring-2 focus-visible:ring-inset"
+      className={cn(
+        'focus-visible:ring-ring overflow-auto focus-visible:ring-2 focus-visible:ring-inset',
+        expanded ? 'max-h-[min(75dvh,50rem)]' : 'max-h-132',
+      )}
     >
-      <div className="grid min-w-[46rem] grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
-        <div className="border-border bg-muted sticky top-0 left-0 z-30 border-r border-b" />
-        {days.map(({ day }) => (
-          <div
-            key={day.toISOString()}
-            className={cn(
-              'border-border sticky top-0 z-20 flex min-h-14 items-center justify-between gap-1 border-r border-b bg-white px-2 last:border-r-0',
-              isSameDay(day, today) && 'bg-[#e9efe4]',
-            )}
-          >
-            <div>
-              <p className="text-muted-foreground text-xs font-medium capitalize">
-                {format(day, 'EEE', { locale: cs })}
-              </p>
+      <div
+        className={cn(
+          'grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] bg-white text-[#211e18]',
+          expanded ? 'min-w-[57rem]' : 'min-w-[44rem]',
+        )}
+      >
+        <div className="sticky top-0 left-0 z-30 border-r border-[#aaa39a] bg-white" />
+        {days.map(({ day }) => {
+          const isToday = today ? isSameDay(day, today) : false;
+          return (
+            <div
+              key={day.toISOString()}
+              className="sticky top-0 z-20 flex h-11 items-center gap-1.5 border border-l-0 border-[#aaa39a] bg-white px-1.5 tabular-nums"
+            >
+              <span
+                className={cn(
+                  'inline-flex h-7 items-center rounded-lg border border-[#82796a] bg-[#ecdec8] text-xs font-medium',
+                  expanded ? 'px-2' : 'px-1.5',
+                  isToday && 'bg-[#b19a72] font-bold',
+                )}
+              >
+                {weekdayLabels[day.getDay()]}
+              </span>
               <time
                 dateTime={format(day, 'yyyy-MM-dd')}
-                aria-current={isSameDay(day, today) ? 'date' : undefined}
-                className="text-primary text-sm font-semibold"
+                aria-current={isToday ? 'date' : undefined}
+                className={cn('whitespace-nowrap', expanded ? 'text-sm' : 'text-xs')}
               >
-                {format(day, 'd. M.')}
+                {format(day, 'd.M.yyyy')}
               </time>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              aria-haspopup="dialog"
-              aria-label={`Přidat aktivitu ${format(day, 'd. M.')}`}
-              onClick={(event) => onAdd(setHours(day, 9), event.currentTarget)}
-            >
-              <Plus aria-hidden="true" />
-            </Button>
-          </div>
-        ))}
+          );
+        })}
 
-        <div className="border-border bg-card sticky left-0 z-10 border-r" aria-hidden="true">
+        <div className="sticky left-0 z-10 border-r border-[#aaa39a] bg-white" aria-hidden="true">
           {hours.map((hour) => (
-            <div
+            <span
               key={hour}
-              style={{ height: hourHeight }}
-              className="text-muted-foreground border-border border-b px-1.5 pt-1 text-right text-xs tabular-nums"
+              style={{ top: hour * hourHeight }}
+              className="absolute right-1.5 -translate-y-1/2 text-sm tabular-nums"
             >
-              {String(hour).padStart(2, '0')}:00
-            </div>
+              {hour}:00
+            </span>
           ))}
         </div>
         {days.map(({ day, entries }) => (
           <ul
             key={day.toISOString()}
             aria-label={format(day, 'EEEE d. M.', { locale: cs })}
-            className={cn(
-              'border-border relative overflow-hidden border-r last:border-r-0',
-              isSameDay(day, today) && 'bg-[#f6f9f3]',
-            )}
+            className="relative overflow-hidden border-r border-b border-[#aaa39a]"
             style={{
-              height,
-              backgroundImage: `repeating-linear-gradient(to bottom, transparent 0 ${hourHeight - 1}px, var(--border) ${hourHeight - 1}px ${hourHeight}px)`,
+              height: calendarHeight,
+              backgroundImage: `repeating-linear-gradient(to bottom, transparent 0 ${gridInterval - 1}px, #aaa39a ${gridInterval - 1}px ${gridInterval}px)`,
             }}
           >
             {entries.map(({ activity, start, end, lane, laneCount }) => {
-              const timing = `${format(activity.startedAt, 'HH:mm')}–${format(activity.endedAt, 'HH:mm')}`;
+              const timing = `${format(activity.startedAt, 'H:mm')}–${format(activity.endedAt, 'H:mm')}`;
               const width = 100 / laneCount;
+              const height = Math.max(expanded ? 2 : 30, ((end - start) / 60) * hourHeight - 1);
               return (
                 <li
                   key={activity.id}
                   title={`${activity.name} · ${timing}`}
-                  className="absolute overflow-hidden rounded-md border border-l-2 border-[#d0dfcd] border-l-[#528054] bg-[#e6efe3] px-1.5 text-[#163820]"
+                  className="absolute flex flex-col justify-between overflow-hidden rounded-xl border border-[#82796a] px-1.5"
                   style={{
-                    top: ((start - firstHour * 60) / 60) * hourHeight,
-                    height: Math.max(2, ((end - start) / 60) * hourHeight - 1),
-                    left: `calc(${lane * width}% + 2px)`,
-                    width: `calc(${width}% - 4px)`,
+                    top: (start / 60) * hourHeight,
+                    height,
+                    left: `calc(${lane * width}% + 3px)`,
+                    width: `calc(${width}% - 6px)`,
+                    backgroundColor: activityColor(activity),
                   }}
                 >
-                  <p className="truncate text-xs leading-4 font-semibold">{activity.name}</p>
-                  <p className="truncate text-[11px] leading-4 tabular-nums">{timing}</p>
+                  <p className="truncate text-sm leading-[14px] font-medium">{activity.name}</p>
+                  <p className="truncate text-right text-xs leading-[14px] tabular-nums">
+                    {timing}
+                  </p>
                 </li>
               );
             })}

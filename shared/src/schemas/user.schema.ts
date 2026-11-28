@@ -25,6 +25,7 @@ const profileResponse = userResponseSchema.pick({
 });
 
 export const PROFILE_NAME_MAX_LENGTH = 50;
+export const PROFILE_IMAGE_MAX_LENGTH = 90_000;
 
 export const userNameSchema = z
   .string()
@@ -41,6 +42,14 @@ export const userSurnameSchema = z
 const updateProfileRequest = z.strictObject({
   name: userNameSchema,
   surname: userSurnameSchema,
+  profileImageUrl: z
+    .string()
+    .max(PROFILE_IMAGE_MAX_LENGTH)
+    .regex(
+      /^data:image\/(?:jpeg|png|webp);base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
+    )
+    .nullable()
+    .optional(),
 });
 
 export const userSchema = {

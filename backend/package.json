@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "prisma:generate": "NODE_OPTIONS=--require=./scripts/node-fs-compat.cjs prisma generate"
+    "prisma:generate": "node --require=./scripts/node-fs-compat.cjs ../node_modules/prisma/build/index.js generate"
   },
   "keywords": [],
   "author": "",

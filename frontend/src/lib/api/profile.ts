@@ -1,4 +1,4 @@
-import { userSchema, type UserProfile } from '@time-tracker/shared';
+import { userSchema, type UpdateProfileRequest, type UserProfile } from '@time-tracker/shared';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -14,7 +14,7 @@ function parseProfile(value: unknown): UserProfile {
   return result.data;
 }
 
-export async function getProfile(signal: AbortSignal): Promise<UserProfile> {
+async function requestProfile(options: RequestInit): Promise<UserProfile> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   if (!apiUrl) {
@@ -22,7 +22,7 @@ export async function getProfile(signal: AbortSignal): Promise<UserProfile> {
   }
 
   const response = await fetch(`${apiUrl.replace(/\/+$/, '')}/api/users/profile`, {
-    signal,
+    ...options,
     credentials: 'include',
   });
 
@@ -50,4 +50,16 @@ export async function getProfile(signal: AbortSignal): Promise<UserProfile> {
 
   const payload: unknown = await response.json();
   return parseProfile(payload);
+}
+
+export function getProfile(signal: AbortSignal): Promise<UserProfile> {
+  return requestProfile({ signal });
+}
+
+export function saveProfile(profile: UpdateProfileRequest): Promise<UserProfile> {
+  return requestProfile({
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profile),
+  });
 }

@@ -55,13 +55,7 @@ type OrganizationMemberRecord = {
   };
 };
 
-function toMemberResponse({
-  member,
-  includeEmail,
-}: {
-  member: OrganizationMemberRecord;
-  includeEmail: boolean;
-}): OrganizationMemberResponse {
+function toMemberResponse(member: OrganizationMemberRecord): OrganizationMemberResponse {
   const parsedRole = organizationSchema.role.safeParse(member.role);
 
   if (!parsedRole.success) {
@@ -72,7 +66,7 @@ function toMemberResponse({
     id: member.id,
     name: member.user.name,
     surname: member.user.surname ?? '',
-    ...(includeEmail && member.user.email ? { email: member.user.email } : {}),
+    ...(member.user.email ? { email: member.user.email } : {}),
     role: parsedRole.data,
     joinedAt: member.createdAt,
   };
@@ -96,14 +90,12 @@ function toMembersResponse({
   page,
   pageSize,
   total,
-  includeEmail,
 }: {
   organization: Pick<OrganizationRecord, 'id' | 'name' | 'slug'>;
   members: OrganizationMemberRecord[];
   page: number;
   pageSize: number;
   total: number;
-  includeEmail: boolean;
 }): ListOrganizationMembersResponse {
   return {
     organization: {
@@ -111,7 +103,7 @@ function toMembersResponse({
       name: organization.name,
       slug: organization.slug,
     },
-    items: members.map((member) => toMemberResponse({ member, includeEmail })),
+    items: members.map(toMemberResponse),
     pageInfo: { page, pageSize, total },
   };
 }

@@ -12,6 +12,7 @@ export function useNotifications() {
   const query = useQuery<ListNotificationsResponse, Error>({
     queryKey: ['notifications'],
     queryFn: fetchNotifications,
+    refetchInterval: 10_000,
   });
 
   return {

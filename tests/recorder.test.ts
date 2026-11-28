@@ -4,7 +4,11 @@ import { once } from 'node:events';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { after, before, describe, test } from 'node:test';
-import { activitySchema } from '@time-tracker/shared';
+import {
+  activityCalendarDate,
+  activitySchema,
+  pastActivityDateMessage,
+} from '@time-tracker/shared';
 import { app } from '../backend/src/app.js';
 import { env } from '../backend/src/config/env.js';
 import { prisma } from '../backend/src/db/prisma.js';
@@ -168,19 +172,20 @@ describe('Zobrazení záznamníku a přidání aktivity (MongoDB)', () => {
     );
   });
 
+  const today = activityCalendarDate();
   const interval = {
     name: '  Plánování  ',
-    startedAt: '2026-11-23T09:00:00+01:00',
-    endedAt: '2026-11-23T10:00:00+01:00',
+    startedAt: `${today}T12:00:00Z`,
+    endedAt: `${today}T13:00:00Z`,
   };
 
   test('uloží osobní i skupinovou aktivitu do správného záznamníku', async () => {
-    const filters = '?from=2026-11-23T00:00:00Z&to=2026-11-30T00:00:00Z';
+    const filters = `?from=${today}T11:00:00Z&to=${today}T14:00:00Z`;
     const personal = await createActivity(personalPath, interval, memberCookie);
     assert.equal(personal.status, 201);
     const saved = activitySchema.activityResponse.parse(await personal.json());
     assert.equal(saved.name, 'Plánování');
-    assert.equal(saved.startedAt.toISOString(), '2026-11-23T08:00:00.000Z');
+    assert.equal(saved.startedAt.toISOString(), `${today}T12:00:00.000Z`);
     assert.deepEqual((await readRecorder(personalPath + filters)).items, [saved]);
     assert.deepEqual((await readRecorder(personalPath + filters, outsiderCookie)).items, []);
     assert.deepEqual((await readRecorder(groupPath + filters)).items, []);
@@ -190,6 +195,19 @@ describe('Zobrazení záznamníku a přidání aktivity (MongoDB)', () => {
     const savedGroup = activitySchema.activityResponse.parse(await group.json());
     assert.deepEqual((await readRecorder(groupPath + filters)).items, [savedGroup]);
     assert.deepEqual((await readRecorder(personalPath + filters)).items, [saved]);
+  });
+
+  test('odmítne vytvoření osobní i skupinové aktivity před dneškem', async () => {
+    const yesterday = activityCalendarDate(new Date(Date.parse(interval.startedAt) - 86_400_000));
+    for (const path of [personalPath, groupPath]) {
+      const response = await createActivity(
+        path,
+        { ...interval, startedAt: `${yesterday}T12:00:00Z`, endedAt: `${yesterday}T13:00:00Z` },
+        memberCookie,
+      );
+      assert.equal(response.status, 400);
+      assert.equal((await response.json()).error, pastActivityDateMessage);
+    }
   });
 
   test('odmítne nepřihlášené uživatele, nečleny a neplatné aktivity', async () => {

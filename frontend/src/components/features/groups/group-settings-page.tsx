@@ -43,6 +43,8 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
   });
 
   const onSubmit: SubmitHandler<UpdateOrganizationSettingsRequest> = async (data) => {
+    if (!settings?.permissions.canEdit) return;
+
     resetUpdateError();
     await updateSettings(data);
   };
@@ -83,8 +85,7 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
             </div>
             <h2 className="text-xl font-bold">Přístup odepřen</h2>
             <p className="text-muted-foreground text-sm">
-              K zobrazení a úpravě nastavení této skupiny nemáte dostatečná oprávnění. Tuto akci
-              může provádět pouze vlastník skupiny.
+              Nastavení skupiny je dostupné jejím členům.
             </p>
             <Button variant="outline" onClick={() => router.push('/groups')}>
               Zpět na seznam skupin
@@ -118,10 +119,14 @@ export function GroupSettingsPage({ groupId }: GroupSettingsPageProps) {
             <div>
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Nastavení skupiny</h1>
               <p className="text-muted-foreground mt-1 text-sm">
-                Správa základních informací o skupině {settings.name}
+                {settings.permissions.canEdit
+                  ? `Správa základních informací o skupině ${settings.name}`
+                  : 'Nastavení může upravovat pouze vlastník skupiny.'}
               </p>
             </div>
-            <InviteMemberDialog organizationId={settings.id} organizationName={settings.name} />
+            {settings.permissions.canEdit && (
+              <InviteMemberDialog organizationId={settings.id} organizationName={settings.name} />
+            )}
           </div>
 
           <GroupSettingsForm

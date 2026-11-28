@@ -89,7 +89,7 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
         userId: user.id,
         organizationId,
         role: index === 0 ? 'owner' : 'member',
-        createdAt: new Date(),
+        createdAt: new Date(2026, 0, index + 1),
       })),
     });
   });
@@ -134,6 +134,31 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
     assert.equal(await prisma.invitation.count({ where: { organizationId } }), 0);
   });
 
+  test('the group member list filters and paginates memberships with email access for members', async () => {
+    const path = `/organizations/${organizationId}/members`;
+    const response = await request(`${path}?sort=newest&pageSize=1`, 0);
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.deepEqual(result.pageInfo, { page: 1, pageSize: 1, total: 2 });
+    assert.deepEqual(
+      result.items.map((item: { email: string }) => item.email),
+      [users[1].email],
+    );
+
+    const search = new URLSearchParams({ role: 'owner', search: users[0].email.toUpperCase() });
+    const ownerSearch = await request(`${path}?${search}`, 0);
+    assert.equal((await ownerSearch.json()).pageInfo.total, 1);
+    const memberSearch = await request(`${path}?${search}`, 1);
+    assert.equal((await memberSearch.json()).pageInfo.total, 1);
+    const memberList = await request(path, 1);
+    assert.equal(memberList.status, 200);
+    assert.deepEqual(
+      (await memberList.json()).items.map((item: { email: string }) => item.email),
+      [users[0].email, users[1].email],
+    );
+    assert.equal((await request(path, 3)).status, 403);
+  });
+
   test('owner creates a normalized invitation; only the recipient sees it and can accept it', async () => {
     const response = await invite(`  ${users[2].email.toUpperCase()}  `);
     assert.equal(response.status, 201);
@@ -142,6 +167,11 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
     assert.equal(invitation.role, 'member');
     assert.equal(invitation.status, 'pending');
     assert.equal(await prisma.member.count({ where: { organizationId } }), 2);
+    const membersPath = `/organizations/${organizationId}/members`;
+    const pendingMembers = await (await request(membersPath, 0)).json();
+    assert.ok(
+      !pendingMembers.items.some((item: { email: string }) => item.email === users[2].email),
+    );
     const inbox = await request('/notifications', 2);
     assert.equal(inbox.status, 200);
     assert.deepEqual(
@@ -159,6 +189,10 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
     assert.equal((await request(acceptPath, 2, {}, 'https://untrusted.example')).status, 403);
     assert.equal((await request(acceptPath, 2, {})).status, 200);
     assert.equal(await prisma.member.count({ where: { organizationId, userId: users[2].id } }), 1);
+    const acceptedMembers = await (await request(membersPath, 0)).json();
+    assert.ok(
+      acceptedMembers.items.some((item: { email: string }) => item.email === users[2].email),
+    );
     assert.deepEqual(await (await request('/notifications', 2)).json(), { items: [] });
   });
 
@@ -215,9 +249,24 @@ describe('Invitations and notification inbox (HTTP + Better Auth + MongoDB)', ()
     assert.equal(await prisma.member.count({ where: { organizationId, userId: users[1].id } }), 1);
   });
 
-  test('unverified accounts cannot enumerate invitations', async () => {
-    assert.equal((await invite(users[4].email)).status, 201);
-    assert.equal((await request('/notifications', 4)).status, 403);
+  test('an unverified recipient can see and accept their invitation', async () => {
+    const response = await invite(users[4].email);
+    assert.equal(response.status, 201);
+    const invitation = await response.json();
+    const inbox = await request('/notifications', 4);
+    assert.equal(inbox.status, 200);
+    assert.deepEqual(
+      (await inbox.json()).items.map((item: { id: string }) => item.id),
+      [invitation.id],
+    );
+    assert.deepEqual(await (await request(`/notifications?email=${users[4].email}`, 3)).json(), {
+      items: [],
+    });
+    const acceptPath = `/organizations/invitations/${invitation.id}/accept`;
+    assert.equal((await request(acceptPath, 3, {})).status, 403);
+    assert.equal((await request(acceptPath, 4, {})).status, 200);
+    assert.equal(await prisma.member.count({ where: { organizationId, userId: users[4].id } }), 1);
+    assert.deepEqual(await (await request('/notifications', 4)).json(), { items: [] });
   });
 
   test('delivery persists for an email without an account; database failure permits retry', async (t) => {

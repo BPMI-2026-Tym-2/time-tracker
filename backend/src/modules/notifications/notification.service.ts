@@ -8,10 +8,14 @@ import { notificationMapper } from './notification.mapper.js';
 
 async function list(request: Request): Promise<ListNotificationsResponse> {
   try {
-    // Use session headers, never the server-only email query parameter.
-    // Better Auth verifies email ownership before exposing invitation IDs.
+    const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+    if (!session) {
+      throw new AppError('Přihlášení je vyžadováno', 401);
+    }
+
+    // The email comes from the authenticated session. Never accept it from the request query.
     const invitations = await auth.api.listUserInvitations({
-      headers: fromNodeHeaders(request.headers),
+      query: { email: session.user.email },
     });
     const now = Date.now();
     return {
@@ -21,6 +25,7 @@ async function list(request: Request): Promise<ListNotificationsResponse> {
         .map(notificationMapper.toInvitationNotification),
     };
   } catch (error) {
+    if (error instanceof AppError) throw error;
     if (isAPIError(error) && error.statusCode < 500) {
       throw new AppError(error.message, error.statusCode);
     }

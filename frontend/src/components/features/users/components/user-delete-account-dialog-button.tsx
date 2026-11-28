@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Trash2Icon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 import {
   AlertDialog,
@@ -14,26 +13,39 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
 import { useDeleteAccount } from '@/hooks/use-delete-account';
 
-export function AlertDialogDestructive() {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
+export function DeleteAccountDialog({
+  userId,
+  open,
+  onOpenChange,
+}: {
+  userId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const [deleted, setDeleted] = useState(false);
   const { deleteAccount, isDeleting, error } = useDeleteAccount();
 
   async function handleDelete() {
-    if (await deleteAccount()) {
+    if (await deleteAccount(userId)) {
       setDeleted(true);
     }
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<Button variant="destructive">Odstranit účet</Button>} />
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (isDeleting) return;
+        if (!nextOpen && deleted) {
+          window.location.replace('/login');
+          return;
+        }
+        onOpenChange(nextOpen);
+      }}
+    >
       <AlertDialogContent size="sm">
         {deleted ? (
           <>
@@ -44,10 +56,7 @@ export function AlertDialogDestructive() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="group-data-[size=sm]/alert-dialog-content:grid-cols-1 sm:justify-center sm:justify-items-center">
-              <AlertDialogCancel
-                className="w-full justify-center sm:w-auto sm:min-w-48"
-                onClick={() => router.replace('/login')}
-              >
+              <AlertDialogCancel className="w-full justify-center sm:w-auto sm:min-w-48">
                 Zpět na přihlašovací stránku
               </AlertDialogCancel>
             </AlertDialogFooter>

@@ -14,7 +14,7 @@ async function GroupDetailContent({ params }: GroupDetailPageProps) {
 export default function GroupDetailPage({ params }: GroupDetailPageProps) {
   return (
     <main className="flex flex-1 flex-col justify-start p-6 md:p-8">
-      <div className="mx-auto w-full max-w-5xl">
+      <div className="mx-auto w-full min-w-0">
         <Suspense
           fallback={
             <div className="flex min-h-64 items-center justify-center">

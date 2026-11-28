@@ -11,6 +11,7 @@ const invitationParams = z.object({
 });
 
 const listMembersQuery = z.object({
+  sort: z.enum(['newest', 'oldest']).optional(),
   search: z.string().trim().min(1).max(200).optional(),
   role: role.optional(),
   page: z.coerce.number().int().min(1).default(1),

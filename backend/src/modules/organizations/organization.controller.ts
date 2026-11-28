@@ -37,7 +37,7 @@ async function createInvitation(request: Request, response: Response): Promise<v
 async function listMembers(request: Request, response: Response): Promise<void> {
   const { organizationId } = organizationSchema.organizationParams.parse(request.params);
   const query = organizationSchema.listMembersQuery.parse(request.query);
-  const result = await organizationService.listMembers(request, organizationId, query);
+  const result = await organizationService.listMembers(organizationId, query);
 
   sendData(response, organizationSchema.listMembersResponse.parse(result));
 }

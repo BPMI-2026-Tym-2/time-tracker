@@ -1,5 +1,6 @@
 import { activitySchema, type CreateActivityRequest } from '@time-tracker/shared';
 import { publicEnv } from '@/lib/env';
+import { activityOccurrences } from './activity-occurrences';
 
 function activityUrl(organizationId?: string): string {
   const path = organizationId
@@ -11,16 +12,17 @@ function activityUrl(organizationId?: string): string {
 export async function listActivities(
   from: string,
   to: string,
-  signal: AbortSignal,
+  signal: AbortSignal | undefined,
   organizationId?: string,
 ) {
-  const query = new URLSearchParams({ from, to });
+  const query = new URLSearchParams({ from, to, includeRecurring: 'true' });
   const response = await fetch(`${activityUrl(organizationId)}?${query}`, {
     credentials: 'include',
     signal,
   });
   if (!response.ok) throw new Error('Aktivity se nepodařilo načíst.');
-  return activitySchema.listResponse.parse(await response.json());
+  const result = activitySchema.listResponse.parse(await response.json());
+  return { ...result, items: activityOccurrences(result.items, new Date(from), new Date(to)) };
 }
 
 export async function createActivity(input: CreateActivityRequest, organizationId?: string) {

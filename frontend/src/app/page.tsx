@@ -1,35 +1,39 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Bell, BookOpen, Clock3, Users } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import type { ActivityResponse } from '@time-tracker/shared';
+import { ActivityCalendar } from '@/components/features/activities/activity-calendar';
 
-const features = [
-  {
-    icon: BookOpen,
-    title: 'Vlastní záznamník',
-    description: 'Udělejte si přehled o tom, čemu jste věnovali čas.',
-  },
-  {
-    icon: Users,
-    title: 'Skupiny',
-    description: 'Založte skupinu, pozvěte kolegy a prohlédněte si sdílené aktivity.',
-  },
-  {
-    icon: Bell,
-    title: 'Pozvánky na jednom místě',
-    description: 'Doručené pozvánky vyřídíte přímo v oznámeních.',
-  },
+const previewWeek = new Date(2027, 0, 11);
+const previewSlots = [
+  { name: 'Plán', day: 11, start: 4, end: 5, category: 'a' },
+  { name: 'Podklady', day: 11, start: 6, end: 8, category: 'b' },
+  { name: 'Hovor', day: 11, start: 9, end: 10, category: 'a' },
+  { name: 'Porada', day: 12, start: 6, end: 7, category: 'b' },
+  { name: 'E-maily', day: 12, start: 8, end: 9, category: 'a' },
+  { name: 'Čtení', day: 13, start: 5, end: 7, category: 'c' },
+  { name: 'Projekt', day: 14, start: 6, end: 9, category: 'b' },
+  { name: 'Revize', day: 14, start: 10, end: 11, category: 'a' },
+  { name: 'Běh', day: 15, start: 5, end: 6, category: 'c' },
+  { name: 'Nákup', day: 16, start: 8, end: 9, category: 'a' },
+  { name: 'Tenis', day: 17, start: 7, end: 9, category: 'b' },
 ];
 
-const preview = [
-  { name: 'Příprava podkladů', context: 'Vlastní aktivita', duration: '45 min' },
-  { name: 'Týmová porada', context: 'Sdílená aktivita', duration: '30 min' },
-  { name: 'Práce na projektu', context: 'Skupinová aktivita', duration: '1 h 15 min' },
-];
+const preview: ActivityResponse[] = previewSlots.map(
+  ({ name, day, start, end, category }, index) => ({
+    id: `preview-${index}`,
+    name,
+    startedAt: new Date(2027, 0, day, start),
+    endedAt: new Date(2027, 0, day, end),
+    categoryIds: [category],
+    tagIds: [],
+  }),
+);
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#f9f6ef] text-[#163820]">
-      <header className="border-b border-[#e8e2d6]">
+    <div className="min-h-screen bg-white text-[#163820]">
+      <header className="border-b border-[#e5e7eb]">
         <nav
           aria-label="Hlavní navigace"
           className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-10"
@@ -40,7 +44,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/overview"
-            className="rounded-full border border-[#cdd2c7] px-4 py-2 text-sm font-semibold transition-colors hover:bg-white"
+            className="rounded-full border border-[#cdd2c7] px-4 py-2 text-sm font-semibold transition-colors hover:bg-gray-50"
           >
             Otevřít aplikaci
           </Link>
@@ -48,16 +52,16 @@ export default function LandingPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-5 sm:px-10">
-        <section className="grid items-center gap-9 py-12 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12 lg:py-20">
-          <div className="max-w-xl">
+        <section className="space-y-9 py-10 sm:space-y-12 sm:py-14">
+          <div className="mx-auto max-w-2xl text-center">
             <h1 className="font-heading text-5xl leading-[0.99] font-bold tracking-[-0.055em] sm:text-6xl xl:text-7xl">
               Mějte přehled o&nbsp;svém čase.
             </h1>
-            <p className="mt-6 max-w-md text-lg leading-7 text-[#4c6151]">
+            <p className="mx-auto mt-6 max-w-md text-lg leading-7 text-[#4c6151]">
               Prohlížejte si osobní i týmové aktivity, spravujte skupiny a vyřizujte pozvánky na
               jednom místě.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/register"
                 className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#163820] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#285336]"
@@ -66,61 +70,20 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors hover:bg-[#ede9df]"
+                className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors hover:bg-gray-50"
               >
                 Přihlásit se
               </Link>
             </div>
           </div>
 
-          <figure className="relative isolate overflow-hidden rounded-3xl bg-[#163820] px-5 pt-7 pb-6 shadow-xl shadow-[#163820]/10 sm:px-9 sm:pt-10">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_100%_0%,#446347,transparent_65%),radial-gradient(ellipse_at_0%_100%,#2f5035,transparent_65%)]"
-            />
-            <div className="rounded-2xl border border-white/50 bg-[#fffdf8] shadow-xl">
-              <div className="flex items-center gap-3 border-b border-[#e8e2d6] px-4 py-4 sm:px-5">
-                <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#e9efe4]">
-                  <Clock3 aria-hidden="true" className="size-5" />
-                </div>
-                <div>
-                  <p className="font-bold">Přehled aktivit</p>
-                  <p className="text-xs text-[#536556]">Vlastní a týmový čas</p>
-                </div>
-              </div>
-              <ul className="divide-y divide-[#eee9df] px-4 sm:px-5">
-                {preview.map((item) => (
-                  <li key={item.name} className="flex items-center justify-between gap-3 py-3.5">
-                    <div>
-                      <p className="text-sm font-semibold">{item.name}</p>
-                      <p className="mt-0.5 text-xs text-[#536556]">{item.context}</p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-[#eee9df] px-2.5 py-1 text-xs font-semibold tabular-nums">
-                      {item.duration}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <figcaption className="mt-4 text-center text-xs text-[#ecdec8]">
-              Ukázka záznamníku
+          <figure className="mx-auto max-w-4xl min-w-0 overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-sm">
+            <figcaption className="border-b border-[#e5e7eb] px-4 py-3 text-left font-semibold sm:px-5">
+              Osobní záznamník
             </figcaption>
+            <ActivityCalendar weekStart={previewWeek} activities={preview} />
           </figure>
         </section>
-
-        <ul className="grid gap-5 border-t border-[#e8e2d6] py-8 sm:grid-cols-3 sm:gap-8">
-          {features.map(({ icon: Icon, title, description }) => (
-            <li key={title} className="flex gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e9efe4]">
-                <Icon aria-hidden="true" className="size-4" />
-              </span>
-              <div>
-                <h2 className="font-bold">{title}</h2>
-                <p className="mt-1 max-w-xs text-sm leading-5 text-[#4c6151]">{description}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
       </main>
     </div>
   );

@@ -3,14 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { User } from 'lucide-react';
+import { AccountMenu } from '@/components/layout/account-menu';
 import { NotificationInbox } from '@/components/features/notifications/notification-inbox';
-import { authClient } from '@/lib/auth-client';
 
 export function AppHeader() {
   const pathname = usePathname();
-  const session = authClient.useSession();
-  const sessionUser = session.data?.user;
 
   const currentSection = pathname.startsWith('/groups')
     ? 'Skupiny'
@@ -47,20 +44,7 @@ export function AppHeader() {
       <div className="flex items-center gap-4">
         <NotificationInbox />
 
-        <Link
-          href="/myaccount"
-          aria-label={`Uživatelský profil: ${sessionUser?.name ?? 'Uživatel'}`}
-          className="flex size-9 items-center justify-center rounded-full border-2 border-[#163820] text-[#163820] transition-opacity select-none hover:opacity-80"
-        >
-          {sessionUser?.name ? (
-            <span className="text-xs font-bold">
-              {sessionUser.name.charAt(0)}
-              {sessionUser.surname ? sessionUser.surname.charAt(0) : ''}
-            </span>
-          ) : (
-            <User className="size-5" />
-          )}
-        </Link>
+        <AccountMenu />
       </div>
     </header>
   );

@@ -3,6 +3,8 @@ import {
   type CreateOrganizationRequest,
   type CreateOrganizationResponse,
   type OrganizationDetailResponse,
+  type ListOrganizationMembersQuery,
+  type ListOrganizationMembersResponse,
   type ListOrganizationsQuery,
   type ListOrganizationsResponse,
   type OrganizationSettingsResponse,
@@ -27,6 +29,7 @@ async function extractErrorMessage(response: Response): Promise<string> {
     if (typeof errorBody?.error?.message === 'string') {
       return errorBody.error.message;
     }
+    if (typeof errorBody?.error === 'string') return errorBody.error;
     if (typeof errorBody?.message === 'string') {
       return errorBody.message;
     }
@@ -154,4 +157,28 @@ export async function createOrganization(
 
   const json = await response.json();
   return organizationSchema.createOrganizationResponse.parse(json.data ?? json);
+}
+
+export async function fetchOrganizationMembers(
+  organizationId: string,
+  query: ListOrganizationMembersQuery,
+  signal: AbortSignal,
+): Promise<ListOrganizationMembersResponse> {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    pageSize: String(query.pageSize),
+  });
+  if (query.search) params.set('search', query.search);
+  if (query.role) params.set('role', query.role);
+  if (query.sort) params.set('sort', query.sort);
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/organizations/${encodeURIComponent(organizationId)}/members?${params}`,
+    { credentials: 'include', signal },
+  );
+  if (!response.ok) {
+    throw new ApiError(await extractErrorMessage(response), response.status);
+  }
+
+  return organizationSchema.listMembersResponse.parse(await response.json());
 }

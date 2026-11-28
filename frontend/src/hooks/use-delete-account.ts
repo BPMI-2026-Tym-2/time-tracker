@@ -6,7 +6,7 @@ export function useDeleteAccount() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function deleteAccount(): Promise<boolean> {
+  async function deleteAccount(userId: string): Promise<boolean> {
     setIsDeleting(true);
     setError(null);
 
@@ -26,8 +26,9 @@ export function useDeleteAccount() {
         throw new Error('Chybí konfigurace adresy API.');
       }
 
-      const response = await fetch(`${baseUrl}/api/users/me`, {
+      const response = await fetch(`${baseUrl}/api/users/${encodeURIComponent(userId)}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       if (!response.ok) {

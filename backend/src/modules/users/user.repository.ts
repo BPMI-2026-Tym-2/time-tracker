@@ -34,7 +34,11 @@ async function updateProfile(
   try {
     return await prisma.user.update({
       where: { id: userId },
-      data: { name: data.name, surname: data.surname },
+      data: {
+        name: data.name,
+        surname: data.surname,
+        ...(data.profileImageUrl !== undefined && { image: data.profileImageUrl }),
+      },
       select: publicUserSelect,
     });
   } catch (error) {
